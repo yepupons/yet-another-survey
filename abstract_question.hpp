@@ -1,0 +1,22 @@
+#ifndef QUESTION_BLOCK_HPP_
+#define QUESTION_BLOCK_HPP_
+#include <string>
+#include <nlohmann/json_fwd.hpp>
+
+namespace survey {
+class QuestionBlock{
+public:
+    QuestionBlock() = default;
+    virtual ~QuestionBlock() = default;
+    QuestionBlock(const QuestionBlock &) = delete;
+    QuestionBlock(QuestionBlock &&) = delete;
+    QuestionBlock &operator=(const QuestionBlock &) = delete;
+    QuestionBlock &operator=(QuestionBlock &&) = delete;
+
+    virtual void print() const = 0;
+    virtual bool parse_input(std::string) const = 0;
+    virtual void save_result(const std::string &, nlohmann::json&) const = 0; // saves in json following sm rules
+};
+}
+
+#endif // QUESTION_BLOCK_HPP_
