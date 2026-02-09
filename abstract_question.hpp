@@ -14,8 +14,8 @@ public:
     QuestionBlock &operator=(QuestionBlock &&) = delete;
 
     virtual void print() const = 0;
-    virtual bool parse_input(std::string) const = 0;
-    virtual void save_result(const std::string &, nlohmann::json&) const = 0; // saves in json following sm rules
+    virtual bool parse_input(const std::string&) = 0;
+    virtual void save_result(nlohmann::json&) const = 0; // saves in json following sm rules
 };
 }
 
