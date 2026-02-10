@@ -10,9 +10,9 @@ MultipleQuestionBlock::MultipleQuestionBlock(std::string question_text,
     : question_text_(question_text), questions_(questions) {}
 
 void MultipleQuestionBlock::print() const {
-  std::cout << question_text_ << " Choose one or more answers\n";
+  std::cout << question_text_ << "\nChoose one or more answers\n";
   for (int i = 0; i < question_text_.size(); ++i) {
-    std::cout << i+1 << '. ' << question_text_[i] << '\n';
+    std::cout << i+1 << ". " << question_text_[i] << '\n';
   }
 }
 
@@ -39,7 +39,7 @@ bool MultipleQuestionBlock::parse_input(const std::string &answer) {
 }
 
 void MultipleQuestionBlock::save_result(nlohmann::json &j) const {
-  j["ansewrs"].push_back(answers_);
+  j["answers"].push_back(answers_);
   std::cout << "Your answer has been saved\n";
 }
 } // namespace survey
