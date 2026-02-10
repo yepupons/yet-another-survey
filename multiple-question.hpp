@@ -6,22 +6,19 @@
 
 namespace survey {
 class MultipleQuestionBlock : QuestionBlock {
-public:
-    std::string question_text_;
-    std::vector<std::string> questions_;
+    std::string question_;
+    std::vector<std::string> options_;
     std::vector<int> answers_;
 
+public:
     void print() const override;
     bool parse_input(const std::string &) override;
     void save_result(nlohmann::json &) const override;
 
-    MultipleQuestionBlock() = default;
-    MultipleQuestionBlock(std::string, std::vector<std::string>);
-    virtual ~MultipleQuestionBlock() = default;
-    MultipleQuestionBlock(const MultipleQuestionBlock &) = delete;
-    MultipleQuestionBlock(MultipleQuestionBlock &&) = delete;
-    MultipleQuestionBlock &operator=(const MultipleQuestionBlock &) = delete;
-    MultipleQuestionBlock &operator=(MultipleQuestionBlock &&) = delete;
+    MultipleQuestionBlock(const nlohmann::json &block)
+        : question_(block["question_block"]),
+          options_(block["question_options"]) {
+    }
 };
 }  // namespace survey
 

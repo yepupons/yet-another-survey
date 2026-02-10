@@ -12,6 +12,10 @@ public:
     void print() const override;
     bool parse_input(const std::string &) override;
     void save_result(nlohmann::json &) const override;
+
+    TextBlock(const nlohmann::json &block)
+        : question_(block["question_block"]) {
+    }
 };
 }  // namespace survey
 
