@@ -4,6 +4,9 @@
 
 namespace survey {
 void TextBlock::print() const {
+    std::cout << '\n';
+    for (int i = 0; i < 10; i++) {std::cout << '-';}
+    std::cout << '\n';
     std::cout << question_ << '\n';
     if (!answer_.empty()) {
         std::cout << "Your answer: " << answer_ << '\n';

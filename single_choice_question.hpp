@@ -3,9 +3,11 @@
 #include <string>
 #include <vector>
 #include "abstract_question.hpp"
+#include <nlohmann/json.hpp>
+
 
 namespace survey {
-class SingleChoiceBlock : QuestionBlock {
+class SingleChoiceBlock : public QuestionBlock {
     std::string question_;
     std::vector<std::string> options_;
     int answer_ = 0;
@@ -15,7 +17,7 @@ public:
     bool parse_input(const std::string &) override;
     void save_result(nlohmann::json &) const override;
 
-    SingleChoiceBlock(const nlohmann::json &block)
+    SingleChoiceBlock(nlohmann::json &block)
         : question_(block["question_text"]),
           options_(block["question_options"]) {
     }

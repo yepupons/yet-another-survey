@@ -1,4 +1,4 @@
-#include <abstract_question.hpp>
+#include "abstract_question.hpp"
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -25,29 +25,27 @@ int main() {
     nlohmann::json survey_data = nlohmann::json::parse(f);
     std::vector<std::unique_ptr<survey::QuestionBlock>> block_list;
 
+    /* nlohmann::json question_block = {{"question_text", "blabla"}, {"question_options", {"Asd", "asd"}}};
+
+    auto test = std::unique_ptr<survey::QuestionBlock>(new survey::TextBlock(question_block)); */
     for (auto question_block : survey_data["questions"]) {
         const std::string question_type = question_block["question_type"];
         switch (survey::COMPARATOR.at(question_type)) {
             case survey::BlockType::Text: {
-                block_list.push_back(std::make_unique<survey::QuestionBlock>(
-                    new survey::TextBlock(question_block)
-                ));
+                block_list.push_back(std::make_unique<survey::TextBlock>(question_block));
                 break;
             }
             case survey::BlockType::Multiple: {
-                block_list.push_back(std::make_unique<survey::QuestionBlock>(
-                    new survey::MultipleQuestionBlock(question_block)
-                ));
+                block_list.push_back(std::make_unique<survey::MultipleQuestionBlock>(question_block));
                 break;
             }
             case survey::BlockType::Single: {
-                block_list.push_back(std::make_unique<survey::QuestionBlock>(
-                    new survey::SingleChoiceBlock(question_block)
-                ));
+                block_list.push_back(std::make_unique<survey::SingleChoiceBlock>(question_block));
                 break;
             }
         }
     }
+    
 
     nlohmann::json answer_data = {
         {"answer_data", {{"survey_id", 0}, {"answer_id", 0}}}, {"answers", {}}
@@ -58,15 +56,14 @@ int main() {
     for (const auto &block : block_list) {
         block->print();
         std::string input;
-        std::cin >> input;
+        std::getline(std::cin, input);
         while (!block->parse_input(input)) {
-            std::cin >> input;
+            std::getline(std::cin, input);
         }
         block->save_result(answer_data);
-        std::cout << "Your answer has been saved\n";
     }
 
-    std::cout << "Survey is completed! Check your answers:\n";
+    std::cout << "\n\n\nSurvey is completed! Check your answers:\n";
     for (const auto &block : block_list) {
         block->print();
     }

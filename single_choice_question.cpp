@@ -5,6 +5,9 @@
 
 namespace survey {
 void SingleChoiceBlock::print() const {
+    std::cout << '\n';
+    for (int i = 0; i < 10; i++) {std::cout << '-';}
+    std::cout << '\n';
     std::cout << question_ << '\n';
     for (int counter = 0; const auto &option : options_) {
         std::cout << ++counter << ". " << option;
@@ -21,7 +24,7 @@ void SingleChoiceBlock::print() const {
 bool SingleChoiceBlock::parse_input(const std::string &input) {
     std::stringstream ss(input);
     if (int answer;
-        ss >> answer && answer <= options_.size() && ss.str().empty()) {
+        ss >> answer && answer <= options_.size()) {
         answer_ = answer;
         return true;
     }
