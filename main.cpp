@@ -1,44 +1,72 @@
-#include <nlohmann/json.hpp>
+#include <abstract_question.hpp>
 #include <fstream>
 #include <iostream>
-#include <vector>
-#include <abstract_question.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include "multiple-question.hpp"
+#include "single_choice_question.hpp"
+#include "text_question.hpp"
 
-// TODO: make it everywhere
-using json = nlohmann::json;
-// TODO: maybe change location of enum?
-enum class BlockType {Text, Multiple, OneOption};
+namespace survey {
+enum class BlockType { Text, Multiple, Single };
 
-const std::unordered_map<std::string, BlockType> COMPARATOR {{"text", BlockType::Text}, \
-                                                        {"multiple", BlockType::Multiple}, \
-                                                        {"one-option", BlockType::OneOption} };
+const std::unordered_map<std::string, BlockType> COMPARATOR{
+    {"text", BlockType::Text},
+    {"multiple", BlockType::Multiple},
+    {"single", BlockType::Single}
+};
+}  // namespace survey
 
-
-
-int main(){
+int main() {
     std::ifstream f("test_survey.json");
-    json survey_data = json::parse(f);
-    std::vector<std::unique_ptr<survey::QuestionBlock>> question_list;
+    nlohmann::json survey_data = nlohmann::json::parse(f);
+    std::vector<std::unique_ptr<survey::QuestionBlock>> block_list;
 
-    for (auto question_block : survey_data["questions"]){
-        std::string question_type = question_block["question_type"];
-        switch (COMPARATOR.at(question_type)) {
-            case BlockType::Text:{
-                // question_list.push_back(std::unique_ptr<survey::QuestionBlock>(new survey::QuestionBlock()));
+    for (auto question_block : survey_data["questions"]) {
+        const std::string question_type = question_block["question_type"];
+        switch (survey::COMPARATOR.at(question_type)) {
+            case survey::BlockType::Text: {
+                block_list.push_back(std::make_unique<survey::QuestionBlock>(
+                    new survey::TextBlock(question_block)
+                ));
                 break;
             }
-            case BlockType::Multiple:{
-                // question_list.push_back(std::unique_ptr<survey::QuestionBlock>(new survey::QuestionBlock()));
+            case survey::BlockType::Multiple: {
+                block_list.push_back(std::make_unique<survey::QuestionBlock>(
+                    new survey::MultipleQuestionBlock(question_block)
+                ));
                 break;
             }
-            case BlockType::OneOption:{
-                // question_list.push_back(std::unique_ptr<survey::QuestionBlock>(new survey::QuestionBlock()));
+            case survey::BlockType::Single: {
+                block_list.push_back(std::make_unique<survey::QuestionBlock>(
+                    new survey::SingleChoiceBlock(question_block)
+                ));
                 break;
             }
         }
     }
 
+    nlohmann::json answer_data = {
+        {"answer_data", {{"survey_id", 0}, {"answer_id", 0}}}, {"answers", {}}
+    };
+    answer_data["answer_data"]["survey_id"] = survey_data["survey_id"];
+    answer_data["answer_data"]["answer_id"] = 67;
+
+    for (const auto &block : block_list) {
+        block->print();
+        std::string input;
+        std::cin >> input;
+        while (!block->parse_input(input)) {
+            std::cin >> input;
+        }
+        block->save_result(answer_data);
+    }
+
+    std::cout << "Survey is completed! Check your answers:\n";
+    for (const auto &block : block_list) {
+        block->print();
+    }
 }

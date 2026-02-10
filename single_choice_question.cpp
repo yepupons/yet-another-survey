@@ -1,7 +1,7 @@
 #include "single_choice_question.hpp"
 #include <iostream>
-#include <sstream>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 namespace survey {
 void SingleChoiceBlock::print() const {
@@ -19,10 +19,9 @@ bool SingleChoiceBlock::parse_input(const std::string &input) {
         return true;
     }
     return false;
-    
 }
 
-void SingleChoiceBlock::save_result(nlohmann::json& answers_data) const {
+void SingleChoiceBlock::save_result(nlohmann::json &answers_data) const {
     answers_data["answers"].push_back(answer_);
 }
-}
+}  // namespace survey

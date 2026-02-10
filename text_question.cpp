@@ -16,7 +16,7 @@ bool TextBlock::parse_input(const std::string &input) {
     return false;
 }
 
-void TextBlock::save_result(nlohmann::json& answers_data) const {
+void TextBlock::save_result(nlohmann::json &answers_data) const {
     answers_data["answers"].push_back(answer_);
 }
-}
+}  // namespace survey
