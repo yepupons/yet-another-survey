@@ -11,17 +11,16 @@ void MultipleQuestionBlock::print() const {
     for (int i = 0; i < 10; i++) {std::cout << '-';}
     std::cout << '\n';
     std::cout << question_ << "\nChoose one or more answers\n";
-    for (int i = 0, j = 0; i < options_.size(); ++i) {
-        std::cout << i + 1 << ". " << options_[i] << '\n';
-    }
-    if (answer_.empty()) {
-        std::cout << "Input your choice here: ";
-    } else {
-        std::cout << "your answer: ";
-        for (int ans : answer_) {
-            std::cout << ans << ' ';
+    for (int counter = 0, j = 0; const auto &option : options_) {
+        std::cout << ++counter << ". " << option;
+        if (j < answer_.size() && counter == answer_[j]) {
+            std::cout << " +";
+            ++j;
         }
         std::cout << '\n';
+      }
+    if (answer_.empty()) {
+        std::cout << "Input your choice here: ";
     }
 }
 
@@ -34,9 +33,12 @@ bool MultipleQuestionBlock::parse_input(const std::string &answer) {
                 x = x * 10 + (answer[i] - '0');
                 ++i;
             }
-            // if (x <= options_.size() && x > 0) {
-            answer_.push_back(x);
-            // }
+            if (x <= options_.size() && x > 0) {
+                answer_.push_back(x);
+            } else {
+                std::cout << "Incorrect input!\n";
+                return false;
+            }
         } else {
             if (answer[i] == ',' || answer[i] == ' ') {
                 ++i;
