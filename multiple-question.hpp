@@ -16,7 +16,7 @@ public:
     void save_result(nlohmann::json &) const override;
 
     MultipleQuestionBlock(const nlohmann::json &block)
-        : question_(block["question_block"]),
+        : question_(block["question_text"]),
           options_(block["question_options"]) {
     }
 };

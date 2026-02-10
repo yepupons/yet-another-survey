@@ -5,7 +5,11 @@
 namespace survey {
 void TextBlock::print() const {
     std::cout << question_ << '\n';
-    std::cout << "Input your answer here: ";
+    if (!answer_.empty()) {
+        std::cout << "Your answer: " << answer_ << '\n';
+    } else {
+        std::cout << "Input your answer here: ";
+    }
 }
 
 bool TextBlock::parse_input(const std::string &input) {
@@ -13,6 +17,7 @@ bool TextBlock::parse_input(const std::string &input) {
         answer_ = input;
         return true;
     }
+    std::cout << "Incorrect input!\n";
     return false;
 }
 

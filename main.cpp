@@ -16,7 +16,8 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}};
+    {"single", BlockType::Single}
+};
 }  // namespace survey
 
 int main() {
@@ -49,7 +50,8 @@ int main() {
     }
 
     nlohmann::json answer_data = {
-        {"answer_data", {{"survey_id", 0}, {"answer_id", 0}}}, {"answers", {}}};
+        {"answer_data", {{"survey_id", 0}, {"answer_id", 0}}}, {"answers", {}}
+    };
     answer_data["answer_data"]["survey_id"] = survey_data["survey_id"];
     answer_data["answer_data"]["answer_id"] = 67;
 
@@ -61,6 +63,7 @@ int main() {
             std::cin >> input;
         }
         block->save_result(answer_data);
+        std::cout << "Your answer has been saved\n";
     }
 
     std::cout << "Survey is completed! Check your answers:\n";

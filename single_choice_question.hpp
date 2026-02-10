@@ -8,7 +8,7 @@ namespace survey {
 class SingleChoiceBlock : QuestionBlock {
     std::string question_;
     std::vector<std::string> options_;
-    int answer_;
+    int answer_ = 0;
 
 public:
     void print() const override;
@@ -16,7 +16,7 @@ public:
     void save_result(nlohmann::json &) const override;
 
     SingleChoiceBlock(const nlohmann::json &block)
-        : question_(block["question_block"]),
+        : question_(block["question_text"]),
           options_(block["question_options"]) {
     }
 };

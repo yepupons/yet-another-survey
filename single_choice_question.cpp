@@ -7,17 +7,25 @@ namespace survey {
 void SingleChoiceBlock::print() const {
     std::cout << question_ << '\n';
     for (int counter = 0; const auto &option : options_) {
-        std::cout << ++counter << ". " << option << '\n';
+        std::cout << ++counter << ". " << option;
+        if (counter == answer_) {
+            std::cout << " +";
+        }
+        std::cout << '\n';
     }
-    std::cout << "Input your choice here: ";
+    if (answer_ == 0) {
+        std::cout << "Input your choice here: ";
+    }
 }
 
 bool SingleChoiceBlock::parse_input(const std::string &input) {
     std::stringstream ss(input);
-    if (int answer; ss >> answer && ss.str().empty()) {
+    if (int answer;
+        ss >> answer && answer <= options_.size() && ss.str().empty()) {
         answer_ = answer;
         return true;
     }
+    std::cout << "Incorrect input!\n";
     return false;
 }
 

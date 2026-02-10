@@ -37,8 +37,7 @@ bool MultipleQuestionBlock::parse_input(const std::string &answer) {
     return true;
 }
 
-void MultipleQuestionBlock::save_result(nlohmann::json &j) const {
-    j["answers"].push_back(answers_);
-    std::cout << "Your answer has been saved\n";
+void MultipleQuestionBlock::save_result(nlohmann::json &answers_data) const {
+    answers_data["answers"].push_back(answers_);
 }
 }  // namespace survey
