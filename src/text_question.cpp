@@ -9,7 +9,13 @@ void TextBlock::print() const {
     std::cout << '\n';
     std::cout << question_ << '\n';
     if (!answer_.empty()) {
-        std::cout << "Your answer: " << answer_ << '\n';
+        if (answer_ == correct_answer_){
+            std::cout << "Your answer: \"" << answer_ << "\" is correct!" <<'\n';
+        } else {
+            std::cout << "Your answer: \"" << answer_ << "\" is NOT correct!" <<'\n';
+            std::cout << "Correct answer: " << correct_answer_ << '\n';
+        }
+        
     } else {
         std::cout << "Input your answer here: ";
     }

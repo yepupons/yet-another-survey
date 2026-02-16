@@ -13,9 +13,16 @@ void MultipleQuestionBlock::print() const {
     std::cout << question_ << "\nChoose one or more answers\n";
     for (int counter = 0, j = 0; const auto &option : options_) {
         std::cout << ++counter << ". " << option;
-        if (j < answer_.size() && counter == answer_[j]) {
-            std::cout << " +";
-            ++j;
+        if (!answer_.empty()){
+            if (j < answer_.size() && counter == answer_[j] && find(correct_answer_.begin(), correct_answer_.end(), answer_[j]) != correct_answer_.end()) {
+                std::cout << " +";
+                ++j;
+            } else if (j < answer_.size() && counter == answer_[j] && find(correct_answer_.begin(), correct_answer_.end(), answer_[j]) == correct_answer_.end()){
+                std::cout << " -";
+                ++j;
+            } else if (find(correct_answer_.begin(), correct_answer_.end(), counter) != correct_answer_.end()){
+                std::cout << " <-";
+            }
         }
         std::cout << '\n';
       }

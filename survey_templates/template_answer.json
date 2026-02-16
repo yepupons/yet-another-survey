@@ -1,0 +1,9 @@
+{
+    "answer_data": {
+        "survey_id": 123456,
+        "answer_id": 654321
+    },
+    "answers": [
+        "17", [2, 3], 1
+    ]
+}
