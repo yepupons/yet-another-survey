@@ -25,9 +25,6 @@ int main() {
     nlohmann::json survey_data = nlohmann::json::parse(f);
     std::vector<std::unique_ptr<survey::QuestionBlock>> block_list;
 
-    /* nlohmann::json question_block = {{"question_text", "blabla"}, {"question_options", {"Asd", "asd"}}};
-
-    auto test = std::unique_ptr<survey::QuestionBlock>(new survey::TextBlock(question_block)); */
     for (auto question_block : survey_data["questions"]) {
         const std::string question_type = question_block["question_type"];
         switch (survey::COMPARATOR.at(question_type)) {
@@ -67,4 +64,6 @@ int main() {
     for (const auto &block : block_list) {
         block->print();
     }
+    std::ofstream o("test_answer.json");
+    o << std::setw(4) << answer_data << std::endl;
 }
