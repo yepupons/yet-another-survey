@@ -11,9 +11,15 @@ void SingleChoiceBlock::print() const {
     std::cout << question_ << '\n';
     for (int counter = 0; const auto &option : options_) {
         std::cout << ++counter << ". " << option;
-        if (counter == answer_) {
+        if (answer_ != 0){
+        if (counter == answer_ && answer_ == correct_answer_) {
             std::cout << " +";
+        } else if (counter == answer_ && answer_ != correct_answer_){
+            std::cout << " -";
+        } else if (counter == correct_answer_){
+            std::cout << " <-";
         }
+    }
         std::cout << '\n';
     }
     if (answer_ == 0) {
