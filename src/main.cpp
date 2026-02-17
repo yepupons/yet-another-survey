@@ -1,3 +1,4 @@
+#include <curl/curl.h>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -19,9 +20,28 @@ const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"single", BlockType::Single}};
 }  // namespace survey
 
+static size_t
+WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    ((std::string *)userp)->append((char *)contents, size * nmemb);
+    return size * nmemb;
+}
+
 int main() {
-    std::ifstream f("./survey_templates/template_test.json");
-    nlohmann::json survey_data = nlohmann::json::parse(f);
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:8080/file");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+    }
+    nlohmann::json survey_data = nlohmann::json::parse(readBuffer);
+    // std::ifstream f("./survey_templates/template_test.json");
+
     std::vector<std::unique_ptr<survey::QuestionBlock>> block_list;
     if (survey_data["survey_data"]["type"] == "survey") {
         for (auto question_block : survey_data["questions"]) {
@@ -85,7 +105,7 @@ int main() {
         {"answer_data", {{"survey_id", 0}, {"answer_id", 0}}}, {"answers", {}}};
     answer_data["answer_data"]["survey_id"] = survey_data["survey_id"];
     answer_data["answer_data"]["answer_id"] = 67;
-    
+
     for (const auto &block : block_list) {
         block->print();
         std::string input;
