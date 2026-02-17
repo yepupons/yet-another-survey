@@ -1,0 +1,20 @@
+{
+    "survey_data": {
+        "id": 123456
+    },
+    "questions": [{
+            "question_type": "text",
+            "question_text": "How old are you?"
+        },
+        {
+            "question_type": "multiple",
+            "question_text": "What lessons do u like?",
+            "question_options": ["matan ;D", "algebra", "c++"]
+        },
+        {
+            "question_type": "single",
+            "question_text": "Who is the best",
+            "question_options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"]
+        }
+    ]
+}
