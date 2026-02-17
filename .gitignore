@@ -44,8 +44,17 @@
 .vscode
 
 # cmake 
-CMakeFiles
+CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 app
 Makefile
+build/
+
+compile_commands.json
+*.cmake.user
+
+CPackConfig.cmake
+CPackSourceConfig.cmake
+_CPack_Packages/
+
