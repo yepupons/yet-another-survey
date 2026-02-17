@@ -17,7 +17,7 @@ add_subdirectory(third_party/drogon)
 add_subdirectory(third_party/jsoncpp)
 
 add_library(core
-    src/multiple-question.cpp
+    src/multiple_question.cpp
     src/single_choice_question.cpp
     src/text_question.cpp
 )

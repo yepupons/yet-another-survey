@@ -3,11 +3,9 @@
 #include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <unordered_map>
-#include <vector>
 #include "abstract_question.hpp"
-#include "multiple-question.hpp"
+#include "multiple_question.hpp"
 #include "single_choice_question.hpp"
 #include "text_question.hpp"
 
@@ -43,60 +41,44 @@ int main() {
     // std::ifstream f("./survey_templates/template_test.json");
 
     std::vector<std::unique_ptr<survey::QuestionBlock>> block_list;
-    if (survey_data["survey_data"]["type"] == "survey") {
-        for (auto question_block : survey_data["questions"]) {
-            const std::string question_type = question_block["type"];
-            switch (survey::COMPARATOR.at(question_type)) {
-                case survey::BlockType::Text: {
-                    block_list.push_back(
-                        std::make_unique<survey::TextBlock>(question_block)
-                    );
-                    break;
-                }
-                case survey::BlockType::Multiple: {
-                    block_list.push_back(
-                        std::make_unique<survey::MultipleQuestionBlock>(
-                            question_block
-                        )
-                    );
-                    break;
-                }
-                case survey::BlockType::Single: {
-                    block_list.push_back(
-                        std::make_unique<survey::SingleChoiceBlock>(
-                            question_block
-                        )
-                    );
-                    break;
-                }
+    const bool is_test =
+        survey_data.at("survey_data").value("type", "survey") == "test";
+
+    for (auto &question_block : survey_data.at("questions")) {
+        const std::string question_type =
+            question_block.at("type").get<std::string>();
+        switch (survey::COMPARATOR.at(question_type)) {
+            case survey::BlockType::Text: {
+                block_list.push_back(std::make_unique<survey::TextBlock>(
+                    question_block,
+                    (is_test) ? std::make_optional(question_block.at("answer"))
+                              : std::nullopt
+                ));
+                break;
             }
-        }
-    } else {
-        for (auto question_block : survey_data["questions"]) {
-            const std::string question_type = question_block["type"];
-            switch (survey::COMPARATOR.at(question_type)) {
-                case survey::BlockType::Text: {
-                    block_list.push_back(std::make_unique<survey::TextBlock>(
-                        question_block, question_block["answer"]
-                    ));
-                    break;
-                }
-                case survey::BlockType::Multiple: {
-                    block_list.push_back(
-                        std::make_unique<survey::MultipleQuestionBlock>(
-                            question_block, question_block["answer"]
-                        )
-                    );
-                    break;
-                }
-                case survey::BlockType::Single: {
-                    block_list.push_back(
-                        std::make_unique<survey::SingleChoiceBlock>(
-                            question_block, question_block["answer"]
-                        )
-                    );
-                    break;
-                }
+            case survey::BlockType::Multiple: {
+                block_list.push_back(
+                    std::make_unique<survey::MultipleChoiceBlock>(
+                        question_block,
+                        (is_test)
+                            ? std::make_optional(question_block.at("answer")
+                                                     .get<std::vector<int>>())
+                            : std::nullopt
+                    )
+                );
+                break;
+            }
+            case survey::BlockType::Single: {
+                block_list.push_back(
+                    std::make_unique<survey::SingleChoiceBlock>(
+                        question_block,
+                        (is_test) ? std::make_optional(
+                                        question_block.at("answer").get<int>()
+                                    )
+                                  : std::nullopt
+                    )
+                );
+                break;
             }
         }
     }
@@ -107,7 +89,7 @@ int main() {
     answer_data["answer_data"]["answer_id"] = 67;
 
     for (const auto &block : block_list) {
-        block->print();
+        block->print_question();
         std::string input;
         std::getline(std::cin, input);
         while (!block->parse_input(input)) {
@@ -118,7 +100,7 @@ int main() {
 
     std::cout << "\n\n\nSurvey is completed! Check your answers:\n";
     for (const auto &block : block_list) {
-        block->print();
+        block->print_answer(is_test);
     }
     std::ofstream o("test_answer.json");
     o << std::setw(4) << answer_data << std::endl;

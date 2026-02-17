@@ -4,33 +4,47 @@
 #include <sstream>
 
 namespace survey {
-void SingleChoiceBlock::print() const {
+void SingleChoiceBlock::print_question() const {
     std::cout << '\n';
-    for (int i = 0; i < 10; i++) {std::cout << '-';}
+    for (int i = 0; i < 10; i++) {
+        std::cout << '-';
+    }
+    std::cout << '\n' << question_ << '\n';
+    for (int counter = 0; const auto &option : options_) {
+        std::cout << ++counter << ". " << option << '\n';
+    }
+    std::cout << "Input your choice here: ";
+}
+
+void SingleChoiceBlock::print_answer(const bool is_test) const {
+    std::cout << '\n';
+    for (int i = 0; i < 10; i++) {
+        std::cout << '-';
+    }
     std::cout << '\n';
     std::cout << question_ << '\n';
     for (int counter = 0; const auto &option : options_) {
         std::cout << ++counter << ". " << option;
-        if (answer_ != 0){
-        if (counter == answer_ && answer_ == correct_answer_) {
-            std::cout << " +";
-        } else if (counter == answer_ && answer_ != correct_answer_){
-            std::cout << " -";
-        } else if (counter == correct_answer_){
-            std::cout << " <-";
+        if (is_test) {
+            if (counter == answer_ && answer_ == correct_answer_) {
+                std::cout << " +";
+            } else if (counter == answer_ && answer_ != correct_answer_) {
+                std::cout << " -";
+            } else if (counter == correct_answer_) {
+                std::cout << " <-";
+            }
+        } else {
+            if (counter == answer_) {
+                std::cout << " +";
+            }
         }
-    }
         std::cout << '\n';
-    }
-    if (answer_ == 0) {
-        std::cout << "Input your choice here: ";
     }
 }
 
 bool SingleChoiceBlock::parse_input(const std::string &input) {
     std::stringstream ss(input);
-    if (int answer;
-        ss >> answer && answer <= options_.size()) {
+    if (int answer; ss >> answer && answer <= options_.size()) {
         answer_ = answer;
         return true;
     }

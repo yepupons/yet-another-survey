@@ -3,21 +3,33 @@
 #include <nlohmann/json.hpp>
 
 namespace survey {
-void TextBlock::print() const {
+void TextBlock::print_question() const {
     std::cout << '\n';
-    for (int i = 0; i < 10; i++) {std::cout << '-';}
+    for (int i = 0; i < 10; i++) {
+        std::cout << '-';
+    }
+    std::cout << '\n' << question_ << "\nInput your answer here: ";
+    ;
+}
+
+void TextBlock::print_answer(const bool is_test) const {
+    std::cout << '\n';
+    for (int i = 0; i < 10; i++) {
+        std::cout << '-';
+    }
     std::cout << '\n';
     std::cout << question_ << '\n';
-    if (!answer_.empty()) {
-        if (answer_ == correct_answer_){
-            std::cout << "Your answer: \"" << answer_ << "\" is correct!" <<'\n';
+    if (is_test) {
+        if (answer_ == correct_answer_) {
+            std::cout << "Your answer: \"" << answer_ << "\" is correct!"
+                      << '\n';
         } else {
-            std::cout << "Your answer: \"" << answer_ << "\" is NOT correct!" <<'\n';
-            std::cout << "Correct answer: " << correct_answer_ << '\n';
+            std::cout << "Your answer: \"" << answer_ << "\" is NOT correct!"
+                      << '\n';
+            std::cout << "Correct answer: " << *correct_answer_ << '\n';
         }
-        
     } else {
-        std::cout << "Input your answer here: ";
+        std::cout << "Your answer: \"" << answer_ << "\"\n";
     }
 }
 

@@ -1,37 +1,55 @@
-#include "multiple-question.hpp"
+#include "multiple_question.hpp"
 #include <cctype>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <vector>
 
 namespace survey {
 
-void MultipleQuestionBlock::print() const {
+void MultipleChoiceBlock::print_question() const {
     std::cout << '\n';
-    for (int i = 0; i < 10; i++) {std::cout << '-';}
+    for (int i = 0; i < 10; i++) {
+        std::cout << '-';
+    }
     std::cout << '\n';
     std::cout << question_ << "\nChoose one or more answers\n";
     for (int counter = 0, j = 0; const auto &option : options_) {
+        std::cout << ++counter << ". " << option << '\n';
+    }
+    std::cout << "Input your choice here: ";
+}
+
+void MultipleChoiceBlock::print_answer(const bool is_test) const {
+    std::cout << '\n';
+    for (int i = 0; i < 10; i++) {
+        std::cout << '-';
+    }
+    std::cout << '\n';
+    for (int counter = 0, j = 0; const auto &option : options_) {
         std::cout << ++counter << ". " << option;
-        if (!answer_.empty()){
-            if (j < answer_.size() && counter == answer_[j] && find(correct_answer_.begin(), correct_answer_.end(), answer_[j]) != correct_answer_.end()) {
+        if (correct_answer_) {
+            if (j < answer_.size() && counter == answer_[j] &&
+                find(
+                    correct_answer_->begin(), correct_answer_->end(), answer_[j]
+                ) != correct_answer_->end()) {
                 std::cout << " +";
                 ++j;
-            } else if (j < answer_.size() && counter == answer_[j] && find(correct_answer_.begin(), correct_answer_.end(), answer_[j]) == correct_answer_.end()){
+            } else if (j < answer_.size() && counter == answer_[j] && find(correct_answer_->begin(), correct_answer_->end(), answer_[j]) == correct_answer_->end()){
                 std::cout << " -";
                 ++j;
-            } else if (find(correct_answer_.begin(), correct_answer_.end(), counter) != correct_answer_.end()){
+            } else if (find(correct_answer_->begin(), correct_answer_->end(), counter) != correct_answer_->end()){
                 std::cout << " <-";
+            }
+        } else {
+            if (j < answer_.size()) {
+                std::cout << " +";
+                ++j;
             }
         }
         std::cout << '\n';
-      }
-    if (answer_.empty()) {
-        std::cout << "Input your choice here: ";
     }
 }
 
-bool MultipleQuestionBlock::parse_input(const std::string &answer) {
+bool MultipleChoiceBlock::parse_input(const std::string &answer) {
     int n = answer.size();
     for (int i = 0; i < n;) {
         if (isdigit(answer[i])) {
@@ -59,7 +77,7 @@ bool MultipleQuestionBlock::parse_input(const std::string &answer) {
     return true;
 }
 
-void MultipleQuestionBlock::save_result(nlohmann::json &answers_data) const {
+void MultipleChoiceBlock::save_result(nlohmann::json &answers_data) const {
     answers_data["answers"].push_back(answer_);
 }
 }  // namespace survey
