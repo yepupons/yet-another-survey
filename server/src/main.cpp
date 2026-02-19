@@ -1,8 +1,9 @@
 #include <drogon/drogon.h>
+#include <filesystem>
 
 using namespace drogon;
 
-int main() {
+int main(int argc, char *argv[]) {
     app().addListener("127.0.0.1", 8080);
 
     app().registerHandler(
