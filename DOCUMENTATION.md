@@ -10,8 +10,63 @@
 git submodule update --init --recursive
 ```
 
-## Сборка проекта
+## Сборка проекта (Qt6)
 
+Проект теперь использует Qt6 (Widgets) для клиента, поэтому перед сборкой нужно установить Qt6.
+
+Минимальные требования:
+- CMake >= 3.16
+- C++20 компилятор
+- Qt6 (Widgets)
+
+### macOS: проверить/установить Qt6
+
+Проверить, установлен ли Qt6 через Homebrew:
+```bash
+brew list --versions qt@6
+```
+
+Если команда ничего не выводит, установить:
+```bash
+brew install qt@6
+```
+
+### Linux: проверить/установить Qt6
+
+Проверить, установлен ли Qt6 (Ubuntu/Debian):
+```bash
+dpkg -l | rg -i "qt6"
+```
+
+Установка (Ubuntu/Debian):
+```bash
+sudo apt update
+sudo apt install -y qt6-base-dev
+```
+
+Для Arch:
+```bash
+sudo pacman -S qt6-base
+```
+
+Для Fedora:
+```bash
+sudo dnf install qt6-qtbase-devel
+```
+
+### Windows: проверить/установить Qt6
+
+Проверить, установлен ли Qt6 через Chocolatey:
+```bash
+choco list --local-only | findstr /i qt6
+```
+
+Установка (Chocolatey):
+```bash
+choco install qt6
+```
+
+### Билд
 Собираем билд, все будет лежать в папочке ./build в корне репозитория
 
 ```bash
@@ -39,10 +94,10 @@ cd ../..
 ./build/server
 ```
 
-### Клиент
+### Клиент (Qt)
 
-Клиент запускается и принимает json файл с сервера
+Клиент — Qt-приложение. Запускается отдельно:
 
 ```bash
-./build/cli
+./build/client
 ```
