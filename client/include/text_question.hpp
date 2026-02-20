@@ -3,8 +3,8 @@
 
 #include <nlohmann/json_fwd.hpp>
 // #include <optional>
-#include "abstract_question.hpp"
 #include <QWidget>
+#include "abstract_question.hpp"
 
 class QLabel;
 class QLineEdit;
@@ -20,13 +20,13 @@ public:
     );
 
     void save_answer(nlohmann::json &) const override;
+    bool has_answer() const override;
 
 private:
-    QLabel* question_;
-    QLineEdit* answer_;
+    QLabel *question_;
+    QLineEdit *answer_;
     // std::optional<std::string> correct_answer_;
 };
 }  // namespace survey
 
 #endif  // TEXT_QUESTION_HPP_
-

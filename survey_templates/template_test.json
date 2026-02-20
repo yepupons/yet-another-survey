@@ -6,19 +6,22 @@
     "questions": [{
             "type": "text",
             "text": "How old are you?",
-            "answer": "enough"
+            "answer": "enough",
+            "required": true
         },
         {
             "type": "multiple",
             "text": "What lessons do u like?",
             "options": ["matan ;D", "algebra", "c++"],
-            "answer": [1, 2]
+            "answer": [1, 2],
+            "required": true
         },
         {
             "type": "single",
             "text": "Who is the best",
             "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
-            "answer": 1
+            "answer": 1,
+            "required": true
         }
     ]
 }

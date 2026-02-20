@@ -3,8 +3,8 @@
 
 #include <nlohmann/json_fwd.hpp>
 // #include <optional>
-#include "abstract_question.hpp"
 #include <QWidget>
+#include "abstract_question.hpp"
 
 class QLabel;
 class QButtonGroup;
@@ -20,13 +20,14 @@ public:
     );
 
     void save_answer(nlohmann::json &) const override;
+    bool has_answer() const override;
 
 private slots:
     // void onButtonClicked();
 
 private:
-    QLabel* question_;
-    QButtonGroup* options_;
+    QLabel *question_;
+    QButtonGroup *options_;
     // std::optional<int> correct_answer_;
 };
 }  // namespace survey
