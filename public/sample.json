@@ -19,7 +19,30 @@
             "text": "Who is the best",
             "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
             "required": false
+        },
+        {
+            "type": "multiple",
+            "text": "What lessons do u like?",
+            "options": ["matan ;D", "algebra", "c++"],
+            "required": false
+        },
+        {
+            "type": "single",
+            "text": "Who is the best",
+            "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
+            "required": false
+        },
+        {
+            "type": "multiple",
+            "text": "What lessons do u like?",
+            "options": ["matan ;D", "algebra", "c++"],
+            "required": false
+        },
+        {
+            "type": "single",
+            "text": "Who is the best",
+            "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
+            "required": false
         }
     ]
 }
-
