@@ -33,11 +33,13 @@ option(USE_MYSQL      "Enable MySQL"      OFF)
 add_executable(client
     client/src/main.cpp
     client/src/main_window.cpp
+    client/src/survey_window.cpp
     client/src/multiple_choice_question.cpp
     client/src/single_choice_question.cpp
     client/src/text_question.cpp
     # Because of Qt issues
     client/include/main_window.hpp
+    client/include/survey_window.hpp
     client/include/multiple_choice_question.hpp
     client/include/single_choice_question.hpp
     client/include/text_question.hpp
