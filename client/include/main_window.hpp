@@ -1,11 +1,10 @@
 #ifndef MAIN_WINDOW_HPP_
 #define MAIN_WINDOW_HPP_
 
-#include <QList>
 #include <QMainWindow>
-#include <nlohmann/json.hpp>
-#include "abstract_question.hpp"
+#include "survey_window.hpp"
 
+class QLineEdit;
 class QPushButton;
 
 namespace survey {
@@ -13,19 +12,17 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    MainWindow(
-        const nlohmann::json &in_file,
-        nlohmann::json &out_file,
-        QWidget *parent = nullptr
-    );
+    MainWindow(QWidget *parent = nullptr);
 
 public slots:
-    void save_answer();
+    void open_survey();
+    void create_survey();
 
 private:
-    QList<QuestionBlock *> questions_{};
-    nlohmann::json answers_;
-    QPushButton *save_answer_;
+    QLineEdit *id_input_;
+    QPushButton *open_survey_button_;
+    QPushButton *create_survey_button_;
+    SurveyWindow *opened_survey_ = nullptr;
 };
 }  // namespace survey
 #endif  // MAIN_WINDOW_HPP_
