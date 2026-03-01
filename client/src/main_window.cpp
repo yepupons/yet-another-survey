@@ -1,6 +1,9 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
 #include <QHBoxLayout>
+#include <QMenu>
+#include <QAction>
+#include <QMessageBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -8,6 +11,7 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "survey_window.hpp"
+#include "survey_builder_window.hpp"
 
 namespace survey {
 // whatever it is, it is needed to write data from curl to string
@@ -83,9 +87,9 @@ void MainWindow::open_survey() {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, survey::WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     CURLcode res = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    curl_easy_cleanup(curl);
     if (res != CURLE_OK || http_code != 200 || readBuffer.empty()) {
         QMessageBox::warning(this, "Error", "Failed to load survey data.");
         return;
@@ -106,6 +110,27 @@ void MainWindow::open_survey() {
 }
 
 void MainWindow::create_survey() {
-    QMessageBox::warning(this, "Error", "This function is not available yet");
+    auto *menu = new QMenu(this);
+
+    auto *pollAction = menu->addAction("Survey");
+    auto *testAction = menu->addAction("Test");
+
+    QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
+        QPoint(0, create_survey_button_->height())
+    ));
+
+    if (!chosen) return;
+
+    if (chosen == pollAction) {
+
+        auto *builder = new SurveyBuilderWindow(SurveyBuilderWindow::Mode::Survey, nullptr);
+        builder->setAttribute(Qt::WA_DeleteOnClose);
+        builder->setWindowFlag(Qt::Window, true);
+        builder->show();
+        builder->raise();
+        builder->activateWindow();
+    } else if (chosen == testAction) {
+        QMessageBox::information(this, "Info", "This mode doesn't availible yet");
+    }
 }
 }  // namespace survey
