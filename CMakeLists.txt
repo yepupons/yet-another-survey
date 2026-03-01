@@ -44,6 +44,17 @@ add_executable(client
     client/include/single_choice_question.hpp
     client/include/text_question.hpp
     client/include/abstract_question.hpp
+    # builder headers
+    client/include/survey_builder_window.hpp
+    client/include/text_question_block_editor.hpp
+    client/include/single_choice_block_editor.hpp
+    client/include/multiple_choice_block_editor.hpp
+    client/include/block_editor.hpp
+    # builder
+    client/src/survey_builder_window.cpp
+    client/src/text_question_block_editor.cpp
+    client/src/single_choice_block_editor.cpp
+    client/src/multiple_choice_block_editor.cpp
 )
 
 target_include_directories(client PRIVATE
