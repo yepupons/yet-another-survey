@@ -61,3 +61,10 @@ _CPack_Packages/
 
 # qt
 .qtcreator
+
+# for surveys and responses (keep dirs, ignore contents)
+public/**/survey/*
+public/**/responses/*
+!public/**/survey/.gitkeep
+!public/**/responses/.gitkeep
+
