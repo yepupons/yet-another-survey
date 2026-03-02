@@ -1,17 +1,16 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
-#include <QHBoxLayout>
-#include <QMenu>
 #include <QAction>
-#include <QMessageBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
-#include "survey_window.hpp"
 #include "survey_builder_window.hpp"
+#include "survey_window.hpp"
 
 namespace survey {
 // whatever it is, it is needed to write data from curl to string
@@ -61,8 +60,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         &MainWindow::open_survey
     );
     connect(
-        id_input_, &QLineEdit::returnPressed, this,
-        &MainWindow::open_survey
+        id_input_, &QLineEdit::returnPressed, this, &MainWindow::open_survey
     );
     connect(
         create_survey_button_, &QPushButton::clicked, this,
@@ -99,8 +97,9 @@ void MainWindow::open_survey() {
     if (!opened_survey_) {
         opened_survey_ = new SurveyWindow(survey_data, this);
         opened_survey_->setAttribute(Qt::WA_DeleteOnClose);
-        connect(opened_survey_, &QObject::destroyed,
-                this, [this]() { opened_survey_ = nullptr; });
+        connect(opened_survey_, &QObject::destroyed, this, [this]() {
+            opened_survey_ = nullptr;
+        });
         opened_survey_->show();
         opened_survey_->raise();
         opened_survey_->activateWindow();
@@ -119,18 +118,22 @@ void MainWindow::create_survey() {
         QPoint(0, create_survey_button_->height())
     ));
 
-    if (!chosen) return;
+    if (!chosen) {
+        return;
+    }
 
     if (chosen == pollAction) {
-
-        auto *builder = new SurveyBuilderWindow(SurveyBuilderWindow::Mode::Survey, nullptr);
+        auto *builder =
+            new SurveyBuilderWindow(SurveyBuilderWindow::Mode::Survey, nullptr);
         builder->setAttribute(Qt::WA_DeleteOnClose);
         builder->setWindowFlag(Qt::Window, true);
         builder->show();
         builder->raise();
         builder->activateWindow();
     } else if (chosen == testAction) {
-        QMessageBox::information(this, "Info", "This mode doesn't availible yet");
+        QMessageBox::information(
+            this, "Info", "This mode doesn't availible yet"
+        );
     }
 }
 }  // namespace survey

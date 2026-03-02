@@ -1,9 +1,9 @@
 #ifndef SURVEY_BUILDER_WINDOW_HPP_
 #define SURVEY_BUILDER_WINDOW_HPP_
-#include <QWidget>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
-#include <QPushButton>
+#include <QWidget>
 #include <nlohmann/json.hpp>
 
 namespace survey {
@@ -33,10 +33,14 @@ private:
 
     nlohmann::json build_survey_json(int) const;
 
-    static std::string generate_survey_id();
+    static int generate_survey_id();
 
-    static bool save_survey_to_disk(const std::string &id, const nlohmann::json &j, std::string &err);
+    static bool save_survey_to_disk(
+        const std::string &id,
+        const nlohmann::json &j,
+        std::string &err
+    );
 };
-}
+}  // namespace survey
 
 #endif
