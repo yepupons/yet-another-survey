@@ -1,4 +1,5 @@
 #include "survey_window.hpp"
+#include <curl/curl.h>
 #include <QList>
 #include <QMessageBox>
 #include <QPushButton>
@@ -20,6 +21,23 @@ const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"multiple", BlockType::Multiple},
     {"single", BlockType::Single}
 };
+
+static bool post_answers(const nlohmann::json &answers, int survey_id) {
+    CURL *curl = curl_easy_init();
+    std::string url = "http://127.0.0.1:8080/response?id=" + std::to_string(survey_id);
+    std::string payload = answers.dump();
+
+    struct curl_slist *headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    // check curl example for example if u like https://curl.se/libcurl/c/http-post.html
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    return res == CURLE_OK;
+}
 
 SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, QWidget *parent)
     : QMainWindow(parent) {
@@ -110,11 +128,16 @@ void SurveyWindow::save_answer() {
     for (auto question : questions_) {
         question->save_answer(answers);
     }
+//TODO: MAKE COOLDOWN, OUR SERVER CAN BE DDOSED BY THIS BUTTON
+    if (!post_answers(answers, survey_id_)) {
+        QMessageBox::warning(
+            this, "Error", "Failed to send answers to the server."
+        );
+        return;
+    }
 
-    std::ofstream o("survey_answer.json");
-    o << std::setw(4) << answers << std::endl;
     QMessageBox::information(
-        this, "Save", "Your answers have been successfully saved."
+        this, "Saved", "Your answers have been successfully saved."
     );
 }
 }  // namespace survey
