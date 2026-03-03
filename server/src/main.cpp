@@ -83,7 +83,14 @@ int main(int argc, char *argv[]) {
             auto root = resolve_public_root();
             base = root / survey_id / "survey";
             std::error_code ec;
-
+            std::filesystem::create_directories(base, ec);
+            if (ec) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody("Failed to create survey directory");
+                cb(resp);   
+                return;
+            }
             std::filesystem::path out_path = base / "data.json";
 
             std::ofstream out(out_path);
