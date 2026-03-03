@@ -5,7 +5,7 @@
 namespace survey {
 MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(QWidget *parent) : BlockEditor(parent) {
     auto *layout = new QVBoxLayout(this);
-    layout->addWidget(new QLabel("Single choice", this));
+    layout->addWidget(new QLabel("Multiple choice", this));
 
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Question");
