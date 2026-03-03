@@ -1,0 +1,15 @@
+configure:
+	cmake -S . -B build
+
+build: configure
+	cmake --build build --parallel
+
+server: ./build/server
+
+client: ./build/client
+
+format:
+	clang-format -i client/*/*.*pp server/*/*.*pp
+
+clean:
+	rm -rf build
