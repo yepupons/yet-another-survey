@@ -1,12 +1,16 @@
+.PHONY: configure build build-server build-client server client format clean
+
 configure:
 	cmake -S . -B build
 
 build: configure
 	cmake --build build --parallel
 
-server: ./build/server
+server:
+	./build/server
 
-client: ./build/client
+client:
+	./build/client
 
 format:
 	clang-format -i client/*/*.*pp server/*/*.*pp
