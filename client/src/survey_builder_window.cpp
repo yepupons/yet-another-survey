@@ -9,9 +9,9 @@
 #include <fstream>
 #include <random>
 #include "multiple_choice_block_editor.hpp"
+#include "server_interaction.hpp"
 #include "single_choice_block_editor.hpp"
 #include "text_question_block_editor.hpp"
-#include "server_interaction.hpp"
 
 namespace survey {
 
@@ -131,7 +131,6 @@ int SurveyBuilderWindow::generate_survey_id() {
 
     return static_cast<int>(ms % 1000000000);
 }
-
 
 void SurveyBuilderWindow::save_survey() {
     int id = generate_survey_id();

@@ -1,6 +1,5 @@
 #include "server_interaction.hpp"
 
-
 namespace survey {
 nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
     CURL *curl = curl_easy_init();
@@ -9,7 +8,9 @@ nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
     std::string request_url =
         "http://127.0.0.1:8080/file?id=" + std::to_string(requested_data_id);
     curl_easy_setopt(curl, CURLOPT_URL, request_url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, survey::ServerInteraction::WriteCallback);
+    curl_easy_setopt(
+        curl, CURLOPT_WRITEFUNCTION, survey::ServerInteraction::WriteCallback
+    );
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     CURLcode res = curl_easy_perform(curl);
     long http_code = 0;
@@ -22,7 +23,10 @@ nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
     return nlohmann::json::parse(readBuffer);
 }
 
-bool ServerInteraction::save_survey_to_server(const std::string &id, const nlohmann::json &j) {
+bool ServerInteraction::save_survey_to_server(
+    const std::string &id,
+    const nlohmann::json &j
+) {
     CURL *curl = curl_easy_init();
     if (!curl) {
         return false;
@@ -46,7 +50,10 @@ bool ServerInteraction::save_survey_to_server(const std::string &id, const nlohm
     return res == CURLE_OK && http_code >= 200 && http_code < 300;
 }
 
-void ServerInteraction::post_answers(const nlohmann::json &answers, int survey_id){
+void ServerInteraction::post_answers(
+    const nlohmann::json &answers,
+    int survey_id
+) {
     CURL *curl = curl_easy_init();
     std::string url =
         "http://127.0.0.1:8080/response?id=" + std::to_string(survey_id);
@@ -67,4 +74,4 @@ void ServerInteraction::post_answers(const nlohmann::json &answers, int survey_i
         throw std::runtime_error("Failed to send answers to the server.");
     }
 }
-}
+}  // namespace survey

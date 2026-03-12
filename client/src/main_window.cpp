@@ -9,9 +9,9 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "server_interaction.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_window.hpp"
-#include "server_interaction.hpp"
 
 namespace survey {
 

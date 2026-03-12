@@ -1,12 +1,12 @@
 #ifndef SINGLE_CHOICE_BLOCK_EDITOR_HPP_
 #define SINGLE_CHOICE_BLOCK_EDITOR_HPP_
-#include <QWidget>
-#include <QLineEdit>
-#include <QVBoxLayout>
-#include <QPushButton>
 #include <QCheckBox>
-#include <vector>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <nlohmann/json.hpp>
+#include <vector>
 #include "block_editor.hpp"
 
 namespace survey {
@@ -17,8 +17,8 @@ public:
 
     bool is_saved() const override {
         return saved_;
-    
     }
+
     nlohmann::json to_json() const override;
 
 private slots:
@@ -32,9 +32,9 @@ private:
     QPushButton *save_ = nullptr;
     QCheckBox *required_ = nullptr;
 
-    std::vector<QLineEdit*> optionEdits_;
+    std::vector<QLineEdit *> optionEdits_;
     bool saved_ = false;
 };
-}
+}  // namespace survey
 
 #endif

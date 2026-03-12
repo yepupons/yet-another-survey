@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody("Failed to create survey directory");
-                cb(resp);   
+                cb(resp);
                 return;
             }
             std::filesystem::path out_path = base / "data.json";

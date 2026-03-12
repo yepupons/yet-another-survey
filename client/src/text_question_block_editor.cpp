@@ -1,7 +1,7 @@
 #include "text_question_block_editor.hpp"
-#include <QVBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QVBoxLayout>
 
 namespace survey {
 TextBlockEditor::TextBlockEditor(QWidget *parent) : BlockEditor(parent) {
@@ -22,7 +22,10 @@ TextBlockEditor::TextBlockEditor(QWidget *parent) : BlockEditor(parent) {
 
     connect(save_, &QPushButton::clicked, this, &TextBlockEditor::on_save);
 
-    setStyleSheet("TextBlockEditor { border: 1px solid #aaa; border-radius: 8px; padding: 8px; }");
+    setStyleSheet(
+        "TextBlockEditor { border: 1px solid #aaa; border-radius: 8px; "
+        "padding: 8px; }"
+    );
 }
 
 void TextBlockEditor::on_save() {
@@ -39,8 +42,8 @@ void TextBlockEditor::on_save() {
 nlohmann::json TextBlockEditor::to_json() const {
     nlohmann::json j;
     j["type"] = "text";
-    j["text"]  = text_->toPlainText().toStdString();
+    j["text"] = text_->toPlainText().toStdString();
     j["required"] = required_->isChecked();
     return j;
 }
-}
+}  // namespace survey

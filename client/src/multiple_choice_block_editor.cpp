@@ -3,7 +3,8 @@
 #include <QMessageBox>
 
 namespace survey {
-MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(QWidget *parent) : BlockEditor(parent) {
+MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(QWidget *parent)
+    : BlockEditor(parent) {
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(new QLabel("Multiple choice", this));
 
@@ -24,12 +25,20 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(QWidget *parent) : BlockEdi
     save_ = new QPushButton("Save block", this);
     layout->addWidget(save_);
 
-    connect(addOption_, &QPushButton::clicked, this, &MultipleChoiceBlockEditor::on_add_option);
-    connect(save_, &QPushButton::clicked, this, &MultipleChoiceBlockEditor::on_save);
+    connect(
+        addOption_, &QPushButton::clicked, this,
+        &MultipleChoiceBlockEditor::on_add_option
+    );
+    connect(
+        save_, &QPushButton::clicked, this, &MultipleChoiceBlockEditor::on_save
+    );
 
     on_add_option();
 
-    setStyleSheet("SingleChoiceBlockEditor { border: 1px solid #aaa; border-radius: 8px; padding: 8px; }");
+    setStyleSheet(
+        "SingleChoiceBlockEditor { border: 1px solid #aaa; border-radius: 8px; "
+        "padding: 8px; }"
+    );
 }
 
 void MultipleChoiceBlockEditor::on_add_option() {
@@ -47,16 +56,22 @@ void MultipleChoiceBlockEditor::on_save() {
 
     int nonEmpty = 0;
     for (auto *e : optionEdits_) {
-        if (!e->text().trimmed().isEmpty()) nonEmpty++;
+        if (!e->text().trimmed().isEmpty()) {
+            nonEmpty++;
+        }
     }
     if (nonEmpty < 2) {
-        QMessageBox::warning(this, "Error", "Need at least 2 non-empty options.");
+        QMessageBox::warning(
+            this, "Error", "Need at least 2 non-empty options."
+        );
         return;
     }
 
     saved_ = true;
     question_->setEnabled(false);
-    for (auto *e : optionEdits_) e->setEnabled(false);
+    for (auto *e : optionEdits_) {
+        e->setEnabled(false);
+    }
     addOption_->setEnabled(false);
     save_->setEnabled(false);
 }
@@ -69,9 +84,11 @@ nlohmann::json MultipleChoiceBlockEditor::to_json() const {
 
     for (auto *e : optionEdits_) {
         auto s = e->text().trimmed().toStdString();
-        if (!s.empty()) j["options"].push_back(s);
+        if (!s.empty()) {
+            j["options"].push_back(s);
+        }
     }
     j["required"] = required_->isChecked();
     return j;
 }
-}
+}  // namespace survey

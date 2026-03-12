@@ -10,9 +10,9 @@
 #include <unordered_map>
 #include "multiple_choice_question.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "server_interaction.hpp"
 #include "single_choice_question.hpp"
 #include "text_question.hpp"
-#include "server_interaction.hpp"
 
 namespace survey {
 enum class BlockType { Text, Multiple, Single };

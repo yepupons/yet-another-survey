@@ -1,10 +1,10 @@
 #ifndef TEXT_QUESTION_BLOCK_EDITOR_HPP_
 #define TEXT_QUESTION_BLOCK_EDITOR_HPP_
-#include <QWidget>
-#include <QLineEdit>
-#include <QTextEdit>
-#include <QPushButton>
 #include <QCheckBox>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTextEdit>
+#include <QWidget>
 #include <nlohmann/json.hpp>
 #include "block_editor.hpp"
 
@@ -14,7 +14,7 @@ class TextBlockEditor : public BlockEditor {
 public:
     explicit TextBlockEditor(QWidget *parent = nullptr);
 
-    bool is_saved() const override { 
+    bool is_saved() const override {
         return saved_;
     }
 
@@ -29,6 +29,6 @@ private:
     QCheckBox *required_ = nullptr;
     bool saved_ = false;
 };
-}
+}  // namespace survey
 
 #endif
