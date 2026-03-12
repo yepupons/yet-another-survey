@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include <QAction>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -10,10 +11,21 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "server_interaction.hpp"
+#include "session_id.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_window.hpp"
 
 namespace survey {
+
+int SessionIdGenerator::generate_session_id() {
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                  now.time_since_epoch()
+    )
+                  .count();
+
+    return static_cast<int>(ms % 1000000);
+}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("ЯЗЬ");
@@ -47,6 +59,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     create_survey_button_ = new QPushButton("Create survey", central);
     central_layout->addWidget(create_survey_button_);
 
+    change_session_id_button_ =
+        new QPushButton("Get or Set Session ID", central);
+    central_layout->addWidget(change_session_id_button_);
+
     central->setLayout(central_layout);
     setCentralWidget(central);
 
@@ -60,6 +76,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(
         create_survey_button_, &QPushButton::clicked, this,
         &MainWindow::create_survey
+    );
+    connect(
+        change_session_id_button_, &QPushButton::clicked, this,
+        &MainWindow::change_session_id
     );
 }
 
@@ -120,5 +140,39 @@ void MainWindow::create_survey() {
             this, "Info", "This mode doesn't availible yet"
         );
     }
+}
+
+void MainWindow::change_session_id() {
+    auto *menu = new QMenu(this);
+    auto *get_session_id_button_ = menu->addAction("Get Session ID");
+    auto *set_session_id_button_ = menu->addAction("Set Session ID");
+
+    QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
+        QPoint(0, create_survey_button_->height())
+    ));
+
+    if (!chosen) {
+        return;
+    }
+
+    if (chosen == get_session_id_button_) {
+        QMessageBox::information(
+            this, "Info", "Your session ID is: " + QString::number(session_id)
+        );
+        return;
+    } else if (chosen == set_session_id_button_) {
+        bool ok;
+        int new_id = QInputDialog::getInt(
+            this, "Set Session ID", "Enter new session ID:", session_id, 1,
+            2147483647, 1, &ok
+        );
+        if (ok) {
+            session_id = new_id;
+        }
+    }
+
+    QMessageBox::information(
+        this, "Info", "Session ID changed to " + QString::number(session_id)
+    );
 }
 }  // namespace survey
