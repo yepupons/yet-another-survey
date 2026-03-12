@@ -37,6 +37,7 @@ add_executable(client
     client/src/multiple_choice_question.cpp
     client/src/single_choice_question.cpp
     client/src/text_question.cpp
+    client/src/server_interaction.cpp
     # Because of Qt issues
     client/include/main_window.hpp
     client/include/survey_window.hpp
@@ -50,6 +51,7 @@ add_executable(client
     client/include/single_choice_block_editor.hpp
     client/include/multiple_choice_block_editor.hpp
     client/include/block_editor.hpp
+    client/include/server_interaction.hpp
     # builder
     client/src/survey_builder_window.cpp
     client/src/text_question_block_editor.cpp
