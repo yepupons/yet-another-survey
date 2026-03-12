@@ -11,6 +11,7 @@
 #include "multiple_choice_question.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "server_interaction.hpp"
+#include "session_id.hpp"
 #include "single_choice_question.hpp"
 #include "text_question.hpp"
 
@@ -105,7 +106,10 @@ void SurveyWindow::save_answer() {
     }
 
     nlohmann::json answers = {
-        {"answer_data", {{"survey_id", survey_id_}, {"answer_id", 67}}},
+        {"answer_data",
+         {{"survey_id", survey_id_},
+          {"answer_id", 67},
+          {"user_id", session_id}}},
         {"answers", {}}};
     for (auto question : questions_) {
         question->save_answer(answers);
