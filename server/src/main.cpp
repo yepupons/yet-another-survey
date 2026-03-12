@@ -46,12 +46,19 @@ int main(int argc, char *argv[]) {
                           .count();
             // maybe we should add hash to it, but later D:
             std::string filename = std::to_string(ts) + ".json";
-
             auto root = resolve_public_root();
             std::filesystem::path base = root / survey_id / "responses";
-            std::filesystem::create_directories(base);
-            std::filesystem::path out_path = base / filename;
+            std::error_code ec;
+            std::filesystem::create_directories(base, ec);
+            if (ec) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody("Failed to create responses directory");
+                cb(resp);
+                return;
+            }
 
+            std::filesystem::path out_path = base / filename;
             std::ofstream out(out_path);
             Json::StreamWriterBuilder writer;
             // for pretty json)))
@@ -78,6 +85,15 @@ int main(int argc, char *argv[]) {
                           now.time_since_epoch()
             )
                           .count();
+            if (!std::filesystem::exists(
+                    std::filesystem::current_path() / "public"
+                )) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody("Public directory does not exist");
+                cb(resp);
+                return;
+            }
             std::filesystem::path base = std::filesystem::current_path() /
                                          "public" / survey_id / "survey";
             auto root = resolve_public_root();
