@@ -11,6 +11,7 @@
 #include "multiple_choice_block_editor.hpp"
 #include "single_choice_block_editor.hpp"
 #include "text_question_block_editor.hpp"
+#include "server_interaction.hpp"
 
 namespace survey {
 
@@ -131,29 +132,6 @@ int SurveyBuilderWindow::generate_survey_id() {
     return static_cast<int>(ms % 1000000000);
 }
 
-bool save_survey_to_server(const std::string &id, const nlohmann::json &j) {
-    CURL *curl = curl_easy_init();
-    if (!curl) {
-        return false;
-    }
-    std::string url = "http://127.0.0.1:8080/registertest?id=" + id;
-    std::string payload = j.dump();
-
-    struct curl_slist *headers = nullptr;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    // check curl example for example if u like
-    // https://curl.se/libcurl/c/http-post.html
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-
-    CURLcode res = curl_easy_perform(curl);
-    long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-    return res == CURLE_OK && http_code >= 200 && http_code < 300;
-}
 
 void SurveyBuilderWindow::save_survey() {
     int id = generate_survey_id();
@@ -167,7 +145,7 @@ void SurveyBuilderWindow::save_survey() {
         return;
     }
 
-    if (!save_survey_to_server(std::to_string(id), j)) {
+    if (!ServerInteraction::save_survey_to_server(std::to_string(id), j)) {
         QMessageBox::warning(this, "Error", "Failed to save survey to server.");
         return;
     }

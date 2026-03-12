@@ -1,7 +1,7 @@
 #ifndef BLOCK_EDITOR_HPP_
 #define BLOCK_EDITOR_HPP_
 #include <nlohmann/json.hpp>
-#include <Qwidget>
+#include <QWidget>
 
 namespace survey {
 class BlockEditor : public QWidget {

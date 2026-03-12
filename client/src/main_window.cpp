@@ -11,14 +11,9 @@
 #include <nlohmann/json.hpp>
 #include "survey_builder_window.hpp"
 #include "survey_window.hpp"
+#include "server_interaction.hpp"
 
 namespace survey {
-// whatever it is, it is needed to write data from curl to string
-static size_t
-WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-    ((std::string *)userp)->append((char *)contents, size * nmemb);
-    return size * nmemb;
-}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("ЯЗЬ");
@@ -76,24 +71,14 @@ void MainWindow::open_survey() {
         return;
     }
 
-    CURL *curl = curl_easy_init();
-
-    std::string readBuffer;
-    std::string request_url =
-        "http://127.0.0.1:8080/file?id=" + std::to_string(id);
-    curl_easy_setopt(curl, CURLOPT_URL, request_url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, survey::WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-    CURLcode res = curl_easy_perform(curl);
-    long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    curl_easy_cleanup(curl);
-    if (res != CURLE_OK || http_code != 200 || readBuffer.empty()) {
-        QMessageBox::warning(this, "Error", "Failed to load survey data.");
+    nlohmann::json survey_data;
+    try {
+        survey_data = ServerInteraction::load_survey(id);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
         return;
     }
 
-    nlohmann::json survey_data = nlohmann::json::parse(readBuffer);
     if (!opened_survey_) {
         opened_survey_ = new SurveyWindow(survey_data, this);
         opened_survey_->setAttribute(Qt::WA_DeleteOnClose);

@@ -12,6 +12,7 @@
 #include "nlohmann/json_fwd.hpp"
 #include "single_choice_question.hpp"
 #include "text_question.hpp"
+#include "server_interaction.hpp"
 
 namespace survey {
 enum class BlockType { Text, Multiple, Single };
@@ -20,28 +21,6 @@ const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
     {"single", BlockType::Single}};
-
-static bool post_answers(const nlohmann::json &answers, int survey_id) {
-    CURL *curl = curl_easy_init();
-    std::string url =
-        "http://127.0.0.1:8080/response?id=" + std::to_string(survey_id);
-    std::string payload = answers.dump();
-
-    struct curl_slist *headers = nullptr;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    // check curl example for example if u like
-    // https://curl.se/libcurl/c/http-post.html
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-
-    CURLcode res = curl_easy_perform(curl);
-    long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-    return res == CURLE_OK && http_code >= 200 && http_code < 300;
-}
 
 SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, QWidget *parent)
     : QMainWindow(parent) {
@@ -132,10 +111,10 @@ void SurveyWindow::save_answer() {
         question->save_answer(answers);
     }
     // TODO: MAKE COOLDOWN, OUR SERVER CAN BE DDOSED BY THIS BUTTON
-    if (!post_answers(answers, survey_id_)) {
-        QMessageBox::warning(
-            this, "Error", "Failed to send answers to the server."
-        );
+    try {
+        ServerInteraction::post_answers(answers, survey_id_);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
         return;
     }
 
