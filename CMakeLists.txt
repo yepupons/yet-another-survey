@@ -23,6 +23,7 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
+add_subdirectory(third_party/nlohmann_json)
 
 # Drogon Options
 option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -68,11 +69,13 @@ target_include_directories(client PRIVATE
 target_link_libraries(client PRIVATE
     Qt6::Widgets
     CURL::libcurl
+    nlohmann_json::nlohmann_json
 )
 
 # Server
 add_executable(server
     server/src/main.cpp
+    server/src/database.cpp
 )
 
 target_include_directories(server PRIVATE
@@ -81,4 +84,5 @@ target_include_directories(server PRIVATE
 
 target_link_libraries(server PRIVATE
     Drogon::Drogon
+    nlohmann_json::nlohmann_json
 )
