@@ -1,5 +1,6 @@
 #ifndef SURVEY_BUILDER_WINDOW_HPP_
 #define SURVEY_BUILDER_WINDOW_HPP_
+#include "builder_mode.hpp"
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -10,9 +11,8 @@ namespace survey {
 class SurveyBuilderWindow : public QWidget {
     Q_OBJECT
 public:
-    enum class Mode { Survey, Test };
 
-    explicit SurveyBuilderWindow(Mode mode, QWidget *parent = nullptr);
+    explicit SurveyBuilderWindow(BuilderMode mode, QWidget *parent = nullptr);
 
 private slots:
     void add_block_menu();
@@ -22,7 +22,7 @@ private slots:
     void save_survey();
 
 private:
-    Mode mode_;
+    BuilderMode mode_;
 
     QScrollArea *scroll_ = nullptr;
     QWidget *content_ = nullptr;

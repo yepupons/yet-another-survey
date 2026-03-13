@@ -116,7 +116,7 @@ void MainWindow::open_survey() {
 void MainWindow::create_survey() {
     auto *menu = new QMenu(this);
 
-    auto *pollAction = menu->addAction("Survey");
+    auto *surveyAction = menu->addAction("Survey");
     auto *testAction = menu->addAction("Test");
 
     QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
@@ -126,20 +126,19 @@ void MainWindow::create_survey() {
     if (!chosen) {
         return;
     }
-
-    if (chosen == pollAction) {
-        auto *builder =
-            new SurveyBuilderWindow(SurveyBuilderWindow::Mode::Survey, nullptr);
-        builder->setAttribute(Qt::WA_DeleteOnClose);
-        builder->setWindowFlag(Qt::Window, true);
-        builder->show();
-        builder->raise();
-        builder->activateWindow();
+    BuilderMode mode;
+    if (chosen == surveyAction) {
+        mode = BuilderMode::Survey;
     } else if (chosen == testAction) {
-        QMessageBox::information(
-            this, "Info", "This mode doesn't availible yet"
-        );
+        mode = BuilderMode::Test;
     }
+    auto *builder =
+            new SurveyBuilderWindow(mode, nullptr);
+    builder->setAttribute(Qt::WA_DeleteOnClose);
+    builder->setWindowFlag(Qt::Window, true);
+    builder->show();
+    builder->raise();
+    builder->activateWindow();
 }
 
 void MainWindow::change_session_id() {

@@ -15,10 +15,10 @@
 
 namespace survey {
 
-SurveyBuilderWindow::SurveyBuilderWindow(Mode mode, QWidget *parent)
+SurveyBuilderWindow::SurveyBuilderWindow(BuilderMode mode, QWidget *parent)
     : QWidget(parent), mode_(mode) {
     setWindowTitle(
-        mode_ == Mode::Survey ? "Survey Builder (Survey)"
+        mode_ == BuilderMode::Survey ? "Survey Builder (Survey)"
                               : "Survey Builder (Test)"
     );
     resize(800, 600);
@@ -83,17 +83,17 @@ void SurveyBuilderWindow::add_block_menu() {
 }
 
 void SurveyBuilderWindow::add_single_choice() {
-    auto *w = new SingleChoiceBlockEditor(content_);
+    auto *w = new SingleChoiceBlockEditor(mode_, content_);
     contentLayout_->addWidget(w);
 }
 
 void SurveyBuilderWindow::add_multiple_choice() {
-    auto *w = new MultipleChoiceBlockEditor(content_);
+    auto *w = new MultipleChoiceBlockEditor(mode_, content_);
     contentLayout_->addWidget(w);
 }
 
 void SurveyBuilderWindow::add_text_block() {
-    auto *w = new TextBlockEditor(content_);
+    auto *w = new TextBlockEditor(mode_,content_);
     contentLayout_->addWidget(w);
 }
 
