@@ -32,6 +32,7 @@ bool ServerInteraction::save_survey_to_server(
     }
     std::string url = "http://127.0.0.1:8080/registertest?id=" + id;
     std::string payload = j.dump();
+    std::string readBuffer;
 
     struct curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -40,13 +41,23 @@ bool ServerInteraction::save_survey_to_server(
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+    curl_easy_setopt(
+        curl, CURLOPT_WRITEFUNCTION, survey::ServerInteraction::WriteCallback
+    );
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
     CURLcode res = curl_easy_perform(curl);
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
-    return res == CURLE_OK && http_code >= 200 && http_code < 300;
+    if (res != CURLE_OK) {
+        return false;
+    }
+    if (http_code < 200 || http_code >= 300) {
+        return false;
+    }
+    return true;
 }
 
 void ServerInteraction::post_answers(
@@ -57,12 +68,17 @@ void ServerInteraction::post_answers(
     std::string url =
         "http://127.0.0.1:8080/response?id=" + std::to_string(survey_id);
     std::string payload = answers.dump();
+    std::string readBuffer;
 
     struct curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+    curl_easy_setopt(
+        curl, CURLOPT_WRITEFUNCTION, survey::ServerInteraction::WriteCallback
+    );
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
     CURLcode res = curl_easy_perform(curl);
     long http_code = 0;
@@ -70,7 +86,17 @@ void ServerInteraction::post_answers(
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
     if (!(res == CURLE_OK && http_code >= 200 && http_code < 300)) {
-        throw std::runtime_error("Failed to send answers to the server.");
+        if (res != CURLE_OK) {
+            auto error_message =
+                "Network error: " + std::string(curl_easy_strerror(res));
+            throw std::runtime_error(error_message);
+        }
+        std::string error_message = "Server error. HTTP code: " +
+                                    std::to_string(http_code);
+        if (!readBuffer.empty()) {
+            error_message += ". " + readBuffer;
+        }
+        throw std::runtime_error(error_message);
     }
 }
 }  // namespace survey
