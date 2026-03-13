@@ -2,6 +2,7 @@
 #define QUESTION_BLOCK_HPP_
 
 #include <QWidget>
+#include <optional>
 #include <nlohmann/json_fwd.hpp>
 
 namespace survey {
@@ -15,12 +16,12 @@ public:
     virtual void save_answer(nlohmann::json &) const = 0;
     virtual bool has_answer() const = 0;
 
-    bool is_required() const {
-        return required_;
+    virtual std::optional<int> next_section() const {
+        return std::nullopt;
     }
 
     bool is_valid() const {
-        return !is_required() || has_answer();
+        return !required_ || has_answer();
     }
 
 private:

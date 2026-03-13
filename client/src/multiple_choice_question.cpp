@@ -39,13 +39,10 @@ void MultipleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
             answer.push_back(options_->id(option));
         }
     }
-    answer_data["answers"].push_back(answer);
+    answer_data.push_back(answer);
 }
 
 bool MultipleChoiceBlock::has_answer() const {
-    if (options_->checkedId() == -1) {
-        return false;
-    }
-    return true;
+    return options_->checkedId() != -1;
 }
 }  // namespace survey

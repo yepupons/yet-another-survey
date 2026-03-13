@@ -5,7 +5,6 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
-#include <fstream>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 #include "multiple_choice_question.hpp"
@@ -21,11 +20,14 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}};
+    {"single", BlockType::Single}
+};
 
-SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, QWidget *parent)
-    : QMainWindow(parent) {
-    setWindowTitle("SURVEY");
+SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, nlohmann::json &answer_data, int section_id, QWidget *parent)
+    : QMainWindow(parent), 
+    section_data_(survey_data.at("sections").at(section_id)), 
+    answer_data_(answer_data.at("sections").at(section_id)) {
+    setWindowTitle(QString::fromStdString(section_data_.at("title").get<std::string>()));
 
     auto *central = new QWidget(this);
     auto *central_layout = new QVBoxLayout(central);
@@ -34,8 +36,7 @@ SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, QWidget *parent)
     auto *content = new QWidget(scroll_area);
     auto *content_layout = new QVBoxLayout(content);
 
-    survey_id_ = survey_data.at("survey_data").at("id");
-    for (const auto &block : survey_data.at("questions")) {
+    for (const auto &block : section_data_.at("questions")) {
         const std::string block_type = block.at("type").get<std::string>();
         switch (COMPARATOR.at(block_type)) {
             case BlockType::Text: {
@@ -51,9 +52,7 @@ SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, QWidget *parent)
                 break;
             }
         }
-        content_layout->insertWidget(
-            content_layout->count() - 1, questions_.back()
-        );
+        content_layout->addWidget(questions_.back());
     }
     content->setLayout(content_layout);
 
@@ -71,6 +70,13 @@ SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, QWidget *parent)
         save_answer_button_, &QPushButton::clicked, this,
         &SurveyWindow::save_answer
     );
+}
+
+void SurveyWindow::closeEvent(QCloseEvent *event) {
+    if (!answer_saved) {
+        emit closed_without_answer();
+    }
+    event->accept();
 }
 
 void SurveyWindow::save_answer() {
@@ -93,9 +99,8 @@ void SurveyWindow::save_answer() {
     }
 
     QString message = all_answered
-                          ? "Are you sure you want to finish the survey?"
-                          : "Some answers sre missing. Are you sure you want "
-                            "to finish the survey?";
+                          ? "Are you sure you want to continue?"
+                          : "Some answers sre missing. Are you sure you want to continue?";
     auto want_to_save = QMessageBox::question(
         this, "Save?", message, QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No
@@ -104,26 +109,19 @@ void SurveyWindow::save_answer() {
     if (want_to_save == QMessageBox::No) {
         return;
     }
-
-    nlohmann::json answers = {
-        {"answer_data",
-         {{"survey_id", survey_id_},
-          {"answer_id", 67},
-          {"user_id", session_id}}},
-        {"answers", {}}};
     for (auto question : questions_) {
-        question->save_answer(answers);
-    }
-    // TODO: MAKE COOLDOWN, OUR SERVER CAN BE DDOSED BY THIS BUTTON
-    try {
-        ServerInteraction::post_answers(answers, survey_id_);
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, "Error", e.what());
-        return;
+        question->save_answer(answer_data_);
     }
 
-    QMessageBox::information(
-        this, "Saved", "Your answers have been successfully saved."
-    );
+    int next_section_id = section_data_.at("next_section_id");
+    for (auto question : questions_) {
+        if (question->next_section()) {
+            next_section_id = *(question->next_section());
+        }
+    }
+    
+    answer_saved = true;
+    emit closed_with_answer(next_section_id);
+    deleteLater();
 }
 }  // namespace survey

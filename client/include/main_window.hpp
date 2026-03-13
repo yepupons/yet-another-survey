@@ -16,10 +16,14 @@ public:
 
 public slots:
     void open_survey();
+    void open_next_section(int next_section_id);
     void create_survey();
     void change_session_id();
 
 private:
+    nlohmann::json opened_survey_data_;
+    nlohmann::json opened_answer_data_;
+
     QLineEdit *id_input_;
     QPushButton *open_survey_button_;
     QPushButton *create_survey_button_;

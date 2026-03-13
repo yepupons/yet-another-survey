@@ -21,6 +21,7 @@ public:
 
     void save_answer(nlohmann::json &) const override;
     bool has_answer() const override;
+    std::optional<int> next_section() const override;
 
 private slots:
     // void onButtonClicked();
@@ -29,6 +30,7 @@ private:
     QLabel *question_;
     QButtonGroup *options_;
     // std::optional<int> correct_answer_;
+    std::unordered_map<int, int> links_;
 };
 }  // namespace survey
 

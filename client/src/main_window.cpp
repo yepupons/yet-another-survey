@@ -91,26 +91,45 @@ void MainWindow::open_survey() {
         return;
     }
 
-    nlohmann::json survey_data;
-    try {
-        survey_data = ServerInteraction::load_survey(id);
-    } catch (const std::exception &e) {
-        QMessageBox::warning(this, "Error", e.what());
-        return;
-    }
-
     if (!opened_survey_) {
-        opened_survey_ = new SurveyWindow(survey_data, this);
-        opened_survey_->setAttribute(Qt::WA_DeleteOnClose);
-        connect(opened_survey_, &QObject::destroyed, this, [this]() {
-            opened_survey_ = nullptr;
-        });
-        opened_survey_->show();
-        opened_survey_->raise();
-        opened_survey_->activateWindow();
+        try {
+            opened_survey_data_ = ServerInteraction::load_survey(id);
+        } catch (const std::exception &e) {
+            QMessageBox::warning(this, "Error", e.what());
+            return;
+        }
+        opened_answer_data_ = ServerInteraction::generate_answer_template(id, opened_survey_data_.at("sections").size());
+        open_next_section(opened_survey_data_.at("start_section_id"));
     } else {
         QMessageBox::warning(this, "Error", "You're already taking the survey");
     }
+}
+
+void MainWindow::open_next_section(int next_section_id) {
+    if (next_section_id == -1) {
+        opened_survey_ = nullptr;
+        try {
+            ServerInteraction::post_answers(opened_answer_data_, opened_survey_data_.at("data").at("id"));
+            QMessageBox::information(this, "Saved", "Your answers have been successfully saved.");
+        } catch (const std::exception &e) {
+            QMessageBox::warning(this, "Error", e.what());
+        }
+        opened_survey_data_.clear();
+        opened_answer_data_.clear();
+        return;
+    }
+    opened_survey_ = new SurveyWindow(opened_survey_data_, opened_answer_data_, next_section_id, this);
+    opened_survey_->setAttribute(Qt::WA_DeleteOnClose);
+    opened_survey_->show();
+    opened_survey_->raise();
+    opened_survey_->activateWindow();
+    connect(opened_survey_, &SurveyWindow::closed_with_answer, this, &MainWindow::open_next_section);
+    connect(opened_survey_, &SurveyWindow::closed_without_answer, this, [this]() {
+        opened_survey_ = nullptr;
+        QMessageBox::warning(this, "Error", "Yor answers haven't been saved");
+        opened_survey_data_.clear();
+        opened_answer_data_.clear();
+    });
 }
 
 void MainWindow::create_survey() {

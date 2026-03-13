@@ -1,24 +1,104 @@
 {
-    "survey_data": {
+    "data": {
         "id": 123456,
+        "creator_id": 1488,
         "type": "survey"
     },
-    "questions": [{
-            "type": "text",
-            "text": "How old are you?",
-            "required": true
+    "start_section_id": 0,
+    "sections": [
+        {
+            "title": "First section",
+            "questions": [
+                {
+                    "type": "text",
+                    "text": "How old are you?",
+                    "required": true
+                },
+                {
+                    "type": "multiple",
+                    "text": "What lessons do u like?",
+                    "options": ["matan ;D", "algebra", "c++"],
+                    "required": false
+                },
+                {
+                    "type": "single",
+                    "text": "Who is the best",
+                    "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
+                    "required": false,
+                    "links": [
+                        {
+                            "condition": 1,
+                            "section_id": 2
+                        },
+                        {
+                            "condition": 2,
+                            "section_id": 3
+                        },
+                        {
+                            "condition": 3,
+                            "section_id": 4
+                        }
+                    ]
+                }
+            ],
+            "next_section_id": 1
         },
         {
-            "type": "multiple",
-            "text": "What lessons do u like?",
-            "options": ["matan ;D", "algebra", "c++"],
-            "required": true
+            "title": "Second section",
+            "questions": [
+                {
+                    "type": "text",
+                    "text": "How are you doing?",
+                    "required": false
+                },
+                {
+                    "type": "multiple",
+                    "text": "What u want to eat?",
+                    "options": ["big special", "borsch", "bulka pro max"],
+                    "required": true
+
+                },
+                {
+                    "type": "single",
+                    "text": "Now who is the worst",
+                    "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
+                    "required": true
+                }
+            ],
+            "next_section_id": -1
         },
         {
-            "type": "single",
-            "text": "Who is the best",
-            "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
-            "required": false
+            "title": "Ronaldo",
+            "questions": [
+                {
+                    "type": "text",
+                    "text": "Why Ronaldo?",
+                    "required": true
+                }
+            ],
+            "next_section_id": 1
+        },
+        {
+            "title": "Messi",
+            "questions": [
+                {
+                    "type": "text",
+                    "text": "Why Messi?",
+                    "required": true
+                }
+            ],
+            "next_section_id": 1
+        },
+        {
+            "title": "Yamal",
+            "questions": [
+                {
+                    "type": "text",
+                    "text": "Why Yamal?",
+                    "required": true
+                }
+            ],
+            "next_section_id": 1
         }
     ]
 }

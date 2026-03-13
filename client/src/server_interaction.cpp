@@ -1,4 +1,5 @@
 #include "server_interaction.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 namespace survey {
 nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
@@ -20,6 +21,27 @@ nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
         throw std::runtime_error("Failed to load survey data.");
     }
     return nlohmann::json::parse(readBuffer);
+}
+
+nlohmann::json ServerInteraction::generate_answer_template(int survey_id, int number_of_questions) {
+    nlohmann::json answer = {
+        {
+            "answer_data", 
+            {
+                {"survey_id", survey_id},
+                {"answer_id", 67},
+                {"respondent_id", 1488}
+            }
+        },
+        {
+            "sections",
+            {}
+        }
+    };
+    for (int i = 0; i < number_of_questions; ++i) {
+        answer["sections"].push_back(nlohmann::json::array());
+    }
+    return answer;
 }
 
 bool ServerInteraction::save_survey_to_server(

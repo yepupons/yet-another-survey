@@ -24,13 +24,10 @@ TextBlock::TextBlock(
 }
 
 void TextBlock::save_answer(nlohmann::json &answer_data) const {
-    answer_data["answers"].push_back(answer_->text().toStdString());
+    answer_data.push_back(answer_->text().toStdString());
 }
 
 bool TextBlock::has_answer() const {
-    if (answer_->text().trimmed().isEmpty()) {
-        return false;
-    }
-    return true;
+    return !answer_->text().trimmed().isEmpty();
 }
 }  // namespace survey

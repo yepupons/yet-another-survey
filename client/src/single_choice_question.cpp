@@ -5,6 +5,8 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include <optional>
+#include <stdexcept>
 #include "abstract_question.hpp"
 
 namespace survey {
@@ -16,6 +18,12 @@ SingleChoiceBlock::SingleChoiceBlock(
     : QuestionBlock(parent, block.value("required", false)) {
     question_ = new QLabel(QString::fromStdString(block.at("text")), this);
     options_ = new QButtonGroup(this);
+    if (block.contains("links")) {
+        for (const auto &link : block.at("links")) {
+            links_[link.at("condition")] = link.at("section_id");
+        }
+    }
+
     int id = 0;
     for (const std::string &option : block.at("options")) {
         auto *radio_button =
@@ -32,13 +40,18 @@ SingleChoiceBlock::SingleChoiceBlock(
 }
 
 void SingleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
-    answer_data["answers"].push_back(options_->checkedId());
+    answer_data.push_back(options_->checkedId());
+}
+
+std::optional<int> SingleChoiceBlock::next_section() const {
+    try {
+        return links_.at(options_->checkedId());
+    } catch (const std::out_of_range &) {
+        return std::nullopt;
+    }
 }
 
 bool SingleChoiceBlock::has_answer() const {
-    if (options_->checkedId() == -1) {
-        return false;
-    }
-    return true;
+    return options_->checkedId() != -1;
 }
 }  // namespace survey
