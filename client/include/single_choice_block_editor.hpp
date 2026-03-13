@@ -4,6 +4,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QRadioButton>
 #include <QWidget>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -13,7 +14,7 @@ namespace survey {
 class SingleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit SingleChoiceBlockEditor(QWidget *parent = nullptr);
+    explicit SingleChoiceBlockEditor(BuilderMode mode, QWidget *parent = nullptr);
 
     bool is_saved() const override {
         return saved_;
@@ -31,6 +32,7 @@ private:
     QPushButton *addOption_ = nullptr;
     QPushButton *save_ = nullptr;
     QCheckBox *required_ = nullptr;
+    QButtonGroup *correctGroup_ = nullptr;
 
     std::vector<QLineEdit *> optionEdits_;
     bool saved_ = false;

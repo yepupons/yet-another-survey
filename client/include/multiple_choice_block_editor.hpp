@@ -4,6 +4,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QRadioButton>
 #include <QWidget>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -13,7 +14,7 @@ namespace survey {
 class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit MultipleChoiceBlockEditor(QWidget *parent = nullptr);
+    explicit MultipleChoiceBlockEditor(BuilderMode mode, QWidget *parent = nullptr);
 
     bool is_saved() const override {
         return saved_;

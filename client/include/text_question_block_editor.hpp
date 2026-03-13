@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QTextEdit>
 #include <QWidget>
+#include <QLabel>
 #include <nlohmann/json.hpp>
 #include "block_editor.hpp"
 
@@ -12,7 +13,7 @@ namespace survey {
 class TextBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit TextBlockEditor(QWidget *parent = nullptr);
+    explicit TextBlockEditor(BuilderMode mode, QWidget *parent = nullptr);
 
     bool is_saved() const override {
         return saved_;
@@ -27,6 +28,10 @@ private:
     QTextEdit *text_ = nullptr;
     QPushButton *save_ = nullptr;
     QCheckBox *required_ = nullptr;
+    QLabel *correctAnswersLabel_ = nullptr;
+    QTextEdit *correctAnswers_ = nullptr;
+
+
     bool saved_ = false;
 };
 }  // namespace survey

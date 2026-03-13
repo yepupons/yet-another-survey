@@ -18,7 +18,6 @@ nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
     curl_easy_cleanup(curl);
     if (res != CURLE_OK || http_code != 200 || readBuffer.empty()) {
         throw std::runtime_error("Failed to load survey data.");
-        return;
     }
     return nlohmann::json::parse(readBuffer);
 }
