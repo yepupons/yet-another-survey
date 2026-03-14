@@ -13,12 +13,19 @@ public:
         return size * nmemb;
     }
 
+    static void handle_http_code(
+        CURL *curl,
+        CURLcode &res,
+        std::string &readBuffer,
+        curl_slist *headers
+    );
     static nlohmann::json load_survey(int requested_data_id);
     static nlohmann::json
     generate_answer_template(int survey_id, int number_of_questions);
-    static bool
+    static void
     save_survey_to_server(const std::string &id, const nlohmann::json &j);
     static void post_answers(const nlohmann::json &answers, int survey_id);
+    static nlohmann::json get_passed_ids(const int user_id);
 };
 #endif  // SERVER_INTERACTION_HPP_
 }

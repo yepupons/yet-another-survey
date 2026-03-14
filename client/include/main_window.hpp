@@ -19,6 +19,7 @@ public slots:
     void open_next_section(int next_section_id);
     void create_survey();
     void change_session_id();
+    void get_passed_surveys();
 
 private:
     nlohmann::json opened_survey_data_;
@@ -29,6 +30,7 @@ private:
     QPushButton *create_survey_button_;
     SurveyWindow *opened_survey_ = nullptr;
     QPushButton *change_session_id_button_;
+    QPushButton *get_passed_surveys_button_;
 };
 
 class SessionIdGenerator {

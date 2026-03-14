@@ -102,8 +102,10 @@ void SurveyBuilderWindow::save_survey() {
     const int id = generate_survey_id();
     nlohmann::json survey = build_survey_json(id);
 
-    if (!ServerInteraction::save_survey_to_server(std::to_string(id), survey)) {
-        QMessageBox::warning(this, "Error", "Failed to save survey to server.");
+    try {
+        ServerInteraction::save_survey_to_server(std::to_string(id), survey);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
         return;
     }
 

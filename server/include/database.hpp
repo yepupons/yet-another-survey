@@ -11,5 +11,7 @@ public:
         const std::string &survey_id,
         const nlohmann::json &test_json
     );
+    static nlohmann::json send_passed_surveys(const std::string &session_id);
     static std::filesystem::path resolve_public_root();
+    static std::filesystem::path resolve_database_root();
 };
