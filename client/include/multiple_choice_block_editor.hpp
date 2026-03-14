@@ -1,40 +1,34 @@
 #ifndef MULTIPLE_CHOICE_BLOCK_EDITOR_HPP_
 #define MULTIPLE_CHOICE_BLOCK_EDITOR_HPP_
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QList>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QRadioButton>
 #include <QWidget>
 #include <nlohmann/json.hpp>
-#include <vector>
-#include "block_editor.hpp"
+#include "abstract_block_editor.hpp"
 
 namespace survey {
 class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit MultipleChoiceBlockEditor(BuilderMode mode, QWidget *parent = nullptr);
-
-    bool is_saved() const override {
-        return saved_;
-    }
+    explicit MultipleChoiceBlockEditor(bool is_test, QWidget *parent = nullptr);
 
     nlohmann::json to_json() const override;
 
 private slots:
-    void on_add_option();
-    void on_save();
+    void add_option();
 
 private:
     QLineEdit *question_ = nullptr;
-    QVBoxLayout *optionsLayout_ = nullptr;
-    QPushButton *addOption_ = nullptr;
-    QPushButton *save_ = nullptr;
+    QList<QLineEdit *> options_;
+    QVBoxLayout *options_layout_ = nullptr;
+    QPushButton *add_option_button_ = nullptr;
     QCheckBox *required_ = nullptr;
 
-    std::vector<QLineEdit *> optionEdits_;
-    bool saved_ = false;
+    QButtonGroup *correct_answers_ = nullptr;
 };
 }  // namespace survey
 

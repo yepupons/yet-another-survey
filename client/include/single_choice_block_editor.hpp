@@ -1,41 +1,45 @@
 #ifndef SINGLE_CHOICE_BLOCK_EDITOR_HPP_
 #define SINGLE_CHOICE_BLOCK_EDITOR_HPP_
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLineEdit>
+#include <QList>
 #include <QPushButton>
-#include <QVBoxLayout>
 #include <QRadioButton>
+#include <QStringListModel>
+#include <QVBoxLayout>
 #include <QWidget>
 #include <nlohmann/json.hpp>
-#include <vector>
-#include "block_editor.hpp"
+#include "abstract_block_editor.hpp"
 
 namespace survey {
 class SingleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit SingleChoiceBlockEditor(BuilderMode mode, QWidget *parent = nullptr);
-
-    bool is_saved() const override {
-        return saved_;
-    }
+    explicit SingleChoiceBlockEditor(
+        bool is_test,
+        QStringListModel *sections_list,
+        QWidget *parent = nullptr
+    );
 
     nlohmann::json to_json() const override;
 
 private slots:
-    void on_add_option();
-    void on_save();
+    void add_option();
 
 private:
     QLineEdit *question_ = nullptr;
-    QVBoxLayout *optionsLayout_ = nullptr;
-    QPushButton *addOption_ = nullptr;
-    QPushButton *save_ = nullptr;
-    QCheckBox *required_ = nullptr;
-    QButtonGroup *correctGroup_ = nullptr;
 
-    std::vector<QLineEdit *> optionEdits_;
-    bool saved_ = false;
+    QList<QLineEdit *> options_;
+    QList<QRadioButton *> link_enablings_;
+    QList<QComboBox *> links_;
+    QStringListModel *sections_list_ = nullptr;
+
+    QVBoxLayout *options_layout_ = nullptr;
+    QPushButton *add_option_button_ = nullptr;
+    QCheckBox *required_ = nullptr;
+
+    QButtonGroup *correct_answers_ = nullptr;
 };
 }  // namespace survey
 

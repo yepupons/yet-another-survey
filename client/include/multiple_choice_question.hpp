@@ -22,9 +22,6 @@ public:
     void save_answer(nlohmann::json &) const override;
     bool has_answer() const override;
 
-private slots:
-    // void onButtonClicked();
-
 private:
     QLabel *question_;
     QButtonGroup *options_;

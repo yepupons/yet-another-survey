@@ -1,175 +1,112 @@
 #include "single_choice_block_editor.hpp"
+#include <qradiobutton.h>
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QRadioButton>
 
 namespace survey {
-
 SingleChoiceBlockEditor::SingleChoiceBlockEditor(
-    BuilderMode mode,
+    bool is_test,
+    QStringListModel *sections_list,
     QWidget *parent
 )
-    : BlockEditor(mode, parent) {
-    auto *layout = new QVBoxLayout(this);
+    : BlockEditor(is_test, parent), sections_list_(sections_list) {
+    auto *layout = new QVBoxLayout();
     layout->addWidget(new QLabel("Single choice", this));
 
     question_ = new QLineEdit(this);
-    question_->setPlaceholderText("Question");
+    question_->setPlaceholderText("Write your question here");
     layout->addWidget(question_);
 
-    if (is_test_mode()) {
-        auto *correctLabel = new QLabel("Mark the correct answer", this);
-        layout->addWidget(correctLabel);
-
-        correctGroup_ = new QButtonGroup(this);
-        correctGroup_->setExclusive(true);
+    if (is_test_) {
+        layout->addWidget(new QLabel("Mark the correct answer", this));
+        correct_answers_ = new QButtonGroup(this);
     }
 
-    optionsLayout_ = new QVBoxLayout();
-    layout->addLayout(optionsLayout_);
+    options_layout_ = new QVBoxLayout();
+    layout->addLayout(options_layout_);
 
-    addOption_ = new QPushButton("+ option", this);
-    layout->addWidget(addOption_);
+    add_option_button_ = new QPushButton("Add option", this);
+    layout->addWidget(add_option_button_);
+
+    add_option();
+
+    connect(
+        add_option_button_, &QPushButton::clicked, this,
+        &SingleChoiceBlockEditor::add_option
+    );
 
     required_ = new QCheckBox("Required", this);
     required_->setChecked(true);
     layout->addWidget(required_);
 
-    save_ = new QPushButton("Save block", this);
-    layout->addWidget(save_);
-
-    connect(
-        addOption_, &QPushButton::clicked, this,
-        &SingleChoiceBlockEditor::on_add_option
-    );
-    connect(
-        save_, &QPushButton::clicked, this,
-        &SingleChoiceBlockEditor::on_save
-    );
-
-    on_add_option();
-    on_add_option();
-
-    setStyleSheet(
-        "SingleChoiceBlockEditor { border: 1px solid #aaa; border-radius: 8px; "
-        "padding: 8px; }"
-    );
+    setLayout(layout);
 }
 
-void SingleChoiceBlockEditor::on_add_option() {
-    auto *row = new QWidget(this);
-    auto *rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(0, 0, 0, 0);
+void SingleChoiceBlockEditor::add_option() {
+    auto *row_layout = new QHBoxLayout();
 
-    auto *opt = new QLineEdit(row);
-    opt->setPlaceholderText("Option text");
-    rowLayout->addWidget(opt);
-    optionEdits_.push_back(opt);
+    auto *option = new QLineEdit(this);
+    option->setPlaceholderText("Write option text here");
+    row_layout->addWidget(option);
+    options_.push_back(option);
 
-    if (is_test_mode()) {
-        auto *correct = new QRadioButton("Correct", row);
-        rowLayout->addWidget(correct);
+    auto *link_enabling = new QRadioButton("After answer:");
+    link_enabling->setAutoExclusive(false);
+    row_layout->addWidget(link_enabling);
+    link_enablings_.push_back(link_enabling);
 
-        if (correctGroup_ != nullptr) {
-            correctGroup_->addButton(correct);
-        }
-    }
+    auto *link = new QComboBox(this);
+    link->setModel(sections_list_);
+    link->setEnabled(false);
+    row_layout->addWidget(link);
+    links_.push_back(link);
 
-    optionsLayout_->addWidget(row);
-}
+    connect(link_enabling, &QRadioButton::toggled, link, [link](bool checked) {
+        link->setEnabled(checked);
+    });
 
-void SingleChoiceBlockEditor::on_save() {
-    if (question_->text().trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Error", "Question is required.");
-        return;
-    }
-
-    int nonEmpty = 0;
-    for (auto *e : optionEdits_) {
-        if (!e->text().trimmed().isEmpty()) {
-            ++nonEmpty;
-        }
-    }
-
-    if (nonEmpty < 2) {
-        QMessageBox::warning(
-            this, "Error", "Need at least 2 non-empty options."
+    if (is_test_) {
+        auto *correct = new QRadioButton("Correct", this);
+        row_layout->addWidget(correct);
+        correct_answers_->addButton(
+            correct, correct_answers_->buttons().size()
         );
-        return;
     }
 
-    if (is_test_mode()) {
-        int correctCount = 0;
-        const auto radios = findChildren<QRadioButton *>();
-        for (auto *radio : radios) {
-            if (radio->isChecked()) {
-                ++correctCount;
-            }
-        }
-
-        if (correctCount != 1) {
-            QMessageBox::warning(
-                this, "Error", "Choose exactly 1 correct answer."
-            );
-            return;
-        }
-    }
-
-    saved_ = true;
-    question_->setEnabled(false);
-    required_->setEnabled(false);
-
-    for (auto *e : optionEdits_) {
-        e->setEnabled(false);
-    }
-
-    const auto radios = findChildren<QRadioButton *>();
-    for (auto *radio : radios) {
-        radio->setEnabled(false);
-    }
-
-    addOption_->setEnabled(false);
-    save_->setEnabled(false);
+    options_layout_->addLayout(row_layout);
 }
 
 nlohmann::json SingleChoiceBlockEditor::to_json() const {
-    nlohmann::json j;
-    j["type"] = "single";
-    j["text"] = question_->text().trimmed().toStdString();
-    j["options"] = nlohmann::json::array();
+    nlohmann::json block;
+    block["type"] = "single";
+    block["text"] = question_->text().trimmed().toStdString();
 
-    int correctIndex = -1;
-    int currentIndex = 0;
-
-    for (auto *e : optionEdits_) {
-        const auto s = e->text().trimmed().toStdString();
-        if (s.empty()) {
-            continue;
-        }
-
-        j["options"].push_back(s);
-
-        if (is_test_mode()) {
-            auto *row = e->parentWidget();
-            if (row != nullptr) {
-                auto *radio = row->findChild<QRadioButton *>();
-                if (radio != nullptr && radio->isChecked()) {
-                    correctIndex = currentIndex;
-                }
-            }
-        }
-
-        ++currentIndex;
+    block["options"] = nlohmann::json::array();
+    for (auto *option : options_) {
+        const std::string option_text = option->text().trimmed().toStdString();
+        block["options"].push_back(option_text);
     }
 
-    j["required"] = required_->isChecked();
-
-    if (is_test_mode()) {
-        j["answer"] = correctIndex;
+    block["links"] = nlohmann::json::array();
+    for (int i = 0; i < links_.size(); ++i) {
+        if (link_enablings_[i]->isChecked()) {
+            nlohmann::json link;
+            link["condition"] = i + 1;
+            link["section_id"] = links_[i]->currentIndex() - 1;
+            block["links"].push_back(link);
+        }
     }
 
-    return j;
+    block["required"] = required_->isChecked();
+
+    if (is_test_) {
+        block["answer"] = correct_answers_->checkedId() + 1;
+    }
+
+    return block;
 }
 
 }  // namespace survey

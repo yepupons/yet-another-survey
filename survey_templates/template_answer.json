@@ -1,9 +1,25 @@
 {
-    "answer_data": {
+    "data": {
         "survey_id": 123456,
-        "answer_id": 654321
+        "answer_id": 654321,
+        "respondent_id": 1488
     },
-    "answers": [
-        "17", [2, 3], 1
+    "sections": [
+        [
+            "17", [2, 3], 1
+        ],
+        [
+            "ok", [1, 2], 3
+        ],
+        [
+            "because"
+        ],
+        [
+
+        ],
+        [
+
+        ]
     ]
 }
+

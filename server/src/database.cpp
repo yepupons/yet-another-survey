@@ -44,10 +44,37 @@ void Database::write_response(const nlohmann::json &response, int survey_id) {
     if (db_out.is_open()) {
         db_out >> db_json;
     } else {
-        db_json = nlohmann::json::array();
+        db_json = nlohmann::json::object();
     }
-    std::string session_id =
-        response["answer_data"]["user_id"].get<std::string>();
+
+    auto to_string_id = [](const nlohmann::json &value) -> std::string {
+        if (value.is_string()) {
+            return value.get<std::string>();
+        }
+        if (value.is_number_integer()) {
+            return std::to_string(value.get<int64_t>());
+        }
+        if (value.is_number_unsigned()) {
+            return std::to_string(value.get<uint64_t>());
+        }
+        throw std::runtime_error("user_id must be string or number");
+    };
+
+    std::string session_id;
+    if (response.contains("answer_data") &&
+        response["answer_data"].contains("user_id")) {
+        session_id = to_string_id(response["answer_data"]["user_id"]);
+    } else if (response.contains("data") && response["data"].contains("respondent_id")) {
+        session_id = to_string_id(response["data"]["respondent_id"]);
+    } else if (response.contains("data") && response["data"].contains("user_id")) {
+        session_id = to_string_id(response["data"]["user_id"]);
+    } else {
+        throw std::runtime_error("Response missing user_id");
+    }
+
+    if (!db_json.is_object()) {
+        db_json = nlohmann::json::object();
+    }
     if (!db_json.contains(session_id)) {
         db_json[session_id] = nlohmann::json::array();
     }

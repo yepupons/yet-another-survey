@@ -1,125 +1,93 @@
 #include "survey_builder_window.hpp"
-#include <curl/curl.h>
+#include <qglobal.h>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMenu>
+#include <QMainWindow>
 #include <QMessageBox>
 #include <chrono>
-#include <filesystem>
-#include <fstream>
-#include <random>
-#include "multiple_choice_block_editor.hpp"
+#include <string>
+#include "section_editor.hpp"
 #include "server_interaction.hpp"
-#include "single_choice_block_editor.hpp"
-#include "text_question_block_editor.hpp"
+#include "session_id.hpp"
 
 namespace survey {
-
-SurveyBuilderWindow::SurveyBuilderWindow(BuilderMode mode, QWidget *parent)
-    : QWidget(parent), mode_(mode) {
+SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
+    : QMainWindow(parent), is_test_(is_test) {
     setWindowTitle(
-        mode_ == BuilderMode::Survey ? "Survey Builder (Survey)"
-                                     : "Survey Builder (Test)"
+        is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)"
     );
-    resize(800, 600);
 
-    auto *root = new QVBoxLayout(this);
+    auto *central = new QWidget(this);
+    auto *central_layout = new QVBoxLayout();
+    central_layout->setAlignment(Qt::AlignTop);
 
-    auto *title = new QLabel("Survey constructor", this);
-    root->addWidget(title);
+    auto *title = new QLabel("Survey Builder", central);
+    central_layout->addWidget(title);
 
-    scroll_ = new QScrollArea(this);
-    scroll_->setWidgetResizable(true);
+    auto *scroll_area = new QScrollArea(central);
+    content_ = new QWidget();
+    scroll_area->setWidget(content_);
 
-    content_ = new QWidget(scroll_);
-    contentLayout_ = new QVBoxLayout(content_);
-    contentLayout_->setAlignment(Qt::AlignTop);
+    sections_layout_ = new QVBoxLayout();
+    sections_layout_->setAlignment(Qt::AlignTop);
+    content_->setLayout(sections_layout_);
 
-    scroll_->setWidget(content_);
-    root->addWidget(scroll_, 1);
+    sections_list_ = new QStringListModel(this);
+    QStringList list = sections_list_->stringList();
+    sections_list_->setStringList(list << "Save answers");
 
-    auto *bottomRow = new QHBoxLayout();
-    bottomRow->addStretch();
+    add_section();
 
-    addBlockButton_ = new QPushButton("+", this);
-    addBlockButton_->setFixedSize(40, 40);
-    bottomRow->addWidget(addBlockButton_);
+    scroll_area->setWidget(content_);
+    scroll_area->setWidgetResizable(true);
+    central_layout->addWidget(scroll_area);
 
-    root->addLayout(bottomRow);
+    auto *bottom_row = new QHBoxLayout();
+    bottom_row->addStretch();
 
-    saveSurveyButton_ = new QPushButton("Save survey", this);
-    root->addWidget(saveSurveyButton_);
+    add_section_button_ = new QPushButton("+", central);
+    add_section_button_->setFixedSize(40, 40);
+    bottom_row->addWidget(add_section_button_);
+
+    central_layout->addLayout(bottom_row);
+
+    save_survey_button_ = new QPushButton("Save survey", central);
+    central_layout->addWidget(save_survey_button_);
+
+    central->setLayout(central_layout);
+    setCentralWidget(central);
 
     connect(
-        addBlockButton_, &QPushButton::clicked, this,
-        &SurveyBuilderWindow::add_block_menu
+        add_section_button_, &QPushButton::clicked, this,
+        &SurveyBuilderWindow::add_section
     );
     connect(
-        saveSurveyButton_, &QPushButton::clicked, this,
+        save_survey_button_, &QPushButton::clicked, this,
         &SurveyBuilderWindow::save_survey
     );
 }
 
-void SurveyBuilderWindow::add_block_menu() {
-    auto *menu = new QMenu(this);
-    auto *single = menu->addAction("Single choice");
-    auto *multiple = menu->addAction("Multiple choice");
-    auto *text = menu->addAction("Text block");
+void SurveyBuilderWindow::add_section() {
+    QStringList list = sections_list_->stringList();
+    list.push_back("Go to section " + QString::number(list.size()));
+    sections_list_->setStringList(list);
 
-    QAction *chosen = menu->exec(
-        addBlockButton_->mapToGlobal(QPoint(0, addBlockButton_->height()))
-    );
-    if (!chosen) {
-        return;
-    }
-
-    if (chosen == single) {
-        add_single_choice();
-    } else if (chosen == multiple) {
-        add_multiple_choice();
-    } else if (chosen == text) {
-        add_text_block();
-    }
-}
-
-void SurveyBuilderWindow::add_single_choice() {
-    auto *w = new SingleChoiceBlockEditor(mode_, content_);
-    contentLayout_->addWidget(w);
-}
-
-void SurveyBuilderWindow::add_multiple_choice() {
-    auto *w = new MultipleChoiceBlockEditor(mode_, content_);
-    contentLayout_->addWidget(w);
-}
-
-void SurveyBuilderWindow::add_text_block() {
-    auto *w = new TextBlockEditor(mode_, content_);
-    contentLayout_->addWidget(w);
+    sections_.push_back(new SectionEditor(is_test_, sections_list_, content_));
+    sections_layout_->addWidget(sections_.back());
 }
 
 nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
-    nlohmann::json j;
-    j["survey_data"] = {{"id", id}, {"type", "survey"}};
-    j["questions"] = nlohmann::json::array();
+    nlohmann::json survey;
+    survey["data"] = {
+        {"id", id},
+        {"creator_id", session_id},
+        {"type", is_test_ ? "test" : "survey"}};
+    survey["sections"] = nlohmann::json::array();
 
-    for (int i = 0; i < contentLayout_->count(); ++i) {
-        QWidget *w = contentLayout_->itemAt(i)->widget();
-        if (!w) {
-            continue;
-        }
-
-        auto *base = dynamic_cast<BlockEditor *>(w);
-        if (!base) {
-            continue;
-        }
-
-        if (!base->is_saved()) {
-            continue;
-        }
-
-        j["questions"].push_back(base->to_json());
+    for (auto *section : sections_) {
+        survey["sections"].push_back(section->to_json());
     }
-    return j;
+    return survey;
 }
 
 int SurveyBuilderWindow::generate_survey_id() {
@@ -133,19 +101,11 @@ int SurveyBuilderWindow::generate_survey_id() {
 }
 
 void SurveyBuilderWindow::save_survey() {
-    int id = generate_survey_id();
-    nlohmann::json j = build_survey_json(id);
-
-    if (!j.contains("questions") || j["questions"].empty()) {
-        QMessageBox::warning(
-            this, "Error",
-            "There are no saved blocks. First, add and save at least one block."
-        );
-        return;
-    }
+    const int id = generate_survey_id();
+    nlohmann::json survey = build_survey_json(id);
 
     try {
-        ServerInteraction::save_survey_to_server(std::to_string(id), j);
+        ServerInteraction::save_survey_to_server(std::to_string(id), survey);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, "Error", e.what());
         return;
