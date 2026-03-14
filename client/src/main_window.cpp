@@ -14,6 +14,7 @@
 #include "session_id.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_window.hpp"
+#include "view_passed_surveys.hpp"
 
 namespace survey {
 
@@ -63,6 +64,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         new QPushButton("Get or Set Session ID", central);
     central_layout->addWidget(change_session_id_button_);
 
+    get_passed_surveys_button_ = new QPushButton("Get your passed surveys");
+    central_layout->addWidget(get_passed_surveys_button_);
+
     central->setLayout(central_layout);
     setCentralWidget(central);
 
@@ -80,6 +84,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(
         change_session_id_button_, &QPushButton::clicked, this,
         &MainWindow::change_session_id
+    );
+    connect(
+        get_passed_surveys_button_, &QPushButton::clicked, this,
+        &MainWindow::get_passed_surveys
     );
 }
 
@@ -132,8 +140,7 @@ void MainWindow::create_survey() {
     } else if (chosen == testAction) {
         mode = BuilderMode::Test;
     }
-    auto *builder =
-            new SurveyBuilderWindow(mode, nullptr);
+    auto *builder = new SurveyBuilderWindow(mode, nullptr);
     builder->setAttribute(Qt::WA_DeleteOnClose);
     builder->setWindowFlag(Qt::Window, true);
     builder->show();
@@ -173,5 +180,29 @@ void MainWindow::change_session_id() {
     QMessageBox::information(
         this, "Info", "Session ID changed to " + QString::number(session_id)
     );
+}
+
+void MainWindow::get_passed_surveys() {
+    nlohmann::json passed_ids;
+    try {
+        passed_ids = ServerInteraction::get_passed_ids(session_id);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
+        return;
+    }
+
+    QStringList survey_ids;
+    // todo: прописать гарантии для типов
+    for (const auto &id : passed_ids) {
+        if (id.is_string()) {
+            survey_ids.append(QString::fromStdString(id.get<std::string>()));
+        } else if (id.is_number_integer()) {
+            survey_ids.append(QString::number(id.get<int>()));
+        }
+    }
+
+    auto *view = new ViewPassedSurveys(survey_ids, this);
+    view->setAttribute(Qt::WA_DeleteOnClose);
+    view->show();
 }
 }  // namespace survey

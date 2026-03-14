@@ -2,7 +2,7 @@
 #define BLUILDER_MODE_HPP_
 
 namespace survey {
-enum class BuilderMode { Test, Survey }; 
+enum class BuilderMode { Test, Survey };
 }
 
 #endif
