@@ -23,9 +23,6 @@ public:
     bool has_answer() const override;
     std::optional<int> next_section() const override;
 
-private slots:
-    // void onButtonClicked();
-
 private:
     QLabel *question_;
     QButtonGroup *options_;

@@ -31,10 +31,12 @@ SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, nlohmann::json &an
 
     auto *central = new QWidget(this);
     auto *central_layout = new QVBoxLayout(central);
+    central_layout->setAlignment(Qt::AlignTop);
 
     auto *scroll_area = new QScrollArea(central);
     auto *content = new QWidget(scroll_area);
     auto *content_layout = new QVBoxLayout(content);
+    content_layout->setAlignment(Qt::AlignTop);
 
     for (const auto &block : section_data_.at("questions")) {
         const std::string block_type = block.at("type").get<std::string>();

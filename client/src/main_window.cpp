@@ -31,7 +31,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("ЯЗЬ");
 
     auto *central = new QWidget(this);
-    auto *central_layout = new QVBoxLayout(central);
+    auto *central_layout = new QVBoxLayout();
+    central_layout->setAlignment(Qt::AlignTop);
 
     auto *open_label = new QLabel("Take a survey:", central);
     central_layout->addWidget(open_label);
@@ -99,7 +100,7 @@ void MainWindow::open_survey() {
             return;
         }
         opened_answer_data_ = ServerInteraction::generate_answer_template(id, opened_survey_data_.at("sections").size());
-        open_next_section(opened_survey_data_.at("start_section_id"));
+        open_next_section(0);
     } else {
         QMessageBox::warning(this, "Error", "You're already taking the survey");
     }
@@ -135,8 +136,8 @@ void MainWindow::open_next_section(int next_section_id) {
 void MainWindow::create_survey() {
     auto *menu = new QMenu(this);
 
-    auto *surveyAction = menu->addAction("Survey");
-    auto *testAction = menu->addAction("Test");
+    auto *survey = menu->addAction("Survey");
+    auto *test = menu->addAction("Test");
 
     QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
         QPoint(0, create_survey_button_->height())
@@ -145,16 +146,8 @@ void MainWindow::create_survey() {
     if (!chosen) {
         return;
     }
-    BuilderMode mode;
-    if (chosen == surveyAction) {
-        mode = BuilderMode::Survey;
-    } else if (chosen == testAction) {
-        mode = BuilderMode::Test;
-    }
-    auto *builder =
-            new SurveyBuilderWindow(mode, nullptr);
+    auto *builder = new SurveyBuilderWindow(chosen == test);
     builder->setAttribute(Qt::WA_DeleteOnClose);
-    builder->setWindowFlag(Qt::Window, true);
     builder->show();
     builder->raise();
     builder->activateWindow();
@@ -162,23 +155,23 @@ void MainWindow::create_survey() {
 
 void MainWindow::change_session_id() {
     auto *menu = new QMenu(this);
-    auto *get_session_id_button_ = menu->addAction("Get Session ID");
-    auto *set_session_id_button_ = menu->addAction("Set Session ID");
+    auto *get_session_id_button = menu->addAction("Get Session ID");
+    auto *set_session_id_button = menu->addAction("Set Session ID");
 
-    QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
-        QPoint(0, create_survey_button_->height())
+    QAction *chosen = menu->exec(change_session_id_button_->mapToGlobal(
+        QPoint(0, change_session_id_button_->height())
     ));
 
     if (!chosen) {
         return;
     }
 
-    if (chosen == get_session_id_button_) {
+    if (chosen == get_session_id_button) {
         QMessageBox::information(
             this, "Info", "Your session ID is: " + QString::number(session_id)
         );
         return;
-    } else if (chosen == set_session_id_button_) {
+    } else if (chosen == set_session_id_button) {
         bool ok;
         int new_id = QInputDialog::getInt(
             this, "Set Session ID", "Enter new session ID:", session_id, 1,

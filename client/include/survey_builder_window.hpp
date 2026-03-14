@@ -1,38 +1,39 @@
 #ifndef SURVEY_BUILDER_WINDOW_HPP_
 #define SURVEY_BUILDER_WINDOW_HPP_
-#include "builder_mode.hpp"
+#include <qtmetamacros.h>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
-#include <QWidget>
+#include <QMainWindow>
+#include <QList>
+#include <QStringListModel>
 #include <nlohmann/json.hpp>
+#include "section_editor.hpp"
 
 namespace survey {
-class SurveyBuilderWindow : public QWidget {
+class SurveyBuilderWindow : public QMainWindow {
     Q_OBJECT
 public:
 
-    explicit SurveyBuilderWindow(BuilderMode mode, QWidget *parent = nullptr);
+    explicit SurveyBuilderWindow(bool is_test, QWidget *parent = nullptr);
 
 private slots:
-    void add_block_menu();
-    void add_single_choice();
-    void add_multiple_choice();
-    void add_text_block();
+    void add_section();
     void save_survey();
 
 private:
-    BuilderMode mode_;
+    bool is_test_;
 
-    QScrollArea *scroll_ = nullptr;
     QWidget *content_ = nullptr;
-    QVBoxLayout *contentLayout_ = nullptr;
+    
+    QList<SectionEditor *> sections_;
+    QVBoxLayout *sections_layout_ = nullptr;
+    QStringListModel* sections_list_ = nullptr;
 
-    QPushButton *addBlockButton_ = nullptr;
-    QPushButton *saveSurveyButton_ = nullptr;
+    QPushButton *add_section_button_ = nullptr;
+    QPushButton *save_survey_button_ = nullptr;
 
-    nlohmann::json build_survey_json(int) const;
-
+    nlohmann::json build_survey_json(int id) const;
     static int generate_survey_id();
 };
 }  // namespace survey

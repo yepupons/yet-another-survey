@@ -26,7 +26,7 @@ nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
 nlohmann::json ServerInteraction::generate_answer_template(int survey_id, int number_of_questions) {
     nlohmann::json answer = {
         {
-            "answer_data", 
+            "data", 
             {
                 {"survey_id", survey_id},
                 {"answer_id", 67},
@@ -35,7 +35,7 @@ nlohmann::json ServerInteraction::generate_answer_template(int survey_id, int nu
         },
         {
             "sections",
-            {}
+            nlohmann::json::array()
         }
     };
     for (int i = 0; i < number_of_questions; ++i) {

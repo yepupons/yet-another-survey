@@ -23,7 +23,7 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
-add_subdirectory(third_party/nlohmann_json)
+find_package(nlohmann_json REQUIRED)
 
 # Drogon Options
 option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -38,8 +38,16 @@ add_executable(client
     client/src/multiple_choice_question.cpp
     client/src/single_choice_question.cpp
     client/src/text_question.cpp
+
+    client/src/survey_builder_window.cpp
+    client/src/section_editor.cpp
+    client/src/text_block_editor.cpp
+    client/src/single_choice_block_editor.cpp
+    client/src/multiple_choice_block_editor.cpp
+
     client/src/session_id.cpp
     client/src/server_interaction.cpp
+
     # Because of Qt issues
     client/include/main_window.hpp
     client/include/survey_window.hpp
@@ -47,19 +55,13 @@ add_executable(client
     client/include/single_choice_question.hpp
     client/include/text_question.hpp
     client/include/abstract_question.hpp
-    # builder headers
+
     client/include/survey_builder_window.hpp
-    client/include/text_question_block_editor.hpp
+    client/include/section_editor.hpp
+    client/include/text_block_editor.hpp
     client/include/single_choice_block_editor.hpp
     client/include/multiple_choice_block_editor.hpp
-    client/include/block_editor.hpp
-    client/include/server_interaction.hpp
-    client/include/session_id.hpp
-    # builder
-    client/src/survey_builder_window.cpp
-    client/src/text_question_block_editor.cpp
-    client/src/single_choice_block_editor.cpp
-    client/src/multiple_choice_block_editor.cpp
+    client/include/abstract_block_editor.hpp
 )
 
 target_include_directories(client PRIVATE
