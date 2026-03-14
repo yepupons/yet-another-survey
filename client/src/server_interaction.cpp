@@ -23,20 +23,15 @@ nlohmann::json ServerInteraction::load_survey(int requested_data_id) {
     return nlohmann::json::parse(readBuffer);
 }
 
-nlohmann::json ServerInteraction::generate_answer_template(int survey_id, int number_of_questions) {
+nlohmann::json ServerInteraction::generate_answer_template(
+    int survey_id,
+    int number_of_questions
+) {
     nlohmann::json answer = {
-        {
-            "data", 
-            {
-                {"survey_id", survey_id},
-                {"answer_id", 67},
-                {"respondent_id", 1488}
-            }
+        {"data",
+         {{"survey_id", survey_id}, {"answer_id", 67}, {"respondent_id", 1488}}
         },
-        {
-            "sections",
-            nlohmann::json::array()
-        }
+        {"sections", nlohmann::json::array()}
     };
     for (int i = 0; i < number_of_questions; ++i) {
         answer["sections"].push_back(nlohmann::json::array());

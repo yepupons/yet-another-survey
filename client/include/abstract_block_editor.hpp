@@ -6,7 +6,8 @@
 namespace survey {
 class BlockEditor : public QWidget {
 public:
-    BlockEditor(bool is_test, QWidget *parent) : QWidget(parent), is_test_(is_test) {
+    BlockEditor(bool is_test, QWidget *parent)
+        : QWidget(parent), is_test_(is_test) {
     }
 
     virtual ~BlockEditor() = default;

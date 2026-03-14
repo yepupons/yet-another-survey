@@ -1,18 +1,20 @@
 #include "survey_builder_window.hpp"
 #include <qglobal.h>
-#include "server_interaction.hpp"
-#include <QMainWindow>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMainWindow>
 #include <QMessageBox>
 #include <chrono>
 #include <string>
 #include "section_editor.hpp"
+#include "server_interaction.hpp"
 
 namespace survey {
 SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
     : QMainWindow(parent), is_test_(is_test) {
-    setWindowTitle(is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)");
+    setWindowTitle(
+        is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)"
+    );
 
     auto *central = new QWidget(this);
     auto *central_layout = new QVBoxLayout();
@@ -28,9 +30,9 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
     sections_layout_ = new QVBoxLayout();
     sections_layout_->setAlignment(Qt::AlignTop);
     content_->setLayout(sections_layout_);
-    
+
     sections_list_ = new QStringListModel(this);
-    QStringList list = sections_list_->stringList(); 
+    QStringList list = sections_list_->stringList();
     sections_list_->setStringList(list << "Save answers");
 
     add_section();
@@ -76,9 +78,7 @@ void SurveyBuilderWindow::add_section() {
 nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     nlohmann::json survey;
     survey["data"] = {
-        {"id", id},
-        {"creator_id", 1488},
-        {"type", is_test_ ? "test" : "survey"}
+        {"id", id}, {"creator_id", 1488}, {"type", is_test_ ? "test" : "survey"}
     };
     survey["sections"] = nlohmann::json::array();
 
@@ -91,8 +91,9 @@ nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
 int SurveyBuilderWindow::generate_survey_id() {
     auto now = std::chrono::system_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch()
-    ).count();
+                  now.time_since_epoch()
+    )
+                  .count();
 
     return static_cast<int>(ms % 1000000000);
 }

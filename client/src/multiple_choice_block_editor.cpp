@@ -5,7 +5,10 @@
 #include <vector>
 
 namespace survey {
-MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(bool is_test, QWidget *parent)
+MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
+    bool is_test,
+    QWidget *parent
+)
     : BlockEditor(is_test, parent) {
     auto *layout = new QVBoxLayout();
     layout->addWidget(new QLabel("Multiple choice", this));
@@ -28,7 +31,10 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(bool is_test, QWidget *pare
     add_option_button_ = new QPushButton("Add option", this);
     layout->addWidget(add_option_button_);
 
-    connect(add_option_button_, &QPushButton::clicked, this, &MultipleChoiceBlockEditor::add_option);
+    connect(
+        add_option_button_, &QPushButton::clicked, this,
+        &MultipleChoiceBlockEditor::add_option
+    );
 
     required_ = new QCheckBox("Required", this);
     required_->setChecked(true);
@@ -48,7 +54,9 @@ void MultipleChoiceBlockEditor::add_option() {
     if (is_test_) {
         auto *correct = new QRadioButton("Correct", this);
         row_layout->addWidget(correct);
-        correct_answers_ ->addButton(correct, correct_answers_->buttons().size());
+        correct_answers_->addButton(
+            correct, correct_answers_->buttons().size()
+        );
     }
 
     options_layout_->addLayout(row_layout);
@@ -69,7 +77,7 @@ nlohmann::json MultipleChoiceBlockEditor::to_json() const {
 
     if (is_test_) {
         std::vector<int> answers;
-        for (const auto answer: correct_answers_->buttons()) {
+        for (const auto answer : correct_answers_->buttons()) {
             if (answer->isChecked()) {
                 answers.push_back(correct_answers_->id(answer) + 1);
             }

@@ -33,7 +33,10 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
 
     add_option();
 
-    connect(add_option_button_, &QPushButton::clicked, this, &SingleChoiceBlockEditor::add_option);
+    connect(
+        add_option_button_, &QPushButton::clicked, this,
+        &SingleChoiceBlockEditor::add_option
+    );
 
     required_ = new QCheckBox("Required", this);
     required_->setChecked(true);
@@ -61,12 +64,16 @@ void SingleChoiceBlockEditor::add_option() {
     row_layout->addWidget(link);
     links_.push_back(link);
 
-    connect(link_enabling, &QRadioButton::toggled, link, [link](bool checked) { link->setEnabled(checked); });
+    connect(link_enabling, &QRadioButton::toggled, link, [link](bool checked) {
+        link->setEnabled(checked);
+    });
 
     if (is_test_) {
         auto *correct = new QRadioButton("Correct", this);
         row_layout->addWidget(correct);
-        correct_answers_ ->addButton(correct, correct_answers_->buttons().size());
+        correct_answers_->addButton(
+            correct, correct_answers_->buttons().size()
+        );
     }
 
     options_layout_->addLayout(row_layout);

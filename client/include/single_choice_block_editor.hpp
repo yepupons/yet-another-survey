@@ -1,14 +1,14 @@
 #ifndef SINGLE_CHOICE_BLOCK_EDITOR_HPP_
 #define SINGLE_CHOICE_BLOCK_EDITOR_HPP_
-#include <QRadioButton>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLineEdit>
+#include <QList>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QStringListModel>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QList>
-#include <QComboBox>
-#include <QStringListModel>
 #include <nlohmann/json.hpp>
 #include "abstract_block_editor.hpp"
 
@@ -16,7 +16,11 @@ namespace survey {
 class SingleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit SingleChoiceBlockEditor(bool is_test, QStringListModel *sections_list, QWidget *parent = nullptr);
+    explicit SingleChoiceBlockEditor(
+        bool is_test,
+        QStringListModel *sections_list,
+        QWidget *parent = nullptr
+    );
 
     nlohmann::json to_json() const override;
 

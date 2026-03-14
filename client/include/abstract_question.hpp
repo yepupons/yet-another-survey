@@ -2,8 +2,8 @@
 #define QUESTION_BLOCK_HPP_
 
 #include <QWidget>
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 
 namespace survey {
 class QuestionBlock : public QWidget {

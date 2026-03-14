@@ -1,13 +1,14 @@
 #include "text_block_editor.hpp"
-#include <string>
-#include <QLineEdit>
-#include <QPushButton>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QVBoxLayout>
+#include <string>
 
 namespace survey {
-TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent) : BlockEditor(is_test, parent) {
+TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
+    : BlockEditor(is_test, parent) {
     auto *layout = new QVBoxLayout();
     layout->addWidget(new QLabel("Text", this));
 
@@ -24,7 +25,10 @@ TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent) : BlockEditor(is
         add_correct_answer_button_ = new QPushButton("Add answer", this);
         layout->addWidget(add_correct_answer_button_);
 
-        connect(add_correct_answer_button_, &QPushButton::clicked, this, &TextBlockEditor::add_correct_answer);
+        connect(
+            add_correct_answer_button_, &QPushButton::clicked, this,
+            &TextBlockEditor::add_correct_answer
+        );
 
         add_correct_answer();
     }
@@ -50,8 +54,9 @@ nlohmann::json TextBlockEditor::to_json() const {
 
     if (is_test_) {
         std::vector<std::string> answers;
-        for (QLineEdit *answer: correct_answers_) {
-            const std::string answer_text = answer->text().trimmed().toStdString();
+        for (QLineEdit *answer : correct_answers_) {
+            const std::string answer_text =
+                answer->text().trimmed().toStdString();
             if (!answer_text.empty()) {
                 answers.push_back(answer_text);
             }

@@ -9,9 +9,17 @@
 #include "text_block_editor.hpp"
 
 namespace survey {
-SectionEditor::SectionEditor(bool is_test, QStringListModel *sections_list, QWidget *parent) : QWidget(parent), is_test_(is_test), sections_list_(sections_list) {
+SectionEditor::SectionEditor(
+    bool is_test,
+    QStringListModel *sections_list,
+    QWidget *parent
+)
+    : QWidget(parent), is_test_(is_test), sections_list_(sections_list) {
     auto *layout = new QVBoxLayout();
-    layout->addWidget(new QLabel("Section " + QString::number(sections_list->stringList().size() - 1), this));
+    layout->addWidget(new QLabel(
+        "Section " + QString::number(sections_list->stringList().size() - 1),
+        this
+    ));
 
     title_ = new QLineEdit(this);
     title_->setPlaceholderText("Write section title here");
@@ -32,7 +40,10 @@ SectionEditor::SectionEditor(bool is_test, QStringListModel *sections_list, QWid
     add_block_button_ = new QPushButton("Add question", this);
     bottom_row->addWidget(add_block_button_);
 
-    connect(add_block_button_, &QPushButton::clicked, this, &SectionEditor::add_block);
+    connect(
+        add_block_button_, &QPushButton::clicked, this,
+        &SectionEditor::add_block
+    );
 
     setLayout(layout);
 }
@@ -51,7 +62,9 @@ void SectionEditor::add_block() {
         return;
     }
     if (chosen == single) {
-        questions_.push_back(new SingleChoiceBlockEditor(is_test_, sections_list_, this));
+        questions_.push_back(
+            new SingleChoiceBlockEditor(is_test_, sections_list_, this)
+        );
     } else if (chosen == multiple) {
         questions_.push_back(new MultipleChoiceBlockEditor(is_test_, this));
     } else if (chosen == text) {
@@ -70,7 +83,7 @@ nlohmann::json SectionEditor::to_json() const {
     }
 
     section["next_section_id"] = next_section_->currentIndex() - 1;
-    
+
     return section;
 }
 }  // namespace survey

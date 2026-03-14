@@ -1,21 +1,25 @@
 #ifndef SECTION_EDITOR_HPP_
 #define SECTION_EDITOR_HPP_
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QList>
 #include <QCheckBox>
-#include <QLineEdit>
-#include <QWidget>
 #include <QComboBox>
-#include <nlohmann/json.hpp>
+#include <QLineEdit>
+#include <QList>
+#include <QPushButton>
 #include <QStringListModel>
+#include <QVBoxLayout>
+#include <QWidget>
+#include <nlohmann/json.hpp>
 #include "abstract_block_editor.hpp"
 
 namespace survey {
 class SectionEditor : public QWidget {
     Q_OBJECT
 public:
-    explicit SectionEditor(bool is_test, QStringListModel *sections_list, QWidget *parent = nullptr);
+    explicit SectionEditor(
+        bool is_test,
+        QStringListModel *sections_list,
+        QWidget *parent = nullptr
+    );
 
     nlohmann::json to_json() const;
 

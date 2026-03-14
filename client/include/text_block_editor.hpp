@@ -1,10 +1,10 @@
 #ifndef TEXT_BLOCK_EDITOR_HPP_
 #define TEXT_BLOCK_EDITOR_HPP_
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QList>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QList>
+#include <QPushButton>
+#include <QVBoxLayout>
 #include <QWidget>
 #include <nlohmann/json.hpp>
 #include "abstract_block_editor.hpp"

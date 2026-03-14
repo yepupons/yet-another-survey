@@ -23,11 +23,18 @@ const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"single", BlockType::Single}
 };
 
-SurveyWindow::SurveyWindow(const nlohmann::json &survey_data, nlohmann::json &answer_data, int section_id, QWidget *parent)
-    : QMainWindow(parent), 
-    section_data_(survey_data.at("sections").at(section_id)), 
-    answer_data_(answer_data.at("sections").at(section_id)) {
-    setWindowTitle(QString::fromStdString(section_data_.at("title").get<std::string>()));
+SurveyWindow::SurveyWindow(
+    const nlohmann::json &survey_data,
+    nlohmann::json &answer_data,
+    int section_id,
+    QWidget *parent
+)
+    : QMainWindow(parent),
+      section_data_(survey_data.at("sections").at(section_id)),
+      answer_data_(answer_data.at("sections").at(section_id)) {
+    setWindowTitle(
+        QString::fromStdString(section_data_.at("title").get<std::string>())
+    );
 
     auto *central = new QWidget(this);
     auto *central_layout = new QVBoxLayout(central);
@@ -100,9 +107,10 @@ void SurveyWindow::save_answer() {
         }
     }
 
-    QString message = all_answered
-                          ? "Are you sure you want to continue?"
-                          : "Some answers sre missing. Are you sure you want to continue?";
+    QString message =
+        all_answered
+            ? "Are you sure you want to continue?"
+            : "Some answers sre missing. Are you sure you want to continue?";
     auto want_to_save = QMessageBox::question(
         this, "Save?", message, QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No
@@ -121,7 +129,7 @@ void SurveyWindow::save_answer() {
             next_section_id = *(question->next_section());
         }
     }
-    
+
     answer_saved = true;
     emit closed_with_answer(next_section_id);
     deleteLater();
