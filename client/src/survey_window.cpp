@@ -20,8 +20,7 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}
-};
+    {"single", BlockType::Single}};
 
 SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,

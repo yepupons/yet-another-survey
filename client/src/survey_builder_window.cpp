@@ -8,6 +8,7 @@
 #include <string>
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
+#include "session_id.hpp"
 
 namespace survey {
 SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
@@ -78,8 +79,9 @@ void SurveyBuilderWindow::add_section() {
 nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     nlohmann::json survey;
     survey["data"] = {
-        {"id", id}, {"creator_id", 1488}, {"type", is_test_ ? "test" : "survey"}
-    };
+        {"id", id},
+        {"creator_id", session_id},
+        {"type", is_test_ ? "test" : "survey"}};
     survey["sections"] = nlohmann::json::array();
 
     for (auto *section : sections_) {

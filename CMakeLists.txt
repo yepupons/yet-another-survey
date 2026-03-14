@@ -23,7 +23,7 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
-find_package(nlohmann_json REQUIRED)
+add_subdirectory(third_party/nlohmann_json)
 
 # Drogon Options
 option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
