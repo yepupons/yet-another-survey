@@ -18,6 +18,7 @@ public slots:
     void open_survey();
     void create_survey();
     void change_session_id();
+    void get_passed_surveys();
 
 private:
     QLineEdit *id_input_;
@@ -25,6 +26,7 @@ private:
     QPushButton *create_survey_button_;
     SurveyWindow *opened_survey_ = nullptr;
     QPushButton *change_session_id_button_;
+    QPushButton *get_passed_surveys_button_;
 };
 
 class SessionIdGenerator {

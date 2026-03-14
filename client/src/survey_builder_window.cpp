@@ -19,7 +19,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(BuilderMode mode, QWidget *parent)
     : QWidget(parent), mode_(mode) {
     setWindowTitle(
         mode_ == BuilderMode::Survey ? "Survey Builder (Survey)"
-                              : "Survey Builder (Test)"
+                                     : "Survey Builder (Test)"
     );
     resize(800, 600);
 
@@ -93,7 +93,7 @@ void SurveyBuilderWindow::add_multiple_choice() {
 }
 
 void SurveyBuilderWindow::add_text_block() {
-    auto *w = new TextBlockEditor(mode_,content_);
+    auto *w = new TextBlockEditor(mode_, content_);
     contentLayout_->addWidget(w);
 }
 
@@ -144,8 +144,10 @@ void SurveyBuilderWindow::save_survey() {
         return;
     }
 
-    if (!ServerInteraction::save_survey_to_server(std::to_string(id), j)) {
-        QMessageBox::warning(this, "Error", "Failed to save survey to server.");
+    try {
+        ServerInteraction::save_survey_to_server(std::to_string(id), j);
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
         return;
     }
 

@@ -55,11 +55,13 @@ add_executable(client
     client/include/block_editor.hpp
     client/include/server_interaction.hpp
     client/include/session_id.hpp
+    client/include/view_passed_surveys.hpp
     # builder
     client/src/survey_builder_window.cpp
     client/src/text_question_block_editor.cpp
     client/src/single_choice_block_editor.cpp
     client/src/multiple_choice_block_editor.cpp
+    client/src/view_passed_surveys.cpp
 )
 
 target_include_directories(client PRIVATE

@@ -109,7 +109,7 @@ void SurveyWindow::save_answer() {
         {"answer_data",
          {{"survey_id", survey_id_},
           {"answer_id", 67},
-          {"user_id", session_id}}},
+          {"user_id", std::to_string(session_id)}}},
         {"answers", {}}};
     for (auto question : questions_) {
         question->save_answer(answers);

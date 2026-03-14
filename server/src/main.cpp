@@ -83,6 +83,35 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
+    app().registerHandler(
+        "/getpassed",
+        [](const HttpRequestPtr &request,
+           std::function<void(const HttpResponsePtr &)> &&cb) {
+            std::string session_id = request->getParameter("session_id");
+            nlohmann::json passed_surveys;
+            try {
+                passed_surveys = Database::send_passed_surveys(session_id);
+            } catch (const std::exception &e) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
+                cb(resp);
+                return;
+            }
+            nlohmann::json passed_ids = nlohmann::json::array();
+            for (const auto &tuple : passed_surveys) {
+                if (tuple.is_array() && tuple.size() >= 1) {
+                    passed_ids.push_back(tuple.at(0));
+                }
+            }
+            auto resp = HttpResponse::newHttpResponse();
+
+            resp->setBody(passed_ids.dump(2));
+            cb(resp);
+        },
+        {Get}
+    );
+
     app().run();
     return 0;
 }
