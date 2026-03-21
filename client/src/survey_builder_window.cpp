@@ -13,23 +13,34 @@
 namespace survey {
 SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
     : QMainWindow(parent), is_test_(is_test) {
+    auto *central = new QWidget(this);
+    central->setObjectName("centralWidget");
+
+    auto *central_layout = new QVBoxLayout();
+    central_layout->setAlignment(Qt::AlignTop);
+    central_layout->setContentsMargins(24, 24, 24, 24);
+    central_layout->setSpacing(16);
+
     setWindowTitle(
         is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)"
     );
 
-    auto *central = new QWidget(this);
-    auto *central_layout = new QVBoxLayout();
-    central_layout->setAlignment(Qt::AlignTop);
-
     auto *title = new QLabel("Survey Builder", central);
+    title->setObjectName("titleLabel");
     central_layout->addWidget(title);
 
     auto *scroll_area = new QScrollArea(central);
+    scroll_area->setFrameShape(QFrame::NoFrame);
+    scroll_area->setWidgetResizable(true);
+
     content_ = new QWidget();
+    content_->setObjectName("centralWidget");
     scroll_area->setWidget(content_);
 
     sections_layout_ = new QVBoxLayout();
     sections_layout_->setAlignment(Qt::AlignTop);
+    sections_layout_->setContentsMargins(0, 0, 0, 0);
+    sections_layout_->setSpacing(16);
     content_->setLayout(sections_layout_);
 
     sections_list_ = new QStringListModel(this);
@@ -38,20 +49,20 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
 
     add_section();
 
-    scroll_area->setWidget(content_);
-    scroll_area->setWidgetResizable(true);
     central_layout->addWidget(scroll_area);
 
     auto *bottom_row = new QHBoxLayout();
     bottom_row->addStretch();
 
     add_section_button_ = new QPushButton("+", central);
-    add_section_button_->setFixedSize(40, 40);
+    add_section_button_->setObjectName("primaryButton");
+    add_section_button_->setFixedSize(50, 40);
     bottom_row->addWidget(add_section_button_);
 
     central_layout->addLayout(bottom_row);
 
     save_survey_button_ = new QPushButton("Save survey", central);
+    save_survey_button_->setObjectName("primaryButton");
     central_layout->addWidget(save_survey_button_);
 
     central->setLayout(central_layout);

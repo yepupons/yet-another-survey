@@ -23,7 +23,7 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
-add_subdirectory(third_party/nlohmann_json)
+find_package(nlohmann_json REQUIRED)
 
 # Drogon Options
 option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -66,6 +66,8 @@ add_executable(client
     client/include/abstract_block_editor.hpp
 
     client/include/view_passed_surveys.hpp
+    
+    client/resources/resources.qrc
 )
 
 target_include_directories(client PRIVATE

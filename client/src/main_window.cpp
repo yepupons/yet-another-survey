@@ -1,6 +1,8 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
 #include <QAction>
+#include <QGridLayout>
+#include <QSizePolicy>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
@@ -30,46 +32,140 @@ int SessionIdGenerator::generate_session_id() {
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("ЯЗЬ");
+    resize(1100, 800);
+    setMinimumSize(520, 520);
 
     auto *central = new QWidget(this);
-    auto *central_layout = new QVBoxLayout();
-    central_layout->setAlignment(Qt::AlignTop);
+    central->setObjectName("centralWidget");
+    setCentralWidget(central);
 
-    auto *open_label = new QLabel("Take a survey:", central);
-    central_layout->addWidget(open_label);
+    auto *outer_layout = new QVBoxLayout(central);
+    outer_layout->setContentsMargins(0, 0, 0, 0);
+    outer_layout->setSpacing(0);
 
-    auto *input_row = new QHBoxLayout();
+    auto *header = new QWidget(central);
+    header->setObjectName("topHeader");
+    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    header->setMinimumWidth(500);
 
-    auto *id_label = new QLabel("Survey ID:", central);
-    input_row->addWidget(id_label);
+    auto *header_layout = new QHBoxLayout(header);
+    header_layout->setContentsMargins(32, 18, 32, 18);
+    header_layout->setSpacing(12);
 
-    id_input_ = new QLineEdit(central);
+    auto *header_title = new QLabel("yet-another-survey", header);
+    header_title->setObjectName("headerTitle");
+    header_title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    header_layout->addWidget(header_title);
+
+    auto *header_spacer = new QWidget(header);
+    header_spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    header_layout->addWidget(header_spacer);
+
+    auto *content = new QWidget(central);
+    content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    content->setMaximumWidth(720);
+
+    auto *content_layout = new QVBoxLayout(content);
+    content_layout->setContentsMargins(0, 0, 0, 0);
+    content_layout->setSpacing(18);
+
+    auto *open_label = new QLabel("Take a survey:", content);
+    open_label->setObjectName("titleLabel");
+    open_label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    content_layout->addWidget(open_label, 0, Qt::AlignHCenter);
+
+    auto *card = new QWidget(content);
+    card->setObjectName("card");
+    card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    auto *card_layout = new QVBoxLayout(card);
+    card_layout->setContentsMargins(24, 24, 24, 24);
+    card_layout->setSpacing(16);
+
+    auto *id_label = new QLabel("Survey ID:", card);
+    id_label->setObjectName("sectionLabel");
+    id_label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    card_layout->addWidget(id_label);
+
+    auto *input_row = new QGridLayout();
+    input_row->setHorizontalSpacing(12);
+    input_row->setVerticalSpacing(12);
+    input_row->setColumnStretch(0, 1);
+    input_row->setColumnStretch(1, 0);
+
+    id_input_ = new QLineEdit(card);
     id_input_->setPlaceholderText("Enter survey id");
-    input_row->addWidget(id_input_);
+    id_input_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    input_row->addWidget(id_input_, 0, 0);
 
-    open_survey_button_ = new QPushButton("OK", central);
-    input_row->addWidget(open_survey_button_);
+    open_survey_button_ = new QPushButton("Open Survey", card);
+    open_survey_button_->setObjectName("primaryButton");
+    open_survey_button_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    open_survey_button_->setMinimumWidth(180);
+    input_row->addWidget(open_survey_button_, 0, 1);
 
-    central_layout->addLayout(input_row);
+    card_layout->addLayout(input_row);
 
-    auto *or_label = new QLabel("OR", central);
-    central_layout->addWidget(or_label);
+    auto *or_row = new QHBoxLayout();
+    or_row->setContentsMargins(0, 4, 0, 4);
+    or_row->setSpacing(12);
 
-    auto *create_label = new QLabel("Create your own:", central);
-    central_layout->addWidget(create_label);
+    auto *left_line = new QFrame(card);
+    left_line->setFrameShape(QFrame::HLine);
+    left_line->setFrameShadow(QFrame::Plain);
+    left_line->setObjectName("dividerLine");
 
-    create_survey_button_ = new QPushButton("Create survey", central);
-    central_layout->addWidget(create_survey_button_);
+    auto *or_label = new QLabel("OR", card);
+    or_label->setObjectName("orLabel");
+    or_label->setAlignment(Qt::AlignCenter);
+
+    auto *right_line = new QFrame(card);
+    right_line->setFrameShape(QFrame::HLine);
+    right_line->setFrameShadow(QFrame::Plain);
+    right_line->setObjectName("dividerLine");
+
+    or_row->addWidget(left_line, 1);
+    or_row->addWidget(or_label);
+    or_row->addWidget(right_line, 1);
+
+    card_layout->addLayout(or_row);
+
+    auto *create_label = new QLabel("Create your own:", card);
+    create_label->setObjectName("sectionLabel");
+    create_label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    card_layout->addWidget(create_label);
+
+    create_survey_button_ = new QPushButton("Create survey", card);
+    create_survey_button_->setObjectName("secondaryButton");
+    create_survey_button_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    card_layout->addWidget(create_survey_button_);
 
     change_session_id_button_ =
-        new QPushButton("Get or Set Session ID", central);
-    central_layout->addWidget(change_session_id_button_);
+        new QPushButton("Get or Set Session ID", header);
+    change_session_id_button_->setObjectName("headerNavButton");
+    change_session_id_button_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    header_layout->addWidget(change_session_id_button_);
 
-    get_passed_surveys_button_ = new QPushButton("Get your passed surveys");
-    central_layout->addWidget(get_passed_surveys_button_);
+    get_passed_surveys_button_ =
+        new QPushButton("Get your passed surveys", header);
+    get_passed_surveys_button_->setObjectName("headerNavButton");
+    get_passed_surveys_button_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    header_layout->addWidget(get_passed_surveys_button_);
 
-    central->setLayout(central_layout);
-    setCentralWidget(central);
+    auto *content_wrapper = new QWidget(central);
+    content_wrapper->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    auto *content_wrapper_layout = new QVBoxLayout(content_wrapper);
+    content_wrapper_layout->setContentsMargins(24, 24, 24, 24);
+    content_wrapper_layout->setSpacing(0);
+    content_wrapper_layout->addStretch();
+    content_wrapper_layout->addWidget(content, 0, Qt::AlignHCenter);
+    content_wrapper_layout->addStretch();
+
+    content_layout->addWidget(card);
+
+    outer_layout->addWidget(header);
+    outer_layout->addWidget(content_wrapper);
 
     connect(
         open_survey_button_, &QPushButton::clicked, this,
@@ -92,11 +188,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     );
 }
 
+static void showMessageBox(
+    QWidget *parent,
+    QMessageBox::Icon icon,
+    const QString &title,
+    const QString &text
+) {
+    QMessageBox box(parent);
+    box.setIcon(icon);
+    box.setWindowTitle(title);
+    box.setInformativeText(
+        QString(
+            "<div style='max-width: 220px; white-space: normal; word-wrap: break-word;'>%1</div>"
+        ).arg(text.toHtmlEscaped())
+    );
+    box.setTextFormat(Qt::RichText);
+    box.setStandardButtons(QMessageBox::Ok);
+    box.setStyleSheet(parent ? parent->styleSheet() : QString());
+    box.exec();
+}
+
 void MainWindow::open_survey() {
     bool ok;
     int id = id_input_->text().trimmed().toInt(&ok);
     if (!ok || id <= 0) {
-        QMessageBox::warning(this, "Error", "Please enter a valid survey id.");
+        showMessageBox(
+            this,
+            QMessageBox::Warning,
+            "Error",
+            "Please enter a valid survey id."
+        );
         return;
     }
 
@@ -104,7 +225,7 @@ void MainWindow::open_survey() {
         try {
             opened_survey_data_ = ServerInteraction::load_survey(id);
         } catch (const std::exception &e) {
-            QMessageBox::warning(this, "Error", e.what());
+            showMessageBox(this, QMessageBox::Warning, "Error", e.what());
             return;
         }
         opened_answer_data_ = ServerInteraction::generate_answer_template(
@@ -112,7 +233,12 @@ void MainWindow::open_survey() {
         );
         open_next_section(0);
     } else {
-        QMessageBox::warning(this, "Error", "You're already taking the survey");
+        showMessageBox(
+            this,
+            QMessageBox::Warning,
+            "Error",
+            "You're already taking the survey"
+        );
     }
 }
 
@@ -123,11 +249,14 @@ void MainWindow::open_next_section(int next_section_id) {
             ServerInteraction::post_answers(
                 opened_answer_data_, opened_survey_data_.at("data").at("id")
             );
-            QMessageBox::information(
-                this, "Saved", "Your answers have been successfully saved."
+            showMessageBox(
+                this,
+                QMessageBox::Information,
+                "Saved",
+                "Your answers have been successfully saved."
             );
         } catch (const std::exception &e) {
-            QMessageBox::warning(this, "Error", e.what());
+            showMessageBox(this, QMessageBox::Warning, "Error", e.what());
         }
         opened_survey_data_.clear();
         opened_answer_data_.clear();
@@ -148,8 +277,11 @@ void MainWindow::open_next_section(int next_section_id) {
         opened_survey_, &SurveyWindow::closed_without_answer, this,
         [this]() {
             opened_survey_ = nullptr;
-            QMessageBox::warning(
-                this, "Error", "Yor answers haven't been saved"
+            showMessageBox(
+                this,
+                QMessageBox::Warning,
+                "Error",
+                "Your answers haven't been saved"
             );
             opened_survey_data_.clear();
             opened_answer_data_.clear();
@@ -159,8 +291,11 @@ void MainWindow::open_next_section(int next_section_id) {
 
 void MainWindow::create_survey() {
     auto *menu = new QMenu(this);
+    menu->setMinimumWidth(create_survey_button_->width());
+    menu->setStyleSheet(styleSheet());
 
     auto *survey = menu->addAction("Survey");
+    menu->addSeparator();
     auto *test = menu->addAction("Test");
 
     QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
@@ -179,6 +314,8 @@ void MainWindow::create_survey() {
 
 void MainWindow::change_session_id() {
     auto *menu = new QMenu(this);
+    menu->setMinimumWidth(change_session_id_button_->width());
+    menu->setStyleSheet(styleSheet());
     auto *get_session_id_button = menu->addAction("Get Session ID");
     auto *set_session_id_button = menu->addAction("Set Session ID");
 
@@ -191,8 +328,11 @@ void MainWindow::change_session_id() {
     }
 
     if (chosen == get_session_id_button) {
-        QMessageBox::information(
-            this, "Info", "Your session ID is: " + QString::number(session_id)
+        showMessageBox(
+            this,
+            QMessageBox::Information,
+            "Info",
+            "Your session ID is: " + QString::number(session_id)
         );
         return;
     } else if (chosen == set_session_id_button) {
@@ -206,8 +346,11 @@ void MainWindow::change_session_id() {
         }
     }
 
-    QMessageBox::information(
-        this, "Info", "Session ID changed to " + QString::number(session_id)
+    showMessageBox(
+        this,
+        QMessageBox::Information,
+        "Info",
+        "Session ID changed to " + QString::number(session_id)
     );
 }
 
@@ -216,12 +359,11 @@ void MainWindow::get_passed_surveys() {
     try {
         passed_ids = ServerInteraction::get_passed_ids(session_id);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, "Error", e.what());
+        showMessageBox(this, QMessageBox::Warning, "Error", e.what());
         return;
     }
 
     QStringList survey_ids;
-    // todo: прописать гарантии для типов
     for (const auto &id : passed_ids) {
         if (id.is_string()) {
             survey_ids.append(QString::fromStdString(id.get<std::string>()));
