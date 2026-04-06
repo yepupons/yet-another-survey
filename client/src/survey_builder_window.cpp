@@ -56,7 +56,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
 
     add_section_button_ = new QPushButton("+", central);
     add_section_button_->setObjectName("primaryButton");
-    add_section_button_->setFixedSize(50, 40);
+    add_section_button_->setFixedSize(60, 60);
     bottom_row->addWidget(add_section_button_);
 
     central_layout->addLayout(bottom_row);

@@ -10,13 +10,6 @@ QWidget#centralWidget {
     color: #1f2937;
 }
 
-QWidget#questionCard {
-    background-color: white;
-    border: 1px solid #d1d5db;
-    border-radius: 16px;
-    padding: 16px;
-}
-
 QPushButton#headerNavButton,
 QToolButton#headerNavButton {
     background-color: transparent;
@@ -146,19 +139,23 @@ QPushButton#primaryButton,
 QToolButton#primaryButton {
     background-color: #334155;
     color: white;
-    border: 1px solid #334155;
+    border: 1px solid #ffffff;
+    border-radius: 14px;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 700;
 }
 
 QPushButton#primaryButton:hover,
 QToolButton#primaryButton:hover {
     background-color: #3f4d63;
-    border: 1px solid #3f4d63;
+    border: 1px solid #ffffff;
 }
 
 QPushButton#primaryButton:pressed,
 QToolButton#primaryButton:pressed {
     background-color: #263244;
-    border: 1px solid #263244;
+    border: 1px solid #ffffff;
 }
 
 QPushButton#secondaryButton,
@@ -291,6 +288,51 @@ QCheckBox#requiredToggle::indicator:checked:hover {
     image: url(:/icons/toggle_on.svg);
 }
 
+QCheckBox#choiceOption {
+    font-size: 17px;
+    font-weight: 500;
+    color: #1e293b;
+    spacing: 12px;
+    padding: 14px 16px;
+    background-color: #f8fafc;
+    border: 1px solid #d7dee7;
+    border-radius: 12px;
+}
+
+QCheckBox#choiceOption:hover {
+    background-color: #f1f5f9;
+    border: 1px solid #bfd0e3;
+}
+
+QCheckBox#choiceOption:checked {
+    background-color: #eff6ff;
+    border: 1px solid #93c5fd;
+    color: #0f172a;
+}
+
+QCheckBox#choiceOption::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox#choiceOption::indicator:unchecked {
+    border: 2px solid #94a3b8;
+    border-radius: 10px;
+    background-color: white;
+    image: none;
+}
+
+QCheckBox#choiceOption::indicator:unchecked:hover {
+    border: 2px solid #64748b;
+}
+
+QCheckBox#choiceOption::indicator:checked {
+    border: 2px solid #263244;
+    border-radius: 10px;
+    background-color: #263244;
+    image: url(:/icons/check_white.svg);
+}
+
 #actionValueLabel {
     color: #111827;
     background-color: transparent;
@@ -334,4 +376,68 @@ QComboBox QAbstractItemView {
     selection-background-color: #f3f4f6;
     selection-color: #111827;
     outline: none;
+}
+
+QWidget#questionCard {
+    background-color: white;
+    border: 1px solid #cfd8e3;
+    border-radius: 18px;
+}
+
+QWidget#questionCard:hover {
+    border: 1px solid #b8c4d3;
+}
+
+QLabel#questionTitle {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    background-color: transparent;
+    border: none;
+    padding: 0 0 8px 0;
+}
+
+QRadioButton#choiceOption {
+    font-size: 17px;
+    font-weight: 500;
+    color: #1e293b;
+    spacing: 12px;
+    padding: 14px 16px;
+    background-color: #f8fafc;
+    border: 1px solid #d7dee7;
+    border-radius: 12px;
+}
+
+QRadioButton#choiceOption:hover {
+    background-color: #f1f5f9;
+    border: 1px solid #bfd0e3;
+}
+
+QRadioButton#choiceOption:checked {
+    background-color: #eff6ff;
+    border: 1px solid #93c5fd;
+    color: #0f172a;
+}
+
+QRadioButton#choiceOption::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QRadioButton#choiceOption::indicator:unchecked {
+    border: 2px solid #94a3b8;
+    border-radius: 10px;
+    background-color: white;
+    image: none;
+}
+
+QRadioButton#choiceOption::indicator:unchecked:hover {
+    border: 2px solid #64748b;
+}
+
+QRadioButton#choiceOption::indicator:checked {
+    border: 2px solid #263244;
+    border-radius: 10px;
+    background-color: #263244;
+    image: url(:/icons/check_white.svg);
 }
