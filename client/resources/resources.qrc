@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>style.qss</file>
+        <file>icons/toggle_on.svg</file>
+        <file>icons/toggle_off.svg</file>
+        <file>icons/check_white.svg</file>
+    </qresource>
+</RCC>
