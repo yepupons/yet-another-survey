@@ -5,10 +5,9 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <chrono>
-#include <string>
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
-#include "session_id.hpp"
+#include "session.hpp"
 
 namespace survey {
 SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
@@ -91,8 +90,9 @@ nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     nlohmann::json survey;
     survey["data"] = {
         {"id", id},
-        {"creator_id", session_id},
-        {"type", is_test_ ? "test" : "survey"}};
+        {"creator_id", session().get_id()},
+        {"type", is_test_ ? "test" : "survey"}
+    };
     survey["sections"] = nlohmann::json::array();
 
     for (auto *section : sections_) {
@@ -116,7 +116,7 @@ void SurveyBuilderWindow::save_survey() {
     nlohmann::json survey = build_survey_json(id);
 
     try {
-        ServerInteraction::save_survey_to_server(std::to_string(id), survey);
+        ServerInteraction::post_survey(id, survey);
     } catch (const std::exception &e) {
         QMessageBox::warning(this, "Error", e.what());
         return;

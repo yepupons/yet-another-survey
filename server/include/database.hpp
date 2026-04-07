@@ -1,17 +1,32 @@
-#pragma once
-#include <drogon/HttpController.h>
-#include <filesystem>
-#include <fstream>
-#include <nlohmann/json.hpp>
+#ifndef DATABASE_HPP_
+#define DATABASE_HPP_
 
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/uri.hpp>
+#include <string>
+
+namespace survey {
 class Database {
+    mongocxx::instance instance_;
+    mongocxx::client client_;
+
+    mongocxx::database db() {
+        return client_["yas_db"];
+    }
+
 public:
-    static void write_response(const nlohmann::json &response, int survey_id);
-    static void register_test(
-        const std::string &survey_id,
-        const nlohmann::json &test_json
-    );
-    static nlohmann::json send_passed_surveys(const std::string &session_id);
-    static std::filesystem::path resolve_public_root();
-    static std::filesystem::path resolve_database_root();
+    Database() : instance_{}, client_{mongocxx::uri{}} {
+    }
+
+    std::string read_survey(int survey_id);
+    void write_survey(const std::string &survey_data);
+
+    // std::string read_answer(int answer_id);
+    void write_answer(const std::string &answer_data);
+
+    std::string read_passed_surveys(int session_id);
 };
+}  // namespace survey
+
+#endif

@@ -1,15 +1,15 @@
-#ifndef QUESTION_BLOCK_HPP_
-#define QUESTION_BLOCK_HPP_
+#ifndef BLOCK_HPP_
+#define BLOCK_HPP_
 
 #include <QWidget>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
 namespace survey {
-class QuestionBlock : public QWidget {
+class Block : public QWidget {
     Q_OBJECT
 public:
-    explicit QuestionBlock(QWidget *parent = nullptr, bool required = false)
+    explicit Block(QWidget *parent = nullptr, bool required = false)
         : QWidget(parent), required_(required) {
     }
 
@@ -29,4 +29,4 @@ private:
 };
 }  // namespace survey
 
-#endif  // QUESTION_BLOCK_HPP_
+#endif  // BLOCK_HPP_

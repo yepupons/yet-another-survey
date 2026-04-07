@@ -1,34 +1,32 @@
-#ifndef SINGLE_CHOICE_QUESTION_HPP_
-#define SINGLE_CHOICE_QUESTION_HPP_
+#ifndef MULTIPLE_CHOICE_BLOCK_HPP_
+#define MULTIPLE_CHOICE_BLOCK_HPP_
 
 #include <nlohmann/json_fwd.hpp>
 // #include <optional>
 #include <QWidget>
-#include "abstract_question.hpp"
+#include "abstract_block.hpp"
 
 class QLabel;
 class QButtonGroup;
 
 namespace survey {
-class SingleChoiceBlock : public QuestionBlock {
+class MultipleChoiceBlock : public Block {
     Q_OBJECT
 public:
-    SingleChoiceBlock(
+    MultipleChoiceBlock(
         const nlohmann::json &block,
-        // std::optional<int> correct_answer,
+        // std::optional<std::vector<int>> correct_answer,
         QWidget *parent = nullptr
     );
 
     void save_answer(nlohmann::json &) const override;
     bool has_answer() const override;
-    std::optional<int> next_section() const override;
 
 private:
     QLabel *question_;
     QButtonGroup *options_;
-    // std::optional<int> correct_answer_;
-    std::unordered_map<int, int> links_;
+    // std::optional<std::vector<int>> correct_answer_;
 };
 }  // namespace survey
 
-#endif  // SINGLE_CHOICE_QUESTION_HPP_
+#endif  // MULTIPLE_CHOICE_BLOCK_HPP_

@@ -4,8 +4,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
-#include <QSignalBlocker>
 #include <QRadioButton>
+#include <QSignalBlocker>
 
 namespace survey {
 SingleChoiceBlockEditor::SingleChoiceBlockEditor(
@@ -88,7 +88,8 @@ void SingleChoiceBlockEditor::add_option() {
         for (int i = 0; i < sections.size(); ++i) {
             const QString section_name = sections[i].trimmed();
             if (section_name.compare("Save answer", Qt::CaseInsensitive) == 0 ||
-                section_name.compare("Save answers", Qt::CaseInsensitive) == 0) {
+                section_name.compare("Save answers", Qt::CaseInsensitive) ==
+                    0) {
                 continue;
             }
             link->addItem("Go to section: " + section_name, i);
@@ -135,9 +136,7 @@ void SingleChoiceBlockEditor::add_option() {
 
     connect(
         link, &QComboBox::currentTextChanged, this,
-        [action_label](const QString &text) {
-            action_label->setText(text);
-        }
+        [action_label](const QString &text) { action_label->setText(text); }
     );
 
     if (is_test_) {

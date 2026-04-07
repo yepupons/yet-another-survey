@@ -1,24 +1,19 @@
-#include "single_choice_question.hpp"
+#include "multiple_choice_block.hpp"
 #include <QButtonGroup>
-#include <QHBoxLayout>
-#include <QSizePolicy>
+#include <QCheckBox>
 #include <QLabel>
-#include <QRadioButton>
+#include <QList>
 #include <QString>
 #include <QVBoxLayout>
-#include <QWidget>
 #include <nlohmann/json.hpp>
-#include <optional>
-#include <stdexcept>
-#include "abstract_question.hpp"
 
 namespace survey {
-SingleChoiceBlock::SingleChoiceBlock(
+MultipleChoiceBlock::MultipleChoiceBlock(
     const nlohmann::json &block,
     // std::optional<int> correct_answer,
     QWidget *parent
 )
-{
+    : Block(parent, block.value("required", false)) {
     setObjectName("questionBlockContainer");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
@@ -28,13 +23,7 @@ SingleChoiceBlock::SingleChoiceBlock(
     question_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     options_ = new QButtonGroup(this);
-    options_->setExclusive(true);
-
-    if (block.contains("links")) {
-        for (const auto &link : block.at("links")) {
-            links_[link.at("condition")] = link.at("section_id");
-        }
-    }
+    options_->setExclusive(false);
 
     auto *outer_layout = new QVBoxLayout(this);
     outer_layout->setContentsMargins(0, 0, 0, 0);
@@ -66,15 +55,11 @@ SingleChoiceBlock::SingleChoiceBlock(
 
     int id = 0;
     for (const std::string &option : block.at("options")) {
-        auto *radio_button =
-            new QRadioButton(QString::fromStdString(option), card);
-        radio_button->setObjectName("choiceOption");
-        radio_button->setSizePolicy(
-            QSizePolicy::Expanding,
-            QSizePolicy::Preferred
-        );
-        options_->addButton(radio_button, ++id);
-        card_layout->addWidget(radio_button);
+        auto *button = new QCheckBox(QString::fromStdString(option), card);
+        options_->addButton(button, ++id);
+        button->setObjectName("choiceOption");
+        button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        card_layout->addWidget(button);
     }
 
     content_layout->addWidget(card);
@@ -84,19 +69,17 @@ SingleChoiceBlock::SingleChoiceBlock(
     outer_layout->addLayout(row_layout);
 }
 
-void SingleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
-    answer_data.push_back(options_->checkedId());
-}
-
-std::optional<int> SingleChoiceBlock::next_section() const {
-    try {
-        return links_.at(options_->checkedId());
-    } catch (const std::out_of_range &) {
-        return std::nullopt;
+void MultipleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
+    QList<int> answer;
+    for (const auto &option : options_->buttons()) {
+        if (option->isChecked()) {
+            answer.push_back(options_->id(option));
+        }
     }
+    answer_data.push_back(answer);
 }
 
-bool SingleChoiceBlock::has_answer() const {
+bool MultipleChoiceBlock::has_answer() const {
     return options_->checkedId() != -1;
 }
 }  // namespace survey

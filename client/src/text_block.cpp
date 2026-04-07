@@ -1,12 +1,11 @@
-#include "text_question.hpp"
+#include "text_block.hpp"
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QHBoxLayout>
 #include <QSizePolicy>
 #include <QString>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
-#include "abstract_question.hpp"
 
 namespace survey {
 TextBlock::TextBlock(
@@ -14,7 +13,7 @@ TextBlock::TextBlock(
     // std::optional<std::string> correct_answer,
     QWidget *parent
 )
-    : QuestionBlock(parent, block.value("required", false)) {
+    : Block(parent, block.value("required", false)) {
     setObjectName("questionBlockContainer");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 

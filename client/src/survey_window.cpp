@@ -7,12 +7,11 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
-#include "multiple_choice_question.hpp"
+#include "multiple_choice_block.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "server_interaction.hpp"
-#include "session_id.hpp"
-#include "single_choice_question.hpp"
-#include "text_question.hpp"
+#include "single_choice_block.hpp"
+#include "text_block.hpp"
 
 namespace survey {
 enum class BlockType { Text, Multiple, Single };
@@ -20,7 +19,8 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}};
+    {"single", BlockType::Single}
+};
 
 SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,
@@ -72,14 +72,17 @@ SurveyWindow::SurveyWindow(
         }
         questions_.back()->setObjectName("questionCard");
         questions_.back()->setMaximumWidth(760);
-        questions_.back()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        questions_.back()->setSizePolicy(
+            QSizePolicy::Expanding, QSizePolicy::Preferred
+        );
         content_layout->addWidget(questions_.back(), 0, Qt::AlignHCenter);
     }
     content_layout->addStretch();
     content->setLayout(content_layout);
 
     scroll_area->setWidget(content);
-    // scroll_area->setWidgetResizable(true);  // Deleted this line as per instructions
+    // scroll_area->setWidgetResizable(true);  // Deleted this line as per
+    // instructions
     central_layout->addWidget(scroll_area);
 
     save_answer_button_ = new QPushButton("Save answers", central);

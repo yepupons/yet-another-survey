@@ -4,7 +4,7 @@
 #include <QCloseEvent>
 #include <QMainWindow>
 #include <nlohmann/json.hpp>
-#include "abstract_question.hpp"
+#include "abstract_block.hpp"
 
 class QPushButton;
 
@@ -35,7 +35,7 @@ private:
     nlohmann::json &answer_data_;
     bool answer_saved;
 
-    QList<QuestionBlock *> questions_;
+    QList<Block *> questions_;
     QPushButton *save_answer_button_;
 };
 }  // namespace survey

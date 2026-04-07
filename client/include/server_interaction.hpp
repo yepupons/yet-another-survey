@@ -6,7 +6,6 @@
 
 namespace survey {
 class ServerInteraction {
-public:
     static size_t
     WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
         ((std::string *)userp)->append((char *)contents, size * nmemb);
@@ -19,13 +18,12 @@ public:
         std::string &readBuffer,
         curl_slist *headers
     );
-    static nlohmann::json load_survey(int requested_data_id);
-    static nlohmann::json
-    generate_answer_template(int survey_id, int number_of_questions);
-    static void
-    save_survey_to_server(const std::string &id, const nlohmann::json &j);
-    static void post_answers(const nlohmann::json &answers, int survey_id);
-    static nlohmann::json get_passed_ids(const int user_id);
+
+public:
+    static nlohmann::json get_survey(int survey_id);
+    static void post_survey(int survey_id, const nlohmann::json &survey_data);
+    static void post_answer(int survey_id, const nlohmann::json &answer_data);
+    static nlohmann::json get_passed_surveys(int user_id);
 };
 #endif  // SERVER_INTERACTION_HPP_
 }

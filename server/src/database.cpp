@@ -1,138 +1,113 @@
 #include "database.hpp"
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
+#include <bsoncxx/json.hpp>
+#include <nlohmann/json.hpp>
+#include <set>
+#include <stdexcept>
 
-std::filesystem::path Database::resolve_public_root() {
-    auto pb_root = std::filesystem::current_path() / "public";
-    if (!std::filesystem::exists(pb_root)) {
-        pb_root = std::filesystem::current_path() / ".." / "public";
-    }
-    return pb_root;
-}
+using bsoncxx::builder::stream::close_array;
+using bsoncxx::builder::stream::close_document;
+using bsoncxx::builder::stream::document;
+using bsoncxx::builder::stream::finalize;
+using bsoncxx::builder::stream::open_array;
+using bsoncxx::builder::stream::open_document;
 
-std::filesystem::path Database::resolve_database_root() {
-    auto db_root = std::filesystem::current_path() / "database";
-    if (!std::filesystem::exists(db_root)) {
-        db_root = std::filesystem::current_path() / ".." / "database";
-    }
-    return db_root;
-}
-
-void Database::write_response(const nlohmann::json &response, int survey_id) {
-    auto now = std::chrono::system_clock::now();
-    auto ts = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  now.time_since_epoch()
-    )
-                  .count();
-    // maybe we should add hash to it, but later D:
-    std::string filename = std::to_string(ts) + ".json";
-    auto root = resolve_public_root();
-    std::filesystem::path base = root / std::to_string(survey_id) / "responses";
-    std::error_code ec;
-    std::filesystem::create_directories(base, ec);
-    if (ec) {
-        throw std::runtime_error("Failed to create responses directory");
-    }
-    std::filesystem::path out_path = base / filename;
-
-    std::ofstream out(out_path);
-    if (!out.is_open()) {
-        throw std::runtime_error("Failed to write response");
-    }
-
-    auto db_route = resolve_database_root();
-    std::ifstream db_out(db_route / "passed_surveys.json");
-    nlohmann::json db_json;
-    if (db_out.is_open()) {
-        db_out >> db_json;
-    } else {
-        db_json = nlohmann::json::object();
-    }
-
-    auto to_string_id = [](const nlohmann::json &value) -> std::string {
-        if (value.is_string()) {
-            return value.get<std::string>();
-        }
-        if (value.is_number_integer()) {
-            return std::to_string(value.get<int64_t>());
-        }
-        if (value.is_number_unsigned()) {
-            return std::to_string(value.get<uint64_t>());
-        }
-        throw std::runtime_error("user_id must be string or number");
-    };
-
-    std::string session_id;
-    if (response.contains("answer_data") &&
-        response["answer_data"].contains("user_id")) {
-        session_id = to_string_id(response["answer_data"]["user_id"]);
-    } else if (response.contains("data") && response["data"].contains("respondent_id")) {
-        session_id = to_string_id(response["data"]["respondent_id"]);
-    } else if (response.contains("data") && response["data"].contains("user_id")) {
-        session_id = to_string_id(response["data"]["user_id"]);
-    } else {
-        throw std::runtime_error("Response missing user_id");
-    }
-
-    if (!db_json.is_object()) {
-        db_json = nlohmann::json::object();
-    }
-    if (!db_json.contains(session_id)) {
-        db_json[session_id] = nlohmann::json::array();
-    }
-    db_json[session_id].push_back({survey_id, filename});
-
-    std::ofstream o(db_route / "passed_surveys.json");
-    o << std::setw(4) << db_json << std::endl;
-
-    out << response.dump(2) << std::endl;
-}
-
-void Database::register_test(
-    const std::string &survey_id,
-    const nlohmann::json &test_json
-) {
-    auto now = std::chrono::system_clock::now();
-    auto ts = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  now.time_since_epoch()
-    )
-                  .count();
-    if (!std::filesystem::exists(std::filesystem::current_path() / "public")) {
-        throw std::runtime_error("Public directory does not exist");
-        return;
-    }
-
-    auto base = resolve_public_root() / survey_id / "survey";
-    std::error_code ec;
-    std::filesystem::create_directories(base, ec);
-    if (ec) {
-        throw std::runtime_error("Failed to create survey directory");
-    }
-
-    std::ofstream out(base / "data.json");
-    if (!out.is_open()) {
-        throw std::runtime_error("Failed to write survey data");
-    }
-    out << test_json.dump(2) << std::endl;
-
-    std::filesystem::create_directories(
-        resolve_public_root() / survey_id / "responses", ec
+namespace survey {
+std::string Database::read_survey(int survey_id) {
+    auto result = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << finalize
     );
-    if (ec) {
-        throw std::runtime_error("Failed to create responses directory");
+    if (result) {
+        return bsoncxx::to_json(result->view());
     }
+    throw std::runtime_error("Survey not found");
 }
 
-nlohmann::json Database::send_passed_surveys(const std::string &session_id) {
-    auto db_route = resolve_database_root();
-    std::ifstream db_out(db_route / "passed_surveys.json");
-    nlohmann::json db_json;
-    if (db_out.is_open()) {
-        db_out >> db_json;
-    } else {
-        throw std::runtime_error("Failed to read passed surveys database");
+void Database::write_survey(const std::string &survey_data) {
+    bsoncxx::document::value doc = bsoncxx::from_json(survey_data);
+    auto insert_result = db()["surveys"].insert_one(doc.view());
+    if (!insert_result) {
+        throw std::runtime_error("Writing survey into database failed");
     }
-    if (!db_json.contains(session_id)) {
-        throw std::runtime_error("Session ID not found in database");
+
+    int survey_id = doc.view()["data"]["id"].get_int32().value;
+    int creator_id = doc.view()["data"]["creator_id"].get_int32().value;
+
+    auto find_result =
+        db()["users"].find_one(document{} << "id" << creator_id << finalize);
+    if (!find_result) {
+        db()["users"].insert_one(
+            document{} << "id" << creator_id << "created_surveys" << open_array
+                       << close_array << "given_answers" << open_array
+                       << close_array << finalize
+        );
     }
-    auto passed_surveys = db_json[session_id];
-    return passed_surveys;
+    db()["users"].update_one(
+        document{} << "id" << creator_id << finalize,
+        document{} << "$push" << open_document << "created_surveys" << survey_id
+                   << close_document << finalize
+    );
 }
+
+/*
+std::string Database::read_answer(int answer_id) {
+    auto result = db()["answers"].find_one(
+        document{} << "data.id" << answer_id << finalize
+    );
+    if (result) {
+        return bsoncxx::to_json(result->view());
+    }
+    throw std::runtime_error("Answer not found");
+}
+*/
+
+void Database::write_answer(const std::string &answer_data) {
+    bsoncxx::document::value doc = bsoncxx::from_json(answer_data);
+    auto insert_result = db()["answers"].insert_one(doc.view());
+    if (!insert_result) {
+        throw std::runtime_error("Writing answer into database failed");
+    }
+
+    int answer_id = doc.view()["data"]["id"].get_int32().value;
+    int respondent_id = doc.view()["data"]["respondent_id"].get_int32().value;
+
+    auto find_result =
+        db()["users"].find_one(document{} << "id" << respondent_id << finalize);
+    if (!find_result) {
+        db()["users"].insert_one(
+            document{} << "id" << respondent_id << "created_surveys"
+                       << open_array << close_array << "given_answers"
+                       << open_array << close_array << finalize
+        );
+    }
+    db()["users"].update_one(
+        document{} << "id" << respondent_id << finalize,
+        document{} << "$push" << open_document << "given_answers" << answer_id
+                   << close_document << finalize
+    );
+}
+
+std::string Database::read_passed_surveys(int session_id) {
+    mongocxx::options::find opts;
+    opts.projection(
+        bsoncxx::builder::stream::document{}
+        << "data.survey_id" << 1 << "_id" << 0
+        << bsoncxx::builder::stream::finalize
+    );
+    auto cursor = db()["answers"].find(
+        document{} << "data.respondent_id" << session_id << finalize, opts
+    );
+    std::set<int> passed_surveys;
+    for (auto &&doc : cursor) {
+        if (doc["data"] && doc["data"]["survey_id"]) {
+            passed_surveys.insert(doc["data"]["survey_id"].get_int32().value);
+        }
+    }
+    nlohmann::json result = nlohmann::json::array();
+    for (int id : passed_surveys) {
+        result.push_back(id);
+    }
+    return result.dump();
+}
+}  // namespace survey
