@@ -43,14 +43,10 @@ nlohmann::json ServerInteraction::get_survey(int survey_id) {
     return nlohmann::json::parse(readBuffer);
 }
 
-void ServerInteraction::post_survey(
-    int survey_id,
-    const nlohmann::json &survey_data
-) {
+void ServerInteraction::post_survey(const nlohmann::json &survey_data) {
     CURL *curl = curl_easy_init();
     std::string readBuffer;
-    std::string url =
-        "http://127.0.0.1:8080/survey?id=" + std::to_string(survey_id);
+    std::string url = "http://127.0.0.1:8080/survey";
     std::string payload = survey_data.dump();
     curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -65,14 +61,10 @@ void ServerInteraction::post_survey(
     handle_http_code(curl, res, readBuffer, headers);
 }
 
-void ServerInteraction::post_answer(
-    int survey_id,
-    const nlohmann::json &answer_data
-) {
+void ServerInteraction::post_answer(const nlohmann::json &answer_data) {
     CURL *curl = curl_easy_init();
     std::string readBuffer;
-    std::string url =
-        "http://127.0.0.1:8080/answer?id=" + std::to_string(survey_id);
+    std::string url = "http://127.0.0.1:8080/answer";
     std::string payload = answer_data.dump();
     curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");

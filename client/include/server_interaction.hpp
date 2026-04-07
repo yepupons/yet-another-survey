@@ -21,8 +21,8 @@ class ServerInteraction {
 
 public:
     static nlohmann::json get_survey(int survey_id);
-    static void post_survey(int survey_id, const nlohmann::json &survey_data);
-    static void post_answer(int survey_id, const nlohmann::json &answer_data);
+    static void post_survey(const nlohmann::json &survey_data);
+    static void post_answer(const nlohmann::json &answer_data);
     static nlohmann::json get_passed_surveys(int user_id);
 };
 #endif  // SERVER_INTERACTION_HPP_

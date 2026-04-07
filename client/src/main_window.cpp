@@ -8,13 +8,16 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QObject>
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
 #include "survey_builder_window.hpp"
+#include "survey_taking.hpp"
 #include "survey_window.hpp"
 #include "view_passed_surveys.hpp"
 
@@ -190,29 +193,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     );
 }
 
-static void showMessageBox(
-    QWidget *parent,
-    QMessageBox::Icon icon,
-    const QString &title,
-    const QString &text
-) {
-    QMessageBox box(parent);
-    box.setIcon(icon);
-    box.setWindowTitle(title);
-    box.setInformativeText(QString("<div style='max-width: 220px; white-space: "
-                                   "normal; word-wrap: break-word;'>%1</div>")
-                               .arg(text.toHtmlEscaped()));
-    box.setTextFormat(Qt::RichText);
-    box.setStandardButtons(QMessageBox::Ok);
-    box.setStyleSheet(parent ? parent->styleSheet() : QString());
-    box.exec();
-}
-
 void MainWindow::open_survey() {
     bool ok;
     int id = id_input_->text().trimmed().toInt(&ok);
     if (!ok || id <= 0) {
-        showMessageBox(
+        show_message_box(
             this, QMessageBox::Warning, "Error",
             "Please enter a valid survey id."
         );
@@ -220,70 +205,16 @@ void MainWindow::open_survey() {
     }
 
     if (!opened_survey_) {
-        try {
-            opened_survey_data_ = ServerInteraction::get_survey(id);
-        } catch (const std::exception &e) {
-            showMessageBox(this, QMessageBox::Warning, "Error", e.what());
-            return;
-        }
-        opened_answer_data_.clear();
-        opened_answer_data_["data"] = {
-            {"id", 67}, {"survey_id", id}, {"respondent_id", session().get_id()}
-        };
-        opened_answer_data_["sections"] = nlohmann::json::array();
-        for (int i = 0; i < opened_survey_data_.at("sections").size(); ++i) {
-            opened_answer_data_["sections"].push_back(nlohmann::json::array());
-        }
-        open_next_section(0);
+        opened_survey_ = new SurveyTaking(id);
+        connect(opened_survey_, &QObject::destroyed, this, [this]() {
+            opened_survey_ = nullptr;
+        });
     } else {
-        showMessageBox(
+        show_message_box(
             this, QMessageBox::Warning, "Error",
             "You're already taking the survey"
         );
     }
-}
-
-void MainWindow::open_next_section(int next_section_id) {
-    if (next_section_id == -1) {
-        opened_survey_ = nullptr;
-        try {
-            ServerInteraction::post_answer(
-                opened_survey_data_.at("data").at("id"), opened_answer_data_
-            );
-            showMessageBox(
-                this, QMessageBox::Information, "Saved",
-                "Your answers have been successfully saved."
-            );
-        } catch (const std::exception &e) {
-            showMessageBox(this, QMessageBox::Warning, "Error", e.what());
-        }
-        opened_survey_data_.clear();
-        opened_answer_data_.clear();
-        return;
-    }
-    opened_survey_ = new SurveyWindow(
-        opened_survey_data_, opened_answer_data_, next_section_id, this
-    );
-    opened_survey_->setAttribute(Qt::WA_DeleteOnClose);
-    opened_survey_->show();
-    opened_survey_->raise();
-    opened_survey_->activateWindow();
-    connect(
-        opened_survey_, &SurveyWindow::closed_with_answer, this,
-        &MainWindow::open_next_section
-    );
-    connect(
-        opened_survey_, &SurveyWindow::closed_without_answer, this,
-        [this]() {
-            opened_survey_ = nullptr;
-            showMessageBox(
-                this, QMessageBox::Warning, "Error",
-                "Your answers haven't been saved"
-            );
-            opened_survey_data_.clear();
-            opened_answer_data_.clear();
-        }
-    );
 }
 
 void MainWindow::create_survey() {
@@ -325,7 +256,7 @@ void MainWindow::change_session_id() {
     }
 
     if (chosen == get_session_id_button) {
-        showMessageBox(
+        show_message_box(
             this, QMessageBox::Information, "Info",
             "Your session ID is: " + QString::number(session().get_id())
         );
@@ -341,7 +272,7 @@ void MainWindow::change_session_id() {
         }
     }
 
-    showMessageBox(
+    show_message_box(
         this, QMessageBox::Information, "Info",
         "Session ID changed to " + QString::number(session().get_id())
     );
@@ -352,7 +283,7 @@ void MainWindow::get_passed_surveys() {
     try {
         passed_ids = ServerInteraction::get_passed_surveys(session().get_id());
     } catch (const std::exception &e) {
-        showMessageBox(this, QMessageBox::Warning, "Error", e.what());
+        show_message_box(this, QMessageBox::Warning, "Error", e.what());
         return;
     }
 

@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "multiple_choice_block.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "single_choice_block.hpp"
 #include "text_block.hpp"
@@ -108,8 +109,8 @@ void SurveyWindow::closeEvent(QCloseEvent *event) {
 void SurveyWindow::save_answer() {
     for (auto question : questions_) {
         if (!question->is_valid()) {
-            QMessageBox::warning(
-                this, "Error",
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
                 "Some answers are missing. Please complete all sections."
             );
             return;

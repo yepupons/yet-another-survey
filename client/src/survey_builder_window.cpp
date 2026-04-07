@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <chrono>
+#include "pretty_view.hpp"
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
@@ -88,13 +89,10 @@ void SurveyBuilderWindow::add_section() {
 
 nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     nlohmann::json survey;
-    survey["data"] = {
-        {"id", id},
-        {"creator_id", session().get_id()},
-        {"type", is_test_ ? "test" : "survey"}
-    };
+    survey["data"]["id"] = id;
+    survey["data"]["creator_id"] = session().get_id();
+    survey["data"]["type"] = is_test_ ? "test" : "survey";
     survey["sections"] = nlohmann::json::array();
-
     for (auto *section : sections_) {
         survey["sections"].push_back(section->to_json());
     }
@@ -116,14 +114,14 @@ void SurveyBuilderWindow::save_survey() {
     nlohmann::json survey = build_survey_json(id);
 
     try {
-        ServerInteraction::post_survey(id, survey);
+        ServerInteraction::post_survey(survey);
     } catch (const std::exception &e) {
-        QMessageBox::warning(this, "Error", e.what());
+        show_message_box(this, QMessageBox::Warning, "Error", e.what());
         return;
     }
 
-    QMessageBox::information(
-        this, "Saved",
+    show_message_box(
+        this, QMessageBox::Information, "Saved",
         "Survey has been saved.\nYour ID:\n" + QString::number(id)
     );
 }
