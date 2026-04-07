@@ -94,11 +94,13 @@ nlohmann::json ServerInteraction::get_passed_surveys(int user_id) {
     return nlohmann::json::parse(readBuffer);
 }
 
-nlohmann::json ServerInteraction::get_survey_results(int session_id, int survey_id) {
+nlohmann::json
+ServerInteraction::get_survey_results(int session_id, int survey_id) {
     CURL *curl = curl_easy_init();
     std::string readBuffer;
-    std::string url =
-        "http://127.0.0.1:8080/survey-results?session-id=" + std::to_string(session_id) + "&survey-id=" + std::to_string(survey_id);
+    std::string url = "http://127.0.0.1:8080/survey-results?session-id=" +
+                      std::to_string(session_id) +
+                      "&survey-id=" + std::to_string(survey_id);
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);

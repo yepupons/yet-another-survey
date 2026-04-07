@@ -1,14 +1,14 @@
 #include "view_passed_surveys.hpp"
-#include "multiple_choice_block.hpp"
-#include "server_interaction.hpp"
-#include "session.hpp"
-#include "single_choice_block.hpp"
-#include "text_block.hpp"
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "multiple_choice_block.hpp"
+#include "server_interaction.hpp"
+#include "session.hpp"
+#include "single_choice_block.hpp"
+#include "text_block.hpp"
 
 namespace survey {
 ViewPassedSurveys::ViewPassedSurveys(
@@ -43,7 +43,8 @@ ViewSurveyResults::ViewSurveyResults(
     int survey_id,
     int session_id,
     QWidget *parent
-): QDialog(parent) {
+)
+    : QDialog(parent) {
     setWindowTitle("Survey results");
 
     auto *layout = new QVBoxLayout(this);
@@ -61,8 +62,7 @@ ViewSurveyResults::ViewSurveyResults(
     content_layout->setSpacing(16);
 
     try {
-        nlohmann::json survey =
-            ServerInteraction::get_survey(survey_id);
+        nlohmann::json survey = ServerInteraction::get_survey(survey_id);
         nlohmann::json results =
             ServerInteraction::get_survey_results(session_id, survey_id);
 
@@ -72,9 +72,13 @@ ViewSurveyResults::ViewSurveyResults(
         }
 
         auto &sections = survey.at("sections");
-        for (int section_index = 0; section_index < sections.size(); section_index++) {
+        for (int section_index = 0; section_index < sections.size();
+             section_index++) {
             auto &section = sections.at(section_index);
-            auto *section_title = new QLabel(QString::fromStdString(section.value("title", "Section")),content);
+            auto *section_title = new QLabel(
+                QString::fromStdString(section.value("title", "Section")),
+                content
+            );
             section_title->setObjectName("titleLabel");
             content_layout->addWidget(section_title);
 
@@ -95,7 +99,8 @@ ViewSurveyResults::ViewSurveyResults(
                     continue;
                 }
 
-                if (answers_sections.is_array() && section_index < answers_sections.size()) {
+                if (answers_sections.is_array() &&
+                    section_index < answers_sections.size()) {
                     auto &answers = answers_sections.at(section_index);
                     if (answers.is_array() && question_index < answers.size()) {
                         block->set_answer(answers.at(question_index));

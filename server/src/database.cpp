@@ -119,8 +119,8 @@ std::string Database::read_survey_results(int session_id, int survey_id) {
         << bsoncxx::builder::stream::finalize
     );
     auto cursor = db()["answers"].find(
-        document{} << "data.respondent_id" << session_id
-                   << "data.survey_id" << survey_id << finalize,
+        document{} << "data.respondent_id" << session_id << "data.survey_id"
+                   << survey_id << finalize,
         opts
     );
     nlohmann::json results = nlohmann::json::array();

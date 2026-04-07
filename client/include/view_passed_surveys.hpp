@@ -19,6 +19,10 @@ class ViewSurveyResults : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ViewSurveyResults(int survey_id, int session_id, QWidget *parent = nullptr);
+    explicit ViewSurveyResults(
+        int survey_id,
+        int session_id,
+        QWidget *parent = nullptr
+    );
 };
 }  // namespace survey
