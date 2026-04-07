@@ -7,12 +7,11 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
-#include "multiple_choice_question.hpp"
+#include "multiple_choice_block.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "server_interaction.hpp"
-#include "session_id.hpp"
-#include "single_choice_question.hpp"
-#include "text_question.hpp"
+#include "single_choice_block.hpp"
+#include "text_block.hpp"
 
 namespace survey {
 enum class BlockType { Text, Multiple, Single };
@@ -20,7 +19,8 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}};
+    {"single", BlockType::Single}
+};
 
 SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,

@@ -11,22 +11,12 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "server_interaction.hpp"
-#include "session_id.hpp"
+#include "session.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_window.hpp"
 #include "view_passed_surveys.hpp"
 
 namespace survey {
-
-int SessionIdGenerator::generate_session_id() {
-    auto now = std::chrono::system_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  now.time_since_epoch()
-    )
-                  .count();
-
-    return static_cast<int>(ms % 1000000);
-}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("ЯЗЬ");
@@ -102,14 +92,19 @@ void MainWindow::open_survey() {
 
     if (!opened_survey_) {
         try {
-            opened_survey_data_ = ServerInteraction::load_survey(id);
+            opened_survey_data_ = ServerInteraction::get_survey(id);
         } catch (const std::exception &e) {
             QMessageBox::warning(this, "Error", e.what());
             return;
         }
-        opened_answer_data_ = ServerInteraction::generate_answer_template(
-            id, opened_survey_data_.at("sections").size()
-        );
+        opened_answer_data_.clear();
+        opened_answer_data_["data"] = {
+            {"id", 67}, {"survey_id", id}, {"respondent_id", session().get_id()}
+        };
+        opened_answer_data_["sections"] = nlohmann::json::array();
+        for (int i = 0; i < opened_survey_data_.at("sections").size(); ++i) {
+            opened_answer_data_["sections"].push_back(nlohmann::json::array());
+        }
         open_next_section(0);
     } else {
         QMessageBox::warning(this, "Error", "You're already taking the survey");
@@ -120,8 +115,8 @@ void MainWindow::open_next_section(int next_section_id) {
     if (next_section_id == -1) {
         opened_survey_ = nullptr;
         try {
-            ServerInteraction::post_answers(
-                opened_answer_data_, opened_survey_data_.at("data").at("id")
+            ServerInteraction::post_answer(
+                opened_survey_data_.at("data").at("id"), opened_answer_data_
             );
             QMessageBox::information(
                 this, "Saved", "Your answers have been successfully saved."
@@ -192,29 +187,31 @@ void MainWindow::change_session_id() {
 
     if (chosen == get_session_id_button) {
         QMessageBox::information(
-            this, "Info", "Your session ID is: " + QString::number(session_id)
+            this, "Info",
+            "Your session ID is: " + QString::number(session().get_id())
         );
         return;
     } else if (chosen == set_session_id_button) {
         bool ok;
         int new_id = QInputDialog::getInt(
-            this, "Set Session ID", "Enter new session ID:", session_id, 1,
-            2147483647, 1, &ok
+            this, "Set Session ID", "Enter new session ID:", session().get_id(),
+            1, 2147483647, 1, &ok
         );
         if (ok) {
-            session_id = new_id;
+            session().set_id(new_id);
         }
     }
 
     QMessageBox::information(
-        this, "Info", "Session ID changed to " + QString::number(session_id)
+        this, "Info",
+        "Session ID changed to " + QString::number(session().get_id())
     );
 }
 
 void MainWindow::get_passed_surveys() {
     nlohmann::json passed_ids;
     try {
-        passed_ids = ServerInteraction::get_passed_ids(session_id);
+        passed_ids = ServerInteraction::get_passed_surveys(session().get_id());
     } catch (const std::exception &e) {
         QMessageBox::warning(this, "Error", e.what());
         return;
@@ -223,11 +220,7 @@ void MainWindow::get_passed_surveys() {
     QStringList survey_ids;
     // todo: прописать гарантии для типов
     for (const auto &id : passed_ids) {
-        if (id.is_string()) {
-            survey_ids.append(QString::fromStdString(id.get<std::string>()));
-        } else if (id.is_number_integer()) {
-            survey_ids.append(QString::number(id.get<int>()));
-        }
+        survey_ids.append(QString::number(id.get<int>()));
     }
 
     auto *view = new ViewPassedSurveys(survey_ids, this);

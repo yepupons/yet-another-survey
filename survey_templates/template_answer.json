@@ -1,7 +1,7 @@
 {
     "data": {
+        "id": 654321,
         "survey_id": 123456,
-        "answer_id": 654321,
         "respondent_id": 1488
     },
     "sections": [

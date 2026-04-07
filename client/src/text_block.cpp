@@ -1,10 +1,9 @@
-#include "text_question.hpp"
+#include "text_block.hpp"
 #include <QLabel>
 #include <QLineEdit>
 #include <QString>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
-#include "abstract_question.hpp"
 
 namespace survey {
 TextBlock::TextBlock(
@@ -12,7 +11,7 @@ TextBlock::TextBlock(
     // std::optional<std::string> correct_answer,
     QWidget *parent
 )
-    : QuestionBlock(parent, block.value("required", false)) {
+    : Block(parent, block.value("required", false)) {
     question_ = new QLabel(QString::fromStdString(block.at("text")), this);
     answer_ = new QLineEdit(this);
     answer_->setPlaceholderText("Input your answer here:");

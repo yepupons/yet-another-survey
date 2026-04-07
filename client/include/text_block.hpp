@@ -1,16 +1,16 @@
-#ifndef TEXT_QUESTION_HPP_
-#define TEXT_QUESTION_HPP_
+#ifndef TEXT_BLOCK_HPP_
+#define TEXT_BLOCK_HPP_
 
 #include <nlohmann/json_fwd.hpp>
 // #include <optional>
 #include <QWidget>
-#include "abstract_question.hpp"
+#include "abstract_block.hpp"
 
 class QLabel;
 class QLineEdit;
 
 namespace survey {
-class TextBlock : public QuestionBlock {
+class TextBlock : public Block {
     Q_OBJECT
 public:
     TextBlock(
@@ -29,4 +29,4 @@ private:
 };
 }  // namespace survey
 
-#endif  // TEXT_QUESTION_HPP_
+#endif  // TEXT_BLOCK_HPP_

@@ -1,56 +1,52 @@
+#include <drogon/HttpTypes.h>
 #include <drogon/drogon.h>
-#include <chrono>
 #include <database.hpp>
-#include <filesystem>
-#include <fstream>
 
 using namespace drogon;
 
 int main(int argc, char *argv[]) {
+    survey::Database db;
     app().addListener("127.0.0.1", 8080);
 
     app().registerHandler(
-        "/file",
-        [](const HttpRequestPtr &request,
-           std::function<void(const HttpResponsePtr &)> &&cb) {
-            std::string parametr_survey_id = request->getParameter("id");
-            std::filesystem::path p = Database::resolve_public_root() /
-                                      parametr_survey_id / "survey" /
-                                      "data.json";
-            if (!std::filesystem::exists(p)) {
+        "/survey",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                int survey_id = std::stoi(request->getParameter("id"));
+                const auto survey_data = db.read_survey(survey_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(survey_data);
+                cb(resp);
+            } catch (const std::exception &e) {
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k404NotFound);
-                resp->setBody("Survey not found");
+                resp->setBody(e.what());
                 cb(resp);
-                return;
             }
-            auto resp = HttpResponse::newFileResponse(p.string());
-            cb(resp);
         },
         {Get}
     );
 
     app().registerHandler(
-        "/response",
-        [](const HttpRequestPtr &request,
-           std::function<void(const HttpResponsePtr &)> &&cb) {
-            auto json = request->getJsonObject();
-
-            std::string survey_id = request->getParameter("id");
+        "/survey",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
             try {
-                Database::write_response(
-                    nlohmann::json::parse(json->toStyledString()),
-                    std::stoi(survey_id)
-                );
+                auto json = request->getJsonObject();
+                db.write_survey(json->toStyledString());
             } catch (const std::exception &e) {
-                auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
                 return;
             }
-
-            auto resp = HttpResponse::newHttpResponse();
             resp->setBody("Saved");
             cb(resp);
         },
@@ -58,56 +54,70 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/registertest",
-        [](const HttpRequestPtr &request,
-           std::function<void(const HttpResponsePtr &)> &&cb) {
-            auto json = request->getJsonObject();
-            std::string survey_id = request->getParameter("id");
-
+        "/answer",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
             try {
-                Database::register_test(
-                    survey_id, nlohmann::json::parse(json->toStyledString())
-                );
+                auto json = request->getJsonObject();
+                db.write_answer(json->toStyledString());
             } catch (const std::exception &e) {
-                auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
                 return;
             }
-
-            auto resp = HttpResponse::newHttpResponse();
             resp->setBody("Saved");
             cb(resp);
         },
         {Post}
     );
 
+    /*
     app().registerHandler(
-        "/getpassed",
-        [](const HttpRequestPtr &request,
+        "/answer",
+        [&db](const HttpRequestPtr &request,
            std::function<void(const HttpResponsePtr &)> &&cb) {
-            std::string session_id = request->getParameter("session_id");
-            nlohmann::json passed_surveys;
             try {
-                passed_surveys = Database::send_passed_surveys(session_id);
+                int answer_id = std::stoi(request->getParameter("id"));
+                const auto answer_data = db.read_answer(answer_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(answer_data);
+                cb(resp);
+            } catch (const std::exception &e) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k404NotFound);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+    */
+
+    app().registerHandler(
+        "/passed-surveys",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                int session_id = std::stoi(request->getParameter("session-id"));
+                const auto passed_surveys_data =
+                    db.read_passed_surveys(session_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(passed_surveys_data);
+                cb(resp);
             } catch (const std::exception &e) {
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
-                return;
             }
-            nlohmann::json passed_ids = nlohmann::json::array();
-            for (const auto &tuple : passed_surveys) {
-                if (tuple.is_array() && tuple.size() >= 1) {
-                    passed_ids.push_back(tuple.at(0));
-                }
-            }
-            auto resp = HttpResponse::newHttpResponse();
-
-            resp->setBody(passed_ids.dump(2));
-            cb(resp);
         },
         {Get}
     );

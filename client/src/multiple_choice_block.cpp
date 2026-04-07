@@ -1,4 +1,4 @@
-#include "multiple_choice_question.hpp"
+#include "multiple_choice_block.hpp"
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QLabel>
@@ -6,7 +6,6 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
-#include "abstract_question.hpp"
 
 namespace survey {
 MultipleChoiceBlock::MultipleChoiceBlock(
@@ -14,7 +13,7 @@ MultipleChoiceBlock::MultipleChoiceBlock(
     // std::optional<int> correct_answer,
     QWidget *parent
 )
-    : QuestionBlock(parent, block.value("required", false)) {
+    : Block(parent, block.value("required", false)) {
     question_ = new QLabel(QString::fromStdString(block.at("text")), this);
     options_ = new QButtonGroup(this);
     options_->setExclusive(false);

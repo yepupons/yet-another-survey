@@ -32,10 +32,5 @@ private:
     QPushButton *change_session_id_button_;
     QPushButton *get_passed_surveys_button_;
 };
-
-class SessionIdGenerator {
-public:
-    static int generate_session_id();
-};
 }  // namespace survey
 #endif  // MAIN_WINDOW_HPP_

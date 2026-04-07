@@ -1,4 +1,4 @@
-#include "single_choice_question.hpp"
+#include "single_choice_block.hpp"
 #include <QButtonGroup>
 #include <QLabel>
 #include <QRadioButton>
@@ -7,7 +7,6 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <stdexcept>
-#include "abstract_question.hpp"
 
 namespace survey {
 SingleChoiceBlock::SingleChoiceBlock(
@@ -15,7 +14,7 @@ SingleChoiceBlock::SingleChoiceBlock(
     // std::optional<int> correct_answer,
     QWidget *parent
 )
-    : QuestionBlock(parent, block.value("required", false)) {
+    : Block(parent, block.value("required", false)) {
     question_ = new QLabel(QString::fromStdString(block.at("text")), this);
     options_ = new QButtonGroup(this);
     if (block.contains("links")) {
