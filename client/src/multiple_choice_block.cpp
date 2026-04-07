@@ -10,7 +10,6 @@
 namespace survey {
 MultipleChoiceBlock::MultipleChoiceBlock(
     const nlohmann::json &block,
-    // std::optional<int> correct_answer,
     QWidget *parent
 )
     : Block(parent, block.value("required", false)) {
@@ -81,5 +80,20 @@ void MultipleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
 
 bool MultipleChoiceBlock::has_answer() const {
     return options_->checkedId() != -1;
+}
+
+void MultipleChoiceBlock::set_answer(const nlohmann::json &answer) {
+    for (const auto &value : answer) {
+        auto *button = options_->button(value.get<int>());
+        if (button) {
+            button->setChecked(true);
+        }
+    }
+}
+
+void MultipleChoiceBlock::set_read_only(bool read_only) {
+    for (auto *button : options_->buttons()) {
+        button->setEnabled(!read_only);
+    }
 }
 }  // namespace survey

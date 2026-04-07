@@ -15,6 +15,8 @@ public:
 
     virtual void save_answer(nlohmann::json &) const = 0;
     virtual bool has_answer() const = 0;
+    virtual void set_answer(const nlohmann::json &) = 0;
+    virtual void set_read_only(bool) = 0;
 
     virtual std::optional<int> next_section() const {
         return std::nullopt;
