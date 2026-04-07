@@ -36,39 +36,57 @@ SurveyWindow::SurveyWindow(
     );
 
     auto *central = new QWidget(this);
+    central->setObjectName("centralWidget");
+
     auto *central_layout = new QVBoxLayout(central);
     central_layout->setAlignment(Qt::AlignTop);
+    central_layout->setContentsMargins(24, 24, 24, 24);
+    central_layout->setSpacing(16);
 
     auto *scroll_area = new QScrollArea(central);
+    scroll_area->setFrameShape(QFrame::NoFrame);
+    scroll_area->setWidgetResizable(true);
+
     auto *content = new QWidget(scroll_area);
+    content->setObjectName("centralWidget");
     auto *content_layout = new QVBoxLayout(content);
     content_layout->setAlignment(Qt::AlignTop);
+    content_layout->setContentsMargins(0, 0, 0, 0);
+    content_layout->setSpacing(16);
 
     for (const auto &block : section_data_.at("questions")) {
         const std::string block_type = block.at("type").get<std::string>();
         switch (COMPARATOR.at(block_type)) {
             case BlockType::Text: {
-                questions_.push_back(new TextBlock(block, central));
+                questions_.push_back(new TextBlock(block, content));
                 break;
             }
             case BlockType::Multiple: {
-                questions_.push_back(new MultipleChoiceBlock(block, central));
+                questions_.push_back(new MultipleChoiceBlock(block, content));
                 break;
             }
             case BlockType::Single: {
-                questions_.push_back(new SingleChoiceBlock(block, central));
+                questions_.push_back(new SingleChoiceBlock(block, content));
                 break;
             }
         }
-        content_layout->addWidget(questions_.back());
+        questions_.back()->setObjectName("questionCard");
+        questions_.back()->setMaximumWidth(760);
+        questions_.back()->setSizePolicy(
+            QSizePolicy::Expanding, QSizePolicy::Preferred
+        );
+        content_layout->addWidget(questions_.back(), 0, Qt::AlignHCenter);
     }
+    content_layout->addStretch();
     content->setLayout(content_layout);
 
     scroll_area->setWidget(content);
-    scroll_area->setWidgetResizable(true);
+    // scroll_area->setWidgetResizable(true);  // Deleted this line as per
+    // instructions
     central_layout->addWidget(scroll_area);
 
     save_answer_button_ = new QPushButton("Save answers", central);
+    save_answer_button_->setObjectName("primaryButton");
     central_layout->addWidget(save_answer_button_);
 
     central->setLayout(central_layout);

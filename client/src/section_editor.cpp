@@ -50,6 +50,8 @@ SectionEditor::SectionEditor(
 
 void SectionEditor::add_block() {
     auto *menu = new QMenu(this);
+    menu->setMinimumWidth(add_block_button_->width());
+    menu->setStyleSheet(styleSheet());
     auto *single = menu->addAction("Single Choice");
     auto *multiple = menu->addAction("Multiple Choice");
     auto *text = menu->addAction("Text");

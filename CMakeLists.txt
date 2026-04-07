@@ -68,6 +68,8 @@ add_executable(client
     client/include/abstract_block_editor.hpp
 
     client/include/view_passed_surveys.hpp
+    
+    client/resources/resources.qrc
 )
 
 target_include_directories(client PRIVATE

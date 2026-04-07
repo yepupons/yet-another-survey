@@ -34,6 +34,7 @@ TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
     }
 
     required_ = new QCheckBox("Required", this);
+    required_->setObjectName("requiredToggle");
     required_->setChecked(true);
     layout->addWidget(required_);
 
