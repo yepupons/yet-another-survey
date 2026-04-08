@@ -24,6 +24,7 @@ public:
     static void post_survey(const nlohmann::json &survey_data);
     static void post_answer(const nlohmann::json &answer_data);
     static nlohmann::json get_passed_surveys(int user_id);
+    static nlohmann::json get_survey_results(int session_id, int survey_id);
 };
 #endif  // SERVER_INTERACTION_HPP_
 }

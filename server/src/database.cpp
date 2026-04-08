@@ -110,4 +110,27 @@ std::string Database::read_passed_surveys(int session_id) {
     }
     return result.dump();
 }
+
+std::string Database::read_survey_results(int session_id, int survey_id) {
+    mongocxx::options::find opts;
+    opts.projection(
+        bsoncxx::builder::stream::document{}
+        << "data.survey_id" << 1 << "sections" << 1 << "_id" << 0
+        << bsoncxx::builder::stream::finalize
+    );
+    auto cursor = db()["answers"].find(
+        document{} << "data.respondent_id" << session_id << "data.survey_id"
+                   << survey_id << finalize,
+        opts
+    );
+    nlohmann::json results = nlohmann::json::array();
+    for (auto &&doc : cursor) {
+        if (doc["sections"]) {
+            results.push_back(nlohmann::json::parse(
+                bsoncxx::to_json(doc["sections"].get_array().value)
+            ));
+        }
+    }
+    return results.dump();
+}
 }  // namespace survey

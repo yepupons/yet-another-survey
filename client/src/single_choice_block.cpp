@@ -97,4 +97,17 @@ std::optional<int> SingleChoiceBlock::next_section() const {
 bool SingleChoiceBlock::has_answer() const {
     return options_->checkedId() != -1;
 }
+
+void SingleChoiceBlock::set_answer(const nlohmann::json &answer) {
+    auto *button = options_->button(answer.get<int>());
+    if (button) {
+        button->setChecked(true);
+    }
+}
+
+void SingleChoiceBlock::set_read_only(bool read_only) {
+    for (auto *button : options_->buttons()) {
+        button->setEnabled(!read_only);
+    }
+}
 }  // namespace survey

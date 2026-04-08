@@ -122,6 +122,32 @@ int main(int argc, char *argv[]) {
         {Get}
     );
 
+    app().registerHandler(
+        "/survey-results",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                // ?session-id=...&survey-id=...
+                int session_id = std::stoi(request->getParameter("session-id"));
+                int survey_id = std::stoi(request->getParameter("survey-id"));
+                const auto survey_results_data =
+                    db.read_survey_results(session_id, survey_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(survey_results_data);
+                cb(resp);
+            } catch (const std::exception &e) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
     app().run();
     return 0;
 }

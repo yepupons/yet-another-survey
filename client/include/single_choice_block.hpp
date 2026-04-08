@@ -22,6 +22,8 @@ public:
     void save_answer(nlohmann::json &) const override;
     bool has_answer() const override;
     std::optional<int> next_section() const override;
+    void set_answer(const nlohmann::json &answer) override;
+    void set_read_only(bool read_only) override;
 
 private:
     QLabel *question_;

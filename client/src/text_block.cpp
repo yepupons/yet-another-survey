@@ -70,4 +70,16 @@ void TextBlock::save_answer(nlohmann::json &answer_data) const {
 bool TextBlock::has_answer() const {
     return !answer_->text().trimmed().isEmpty();
 }
+
+void TextBlock::set_answer(const nlohmann::json &answer) {
+    answer_->setText(QString::fromStdString(answer.get<std::string>()));
+    return;
+}
+
+void TextBlock::set_read_only(bool read_only) {
+    answer_->setReadOnly(read_only);
+    if (!read_only) {
+        answer_->setEnabled(true);
+    }
+}
 }  // namespace survey
