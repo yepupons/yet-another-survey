@@ -184,6 +184,30 @@ int main(int argc, char *argv[]) {
         {Get}
     );
 
+    app().registerHandler(
+        "/check",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
+            std::string out;
+            try {
+                auto user_answers = request->getJsonObject();
+                out = db.get_result(user_answers->toStyledString());
+            } catch (const std::exception &e) {
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
+                cb(resp);
+                return;
+            }
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->setBody(out);
+            cb(resp);
+        },
+        {Post}
+    );
+
     app().run();
     return 0;
 }

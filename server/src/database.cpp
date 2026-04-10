@@ -139,7 +139,7 @@ std::string Database::read_survey_results(int session_id, int survey_id) {
 std::string Database::get_result(const std::string &user_result_data) {
     Database::write_answer(user_result_data);
     nlohmann::json user_json = nlohmann::json::parse(user_result_data);
-    int survey_id = user_json.at("data").at("id").get<int>();
+    int survey_id = user_json.at("data").at("survey_id").get<int>();
     mongocxx::options::find opts;
     opts.projection(
         document{} << "sections.questions.answer" << 1
@@ -156,6 +156,8 @@ std::string Database::get_result(const std::string &user_result_data) {
         {"survey_id", survey_id},
     };
     out["sections"] = nlohmann::json::array();
+    int question_amount = 0;
+    int correct_answers = 0;
     for (size_t section_indx = 0; section_indx < survey_json["sections"].size();
          section_indx++) {
         nlohmann::json section_result = nlohmann::json::array();
@@ -163,6 +165,7 @@ std::string Database::get_result(const std::string &user_result_data) {
              question_indx <
              survey_json["sections"].at(section_indx)["questions"].size();
              question_indx++) {
+            question_amount++;
             auto question =
                 survey_json["sections"].at(section_indx)["questions"].at(
                     question_indx
@@ -174,9 +177,10 @@ std::string Database::get_result(const std::string &user_result_data) {
 
             if (type == "single") {
                 // 1 correct, 0 isnt
-                section_result.emplace_back(
-                    correct_answer.get<int>() == user_answer.get<int>()
-                );
+                int status =
+                    correct_answer.get<int>() == user_answer.get<int>();
+                correct_answers += status;
+                section_result.emplace_back(status);
             } else if (type == "multiple") {
                 std::set<int> user_set;
                 std::set<int> correct_set;
@@ -186,7 +190,9 @@ std::string Database::get_result(const std::string &user_result_data) {
                 for (const auto &v : correct_answer) {
                     correct_set.insert(v.get<int>());
                 }
-                section_result.emplace_back(user_set == correct_set);
+                int status = user_set == correct_set;
+                correct_answers += status;
+                section_result.emplace_back(status);
             } else if (type == "text") {
                 if (correct_answer.is_string()) {
                     section_result.emplace_back(
@@ -198,19 +204,22 @@ std::string Database::get_result(const std::string &user_result_data) {
                     for (auto &v : correct_answer) {
                         if (user_answer.get<std::string>() ==
                             v.get<std::string>()) {
-                            section_result.emplace_back(true);
+                            section_result.emplace_back(1);
                             ok = true;
+                            correct_answers++;
                             break;
                         }
                     }
                     if (!ok) {
-                        section_result.emplace_back(false);
+                        section_result.emplace_back(0);
                     }
                 }
             }
-            out["sections"].push_back(section_result);
         }
-        return out.dump();
+        out["sections"].push_back(section_result);
     }
+    out["data"]["question_amount"] = question_amount;
+    out["data"]["correct_answers"] = correct_answers;
+    return out.dump();
 }
 }  // namespace survey
