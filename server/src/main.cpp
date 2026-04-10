@@ -4,6 +4,9 @@
 
 using namespace drogon;
 
+// TODO: maybe not throw raw error to client, but just write it in debug mode +
+// log?
+
 int main(int argc, char *argv[]) {
     survey::Database db;
     app().addListener("127.0.0.1", 8080);
@@ -22,6 +25,11 @@ int main(int argc, char *argv[]) {
                 resp->setBody(survey_data);
                 cb(resp);
             } catch (const std::exception &e) {
+#ifdef YAZ_DEBUG
+                std::cerr << "Error reading survey "
+                          << request->getParameter("id") << ": " << e.what()
+                          << std::endl;
+#endif
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k404NotFound);
                 resp->setBody(e.what());
@@ -41,7 +49,16 @@ int main(int argc, char *argv[]) {
             try {
                 auto json = request->getJsonObject();
                 db.write_survey(json->toStyledString());
+#ifdef YAZ_DEBUG
+                std::cerr << "Received survey: " << json->toStyledString()
+                          << std::endl;
+#endif
             } catch (const std::exception &e) {
+#ifdef YAZ_DEBUG
+                std::cerr << "Error saving survey "
+                          << request->getParameter("id") << ": " << e.what()
+                          << std::endl;
+#endif
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
@@ -63,7 +80,14 @@ int main(int argc, char *argv[]) {
             try {
                 auto json = request->getJsonObject();
                 db.write_answer(json->toStyledString());
+#ifdef YAZ_DEBUG
+                std::cerr << "Received answer: " << json->toStyledString()
+                          << std::endl;
+#endif
             } catch (const std::exception &e) {
+#ifdef YAZ_DEBUG
+                std::cerr << "Error saving answer: " << e.what() << std::endl;
+#endif
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
@@ -113,6 +137,11 @@ int main(int argc, char *argv[]) {
                 resp->setBody(passed_surveys_data);
                 cb(resp);
             } catch (const std::exception &e) {
+#ifdef YAZ_DEBUG
+                std::cerr << "Error reading passed surveys for "
+                          << request->getParameter("session-id") << ": "
+                          << e.what() << std::endl;
+#endif
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
@@ -139,6 +168,13 @@ int main(int argc, char *argv[]) {
                 resp->setBody(survey_results_data);
                 cb(resp);
             } catch (const std::exception &e) {
+#ifdef YAZ_DEBUG
+                std::cerr << "Error reading survey results for "
+                          << request->getParameter("session-id")
+                          << " and survey "
+                          << request->getParameter("survey-id") << ": "
+                          << e.what() << std::endl;
+#endif
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());

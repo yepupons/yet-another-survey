@@ -6,6 +6,10 @@ configure:
 build: configure
 	cmake --build build --parallel
 
+build-debug:
+	cmake -S . -B build -DYAZ_DEBUG=ON
+	cmake --build build --parallel
+
 server:
 	./build/server
 

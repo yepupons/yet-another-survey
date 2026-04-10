@@ -100,3 +100,8 @@ target_link_libraries(server PRIVATE
     mongo::bsoncxx_shared
     mongo::mongocxx_shared
 )
+# Debug (enabling reading errors and recieved data on server)
+option(YAZ_DEBUG OFF)
+if (YAZ_DEBUG) 
+    add_compile_definitions(YAZ_DEBUG)
+endif()
