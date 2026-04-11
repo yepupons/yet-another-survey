@@ -1,5 +1,6 @@
 #include "server_interaction.hpp"
 #include <curl/curl.h>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -102,6 +103,26 @@ ServerInteraction::get_survey_results(int session_id, int survey_id) {
                       std::to_string(session_id) +
                       "&survey-id=" + std::to_string(survey_id);
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    CURLcode res = curl_easy_perform(curl);
+
+    handle_http_code(curl, res, readBuffer, nullptr);
+    return nlohmann::json::parse(readBuffer);
+}
+
+nlohmann::json ServerInteraction::check_answer(const nlohmann::json &answer_data
+) {
+    CURL *curl = curl_easy_init();
+    std::string readBuffer;
+    std::string url = "http://127.0.0.1:8080/check";
+    std::string payload = answer_data.dump();
+    curl_slist *headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     CURLcode res = curl_easy_perform(curl);
