@@ -52,6 +52,7 @@ add_executable(client
     client/src/server_interaction.cpp
 
     client/src/view_passed_surveys.cpp
+    client/src/test_results.cpp
 
     # Because of Qt issues
     client/include/main_window.hpp
@@ -70,6 +71,7 @@ add_executable(client
     client/include/abstract_block_editor.hpp
 
     client/include/view_passed_surveys.hpp
+    client/include/test_results.hpp
     
     client/resources/resources.qrc
 )
