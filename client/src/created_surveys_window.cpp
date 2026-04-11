@@ -33,13 +33,13 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
         auto *row = new QHBoxLayout();
         row->addWidget(new QLabel(QString::number(id), this));
 
-        auto *txt_import_button = new QPushButton("Import in txt", this);
+        auto *txt_import_button = new QPushButton("Import to txt", this);
         row->addWidget(txt_import_button);
         connect(txt_import_button, &QPushButton::clicked, this, [this, id]() {
             import_statistics_txt(id);
         });
 
-        auto *jpg_import_button = new QPushButton("Import in jpg", this);
+        auto *jpg_import_button = new QPushButton("Import to jpg", this);
         row->addWidget(jpg_import_button);
         connect(jpg_import_button, &QPushButton::clicked, this, [this, id]() {
             import_statistics_jpg(id);
