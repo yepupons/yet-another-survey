@@ -41,13 +41,25 @@ ViewTestResults::ViewTestResults(nlohmann::json &results, QWidget *parent)
                                  ? QString("Correct!")
                                  : QString("Wrong!");
             auto *question_result = new QLabel(
-                QString("Вопрос ") + QString::number(question_indx + 1) +
+                QString("Question ") + QString::number(question_indx + 1) +
                     QString(": ") + status,
                 content
             );
             content_layout->addWidget(question_result);
         }
     }
+    auto *overall_result = new QLabel(
+        QString("Correct ") +
+            QString::number(
+                results_json.at("data").at("correct_answers").get<int>()
+            ) +
+            QString(" out of ") +
+            QString::number(
+                results_json.at("data").at("question_amount").get<int>()
+            ),
+        content
+    );
+    content_layout->addWidget(overall_result);
     content_layout->addStretch();
     scroll_area->setWidget(content);
     layout->addWidget(scroll_area);

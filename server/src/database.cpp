@@ -187,7 +187,7 @@ std::string Database::get_result(const std::string &user_result_data) {
                 for (auto &v : user_answer) {
                     user_set.insert(v.get<int>());
                 }
-                for (const auto &v : correct_answer) {
+                for (auto &v : correct_answer) {
                     correct_set.insert(v.get<int>());
                 }
                 int status = user_set == correct_set;
