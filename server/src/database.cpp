@@ -3,8 +3,11 @@
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <set>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -107,6 +110,92 @@ std::string Database::read_passed_surveys(int session_id) {
     nlohmann::json result = nlohmann::json::array();
     for (int id : passed_surveys) {
         result.push_back(id);
+    }
+    return result.dump();
+}
+
+std::string Database::read_created_surveys(int session_id) {
+    mongocxx::options::find opts;
+    opts.projection(
+        bsoncxx::builder::stream::document{}
+        << "created_surveys" << 1 << "_id" << 0
+        << bsoncxx::builder::stream::finalize
+    );
+    auto result = db()["users"].find_one(
+        document{} << "id" << session_id << finalize, opts
+    );
+    if (result) {
+        return bsoncxx::to_json(
+            result->view()["created_surveys"].get_array().value
+        );
+    }
+    throw std::runtime_error("User not found");
+}
+
+std::string Database::read_statistics(int survey_id) {
+    auto survey = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << finalize
+    );
+    if (!survey) {
+        throw std::runtime_error("Survey not found");
+    }
+    nlohmann::json survey_data =
+        nlohmann::json::parse(bsoncxx::to_json(survey->view()));
+    nlohmann::json result;
+    result["total_answers"] = db()["answers"].count_documents(
+        document{} << "data.survey_id" << survey_id << finalize
+    );
+    result["sections"] = nlohmann::json::array();
+    for (int i = 0; i < survey_data["sections"].size(); ++i) {
+        result["sections"].push_back(nlohmann::json::array());
+        for (int j = 0; j < survey_data["sections"][i]["questions"].size();
+             ++j) {
+            result["sections"].back().push_back(nlohmann::json::object());
+        }
+    }
+
+    mongocxx::pipeline p{};
+    p.match(document{} << "data.survey_id" << survey_id << finalize);
+    p.unwind(
+        document{} << "path" << "$sections" << "includeArrayIndex" << "section"
+                   << finalize
+    );
+    p.unwind(
+        document{} << "path" << "$sections" << "includeArrayIndex" << "question"
+                   << finalize
+    );
+    p.unwind(document{} << "path" << "$sections.answer" << finalize);
+    p.match(
+        document{} << "sections.answer" << open_document << "$ne" << ""
+                   << close_document << finalize
+    );
+    p.group(
+        document{} << "_id"
+                   << (document{} << "section" << "$section" << "question"
+                                  << "$question" << "answer"
+                                  << "$sections.answer" << finalize)
+                   << "count" << (document{} << "$sum" << 1 << finalize)
+                   << finalize
+    );
+    auto cursor = db()["answers"].aggregate(p);
+
+    for (auto &&doc : cursor) {
+        auto el = doc["_id"];
+        int section = el["section"].get_int64();
+        int question = el["question"].get_int64();
+        std::string answer;
+        switch (el["answer"].type()) {
+            case bsoncxx::type::k_string:
+                answer = el["answer"].get_string().value.data();
+                break;
+            case bsoncxx::type::k_int32:
+                answer = std::to_string(el["answer"].get_int32().value);
+                break;
+            default:
+                continue;
+        }
+        result.at("sections")[section][question][answer] =
+            doc["count"].get_int32().value;
     }
     return result.dump();
 }
