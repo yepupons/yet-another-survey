@@ -1,7 +1,25 @@
 # Документация yet-another-survey
 
+## Оглавление
+- [Документация yet-another-survey](#документация-yet-another-survey)
+  - [Оглавление](#оглавление)
+  - [Как подтянуть сабмодули?](#как-подтянуть-сабмодули)
+  - [Сборка проекта](#сборка-проекта)
+    - [macOS: проверить/установить Qt6](#macos-проверитьустановить-qt6)
+    - [macOS: установить и запустить mongodb](#macos-установить-и-запустить-mongodb)
+    - [Linux: проверить/установить Qt6](#linux-проверитьустановить-qt6)
+    - [Linux: установить и запустить mongodb](#linux-установить-и-запустить-mongodb)
+    - [Windows: проверить/установить Qt6](#windows-проверитьустановить-qt6)
+    - [Windows: установить и запустить mongodb](#windows-установить-и-запустить-mongodb)
+    - [Билд](#билд)
+    - [Если запустился из корня cmake .](#если-запустился-из-корня-cmake-)
+  - [Что и где запускается?](#что-и-где-запускается)
+    - [Сервер](#сервер)
+    - [Клиент (Qt)](#клиент-qt)
+
 ## Как подтянуть сабмодули?
 Надо один раз запустить код ниже, чтобы их всех подтянуть.
+
 ВАЖНО: далее нужно НЕ запускать cmake . в корне, иначе в сабмодуле повятся изменения и придется отчистить его перед коммитом.
 
 Чтобы подтянуть сабмодули:
@@ -10,12 +28,8 @@ git submodule update --init --recursive
 ```
 
 ## Сборка проекта
-Проект теперь использует Qt6 (Widgets) для клиента, поэтому перед сборкой нужно установить Qt6.
+Проект теперь использует Qt6для клиента, поэтому перед сборкой нужно установить его установить.
 
-Минимальные требования:
-- CMake >= 3.16
-- C++20 компилятор
-- Qt6 (Widgets)
 
 ### macOS: проверить/установить Qt6
 
@@ -59,6 +73,25 @@ sudo pacman -S qt6-base
 sudo dnf install qt6-qtbase-devel
 ```
 
+### Linux: установить и запустить mongodb
+
+Если MongoDB Community Server уже установлен из официального репозитория:
+```bash
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+Для Ubuntu (установка `mongodb-org` из официального репозитория):
+```bash
+sudo apt-get install gnupg curl
+curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
 ### Windows: проверить/установить Qt6
 
 Проверить, установлен ли Qt6 через Chocolatey:
@@ -70,6 +103,11 @@ choco list --local-only | findstr /i qt6
 ```bash
 choco install qt6
 ```
+
+### Windows: установить и запустить mongodb
+
+Установи MongoDB Community Server через MSI и включи опцию установки как Windows Service.
+После установки запусти сервис через Windows Services (Services.msc), нажав Start у MongoDB.
 
 ### Билд
 Собираем билд, все будет лежать в папочке ./build в корне репозитория.
