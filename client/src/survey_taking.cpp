@@ -12,6 +12,7 @@ SurveyTaking::SurveyTaking(int survey_id, QWidget *parent) : QWidget(parent) {
     } catch (const std::exception &e) {
         show_message_box(parent, QMessageBox::Warning, "Error", e.what());
         deleteLater();
+        return;
     }
     answer_data_["data"]["id"] = 67;  // when it will be valid...
     answer_data_["data"]["survey_id"] = survey_id;

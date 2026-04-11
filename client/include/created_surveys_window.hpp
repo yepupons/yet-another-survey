@@ -13,7 +13,8 @@ public:
     explicit CreatedSurveysWindow(QWidget *parent = nullptr);
 
 public slots:
-    void import_statistics(int survey_id);
+    void import_statistics_txt(int survey_id);
+    void import_statistics_jpg(int survey_id);
 };
 }  // namespace survey
 
