@@ -271,7 +271,7 @@ std::string Database::get_result(const std::string &user_result_data) {
             std::string type = question.at("type");
             auto correct_answer = question.at("answer");
             auto user_answer =
-                user_json["sections"].at(section_indx).at(question_indx);
+                user_json["sections"].at(section_indx).at(question_indx).at("answer");
 
             if (type == "single") {
                 // 1 correct, 0 isnt

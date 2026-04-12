@@ -7,6 +7,7 @@
   - [Сборка проекта](#сборка-проекта)
     - [macOS: проверить/установить Qt6](#macos-проверитьустановить-qt6)
     - [macOS: установить и запустить mongodb](#macos-установить-и-запустить-mongodb)
+    - [macos: установить gnuplot](#macos-установить-gnuplot)
     - [Linux: проверить/установить Qt6](#linux-проверитьустановить-qt6)
     - [Linux: установить и запустить mongodb](#linux-установить-и-запустить-mongodb)
     - [Windows: проверить/установить Qt6](#windows-проверитьустановить-qt6)
@@ -48,6 +49,11 @@ brew install qt@6
 brew tap mongodb/brew
 brew install mongodb-community
 brew services start mongodb-community
+```
+
+### macos: установить gnuplot
+```bash
+brew install gnuplot
 ```
 
 ### Linux: проверить/установить Qt6

@@ -66,3 +66,7 @@ _CPack_Packages/
 !/public/.gitkeep
 
 **/.DS_Store
+
+# statistics
+*.txt
+*.jpg

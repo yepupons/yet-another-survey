@@ -26,21 +26,20 @@ find_package(CURL REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
 
-include(FetchContent)
+# Vendored dependencies via git submodule
+set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
+if (EXISTS "${NLOHMANN_JSON_LOCAL_DIR}/CMakeLists.txt")
+    add_subdirectory("${NLOHMANN_JSON_LOCAL_DIR}" third_party/nlohmann_json)
+else()
+    message(FATAL_ERROR "nlohmann_json submodule missing. Run: git submodule update --init --recursive")
+endif()
 
-FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-)
-FetchContent_MakeAvailable(nlohmann_json)
-
-FetchContent_Declare(
-    matplotplusplus
-    GIT_REPOSITORY https://github.com/alandefreitas/matplotplusplus.git
-    GIT_TAG master
-)
-FetchContent_MakeAvailable(matplotplusplus)
+set(MATPLOTPLUSPLUS_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/matplotplusplus")
+if (EXISTS "${MATPLOTPLUSPLUS_LOCAL_DIR}/CMakeLists.txt")
+    add_subdirectory("${MATPLOTPLUSPLUS_LOCAL_DIR}" third_party/matplotplusplus)
+else()
+    message(FATAL_ERROR "matplotplusplus submodule missing. Run: git submodule update --init --recursive")
+endif()
 
 # Drogon Options
 option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
