@@ -23,9 +23,24 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
-find_package(nlohmann_json REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
+    matplotplusplus
+    GIT_REPOSITORY https://github.com/alandefreitas/matplotplusplus.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(matplotplusplus)
 
 # Drogon Options
 option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -53,6 +68,7 @@ add_executable(client
 
     client/src/view_passed_surveys.cpp
     client/src/test_results.cpp
+    client/src/created_surveys_window.cpp
 
     # Because of Qt issues
     client/include/main_window.hpp
@@ -72,6 +88,7 @@ add_executable(client
 
     client/include/view_passed_surveys.hpp
     client/include/test_results.hpp
+    client/include/created_surveys_window.hpp
     
     client/resources/resources.qrc
 )
@@ -84,6 +101,7 @@ target_link_libraries(client PRIVATE
     Qt6::Widgets
     CURL::libcurl
     nlohmann_json::nlohmann_json
+    matplot
 )
 
 # Server

@@ -13,6 +13,7 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "created_surveys_window.hpp"
 #include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
@@ -147,8 +148,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     );
     header_layout->addWidget(change_session_id_button_);
 
-    get_passed_surveys_button_ =
-        new QPushButton("Get your passed surveys", header);
+    get_created_surveys_button_ = new QPushButton("Your surveys", header);
+    get_created_surveys_button_->setObjectName("headerNavButton");
+    get_created_surveys_button_->setSizePolicy(
+        QSizePolicy::Preferred, QSizePolicy::Fixed
+    );
+    header_layout->addWidget(get_created_surveys_button_);
+
+    get_passed_surveys_button_ = new QPushButton("Passed surveys", header);
     get_passed_surveys_button_->setObjectName("headerNavButton");
     get_passed_surveys_button_->setSizePolicy(
         QSizePolicy::Preferred, QSizePolicy::Fixed
@@ -186,6 +193,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(
         change_session_id_button_, &QPushButton::clicked, this,
         &MainWindow::change_session_id
+    );
+    connect(
+        get_created_surveys_button_, &QPushButton::clicked, this,
+        &MainWindow::get_created_surveys
     );
     connect(
         get_passed_surveys_button_, &QPushButton::clicked, this,
@@ -276,6 +287,12 @@ void MainWindow::change_session_id() {
         this, QMessageBox::Information, "Info",
         "Session ID changed to " + QString::number(session().get_id())
     );
+}
+
+void MainWindow::get_created_surveys() {
+    auto *created_surveys = new CreatedSurveysWindow(this);
+    created_surveys->setAttribute(Qt::WA_DeleteOnClose);
+    created_surveys->show();
 }
 
 void MainWindow::get_passed_surveys() {

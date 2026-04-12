@@ -185,6 +185,54 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
+        "/created-surveys",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                int session_id = std::stoi(request->getParameter("session-id"));
+                const auto created_surveys_data =
+                    db.read_created_surveys(session_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(created_surveys_data);
+                cb(resp);
+            } catch (const std::exception &e) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k404NotFound);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
+    app().registerHandler(
+        "/statistics",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                int survey_id = std::stoi(request->getParameter("survey-id"));
+                const auto survey_statistics_data =
+                    db.read_statistics(survey_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(survey_statistics_data);
+                cb(resp);
+            } catch (const std::exception &e) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k404NotFound);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
+    app().registerHandler(
         "/check",
         [&db](
             const HttpRequestPtr &request,

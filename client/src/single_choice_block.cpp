@@ -83,7 +83,7 @@ SingleChoiceBlock::SingleChoiceBlock(
 }
 
 void SingleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
-    answer_data.push_back(options_->checkedId());
+    answer_data.push_back({{"answer", options_->checkedId()}});
 }
 
 std::optional<int> SingleChoiceBlock::next_section() const {

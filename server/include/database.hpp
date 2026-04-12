@@ -26,6 +26,9 @@ public:
     void write_answer(const std::string &answer_data);
 
     std::string read_passed_surveys(int session_id);
+    std::string read_created_surveys(int session_id);
+
+    std::string read_statistics(int survey_id);
     std::string read_survey_results(int session_id, int survey_id);
     std::string get_result(const std::string &user_result_data);
 };
