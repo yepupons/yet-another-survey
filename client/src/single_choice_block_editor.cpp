@@ -66,78 +66,16 @@ void SingleChoiceBlockEditor::add_option() {
     row_layout->addWidget(link_enabling);
     link_enablings_.push_back(link_enabling);
 
-    auto *action_label = new QLabel("Save answer", this);
-    action_label->setObjectName("actionValueLabel");
-    row_layout->addWidget(action_label);
-
     auto *link = new QComboBox(this);
+    link->setModel(sections_list_);
     link->setObjectName("secondaryButton");
-    link->setVisible(false);
+    link->setEnabled(false);
     row_layout->addWidget(link);
     links_.push_back(link);
 
-    auto rebuild_actions = [this, link]() {
-        QSignalBlocker blocker(link);
-        const QVariant current_action = link->currentData();
-
-        link->clear();
-        link->addItem("Save answer", -1);
-        link->insertSeparator(1);
-
-        const QStringList sections = sections_list_->stringList();
-        for (int i = 0; i < sections.size(); ++i) {
-            const QString section_name = sections[i].trimmed();
-            if (section_name.compare("Save answer", Qt::CaseInsensitive) == 0 ||
-                section_name.compare("Save answers", Qt::CaseInsensitive) ==
-                    0) {
-                continue;
-            }
-            link->addItem("Go to section: " + section_name, i);
-        }
-
-        const int current_index = link->findData(current_action);
-        if (current_index >= 0) {
-            link->setCurrentIndex(current_index);
-        } else {
-            link->setCurrentIndex(link->findData(-1));
-        }
-    };
-
-    rebuild_actions();
-    link->setCurrentIndex(link->findData(-1));
-    action_label->setText(link->currentText());
-
-    connect(
-        sections_list_, &QAbstractItemModel::dataChanged, this,
-        [rebuild_actions](const QModelIndex &, const QModelIndex &, const QList<int> &) {
-            rebuild_actions();
-        }
-    );
-    connect(
-        sections_list_, &QAbstractItemModel::rowsInserted, this,
-        [rebuild_actions](const QModelIndex &, int, int) { rebuild_actions(); }
-    );
-    connect(
-        sections_list_, &QAbstractItemModel::rowsRemoved, this,
-        [rebuild_actions](const QModelIndex &, int, int) { rebuild_actions(); }
-    );
-    connect(
-        sections_list_, &QAbstractItemModel::modelReset, this,
-        [rebuild_actions]() { rebuild_actions(); }
-    );
-
-    connect(
-        link_enabling, &QRadioButton::toggled, this,
-        [link, action_label](bool checked) {
-            link->setVisible(checked);
-            action_label->setVisible(!checked);
-        }
-    );
-
-    connect(
-        link, &QComboBox::currentTextChanged, this,
-        [action_label](const QString &text) { action_label->setText(text); }
-    );
+    connect(link_enabling, &QRadioButton::toggled, link, [link](bool checked) {
+        link->setEnabled(checked);
+    });
 
     if (is_test_) {
         auto *correct = new QRadioButton("Correct", this);
@@ -167,7 +105,7 @@ nlohmann::json SingleChoiceBlockEditor::to_json() const {
         if (link_enablings_[i]->isChecked()) {
             nlohmann::json link;
             link["condition"] = i + 1;
-            link["section_id"] = links_[i]->currentData().toInt();
+            link["section_id"] = links_[i]->currentIndex() - 1;
             block["links"].push_back(link);
         }
     }

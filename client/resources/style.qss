@@ -441,3 +441,56 @@ QRadioButton#choiceOption::indicator:checked {
     background-color: #263244;
     image: url(:/icons/check_white.svg);
 }
+
+QInputDialog {
+    background: white;
+}
+
+QInputDialog QLabel {
+    color: #000000;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+QInputDialog QSpinBox {
+    background: #263244;
+    color: #f9fafb;
+    border: 1px solid #374151;
+    border-radius: 10px;
+    padding: 8px 12px;
+    min-height: 42px;
+    font-size: 24px;
+}
+
+QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+
+    width: 34px;
+    height: 38px;
+
+    border-left: 1px solid #2f435c;
+    border-bottom: 1px solid #2f435c;
+    border-top-right-radius: 18px;
+    background: #17283d;
+}
+
+QSpinBox:down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+
+    width: 34px;
+    height: 38px;
+
+    border-left: 1px solid #2f435c;
+    border-bottom-right-radius: 18px;
+    background: #17283d;
+}
+
+QInputDialog QPushButton {
+    min-width: 110px;
+    min-height: 24px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}

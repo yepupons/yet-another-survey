@@ -53,7 +53,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
     current_section_ =
         new SurveyWindow(survey_data_, answer_data_, next_section_id, this);
     current_section_->setAttribute(Qt::WA_DeleteOnClose);
-    current_section_->show();
+    current_section_->showMaximized();
     current_section_->raise();
     current_section_->activateWindow();
     connect(

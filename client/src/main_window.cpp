@@ -246,7 +246,7 @@ void MainWindow::create_survey() {
     }
     auto *builder = new SurveyBuilderWindow(chosen == test);
     builder->setAttribute(Qt::WA_DeleteOnClose);
-    builder->show();
+    builder->showMaximized();
     builder->raise();
     builder->activateWindow();
 }
@@ -274,19 +274,39 @@ void MainWindow::change_session_id() {
         return;
     } else if (chosen == set_session_id_button) {
         bool ok;
-        int new_id = QInputDialog::getInt(
-            this, "Set Session ID", "Enter new session ID:", session().get_id(),
-            1, 2147483647, 1, &ok
+        QString text = QInputDialog::getText(
+            this,
+            "Set Session ID",
+            "Enter new session ID:",
+            QLineEdit::Normal,
+            QString::number(session().get_id()),
+            &ok
         );
-        if (ok) {
-            session().set_id(new_id);
-        }
-    }
 
-    show_message_box(
-        this, QMessageBox::Information, "Info",
-        "Session ID changed to " + QString::number(session().get_id())
-    );
+        if (!ok) {
+            return;
+        }
+
+        bool convert_ok;
+        int new_id = text.trimmed().toInt(&convert_ok);
+        if (!convert_ok || new_id <= 0) {
+            show_message_box(
+                this,
+                QMessageBox::Warning,
+                "Error",
+                "Please enter a valid session id."
+            );
+            return;
+        }
+
+        session().set_id(new_id);
+        show_message_box(
+            this,
+            QMessageBox::Information,
+            "Info",
+            "Session ID changed to " + QString::number(session().get_id())
+        );
+    }
 }
 
 void MainWindow::get_created_surveys() {
@@ -311,6 +331,6 @@ void MainWindow::get_passed_surveys() {
 
     auto *view = new ViewPassedSurveys(survey_ids, this);
     view->setAttribute(Qt::WA_DeleteOnClose);
-    view->show();
+    view->showFullScreen();
 }
 }  // namespace survey

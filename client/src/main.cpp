@@ -16,6 +16,6 @@ int main(int argc, char *argv[]) {
     font.setPointSize(16);
     app.setFont(font);
     survey::MainWindow window;
-    window.show();
+    window.showMaximized();
     return app.exec();
 }
