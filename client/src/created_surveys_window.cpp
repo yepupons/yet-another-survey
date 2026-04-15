@@ -40,16 +40,16 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
             deleteLater();
             return;
         }
-        auto *txt_import_button = new QPushButton("Import to txt", this);
-        row->addWidget(txt_import_button);
-        connect(txt_import_button, &QPushButton::clicked, this, [this, id]() {
-            import_statistics_txt(id);
+        auto *txt_export_button = new QPushButton("Export to txt", this);
+        row->addWidget(txt_export_button);
+        connect(txt_export_button, &QPushButton::clicked, this, [this, id]() {
+            export_statistics_txt(id);
         });
 
-        auto *jpg_import_button = new QPushButton("Import to jpg", this);
-        row->addWidget(jpg_import_button);
-        connect(jpg_import_button, &QPushButton::clicked, this, [this, id]() {
-            import_statistics_jpg(id);
+        auto *jpg_export_button = new QPushButton("Export to jpg", this);
+        row->addWidget(jpg_export_button);
+        connect(jpg_export_button, &QPushButton::clicked, this, [this, id]() {
+            export_statistics_jpg(id);
         });
 
         layout->addLayout(row);
@@ -58,7 +58,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     setLayout(layout);
 }
 
-void CreatedSurveysWindow::import_statistics_txt(int survey_id) {
+void CreatedSurveysWindow::export_statistics_txt(int survey_id) {
     std::ofstream file(std::to_string(survey_id) + ".txt");
     if (!file.is_open()) {
         show_message_box(
@@ -100,7 +100,7 @@ void CreatedSurveysWindow::import_statistics_txt(int survey_id) {
     file.close();
 }
 
-void CreatedSurveysWindow::import_statistics_jpg(int survey_id) {
+void CreatedSurveysWindow::export_statistics_jpg(int survey_id) {
     using namespace matplot;
 
     nlohmann::json survey = ServerInteraction::get_survey(survey_id);

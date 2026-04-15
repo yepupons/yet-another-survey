@@ -17,7 +17,9 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
 )
     : BlockEditor(is_test, parent) {
     auto *layout = new QVBoxLayout();
-    layout->addWidget(new QLabel("Multiple choice", this));
+    auto *title_label = new QLabel("Multiple choice", this);
+    title_label->setObjectName("sectionLabel");
+    layout->addWidget(title_label);
 
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Write your question here");
@@ -73,24 +75,19 @@ void MultipleChoiceBlockEditor::add_option() {
 
     auto *delete_button = new QPushButton(row_widget);
     delete_button->setObjectName("dangerIconButton");
-    delete_button->setToolTip("Delete option");
-    delete_button->setCursor(Qt::PointingHandCursor);
     delete_button->setFixedSize(36, 36);
     row_layout->addWidget(delete_button);
 
     options_layout_->addWidget(row_widget);
 
     connect(delete_button, &QPushButton::clicked, this, [this, row_widget, option, correct_button]() {
-
         options_.erase(
             std::remove(options_.begin(), options_.end(), option),
             options_.end()
         );
-
         if (correct_button) {
             correct_answers_->removeButton(correct_button);
         }
-
         options_layout_->removeWidget(row_widget);
         row_widget->deleteLater();
     });

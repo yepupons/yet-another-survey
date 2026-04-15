@@ -10,7 +10,9 @@ namespace survey {
 TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
     : BlockEditor(is_test, parent) {
     auto *layout = new QVBoxLayout();
-    layout->addWidget(new QLabel("Text", this));
+    auto *title_label = new QLabel("Text", this);
+    title_label->setObjectName("sectionLabel");
+    layout->addWidget(title_label);
 
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Write your question here");

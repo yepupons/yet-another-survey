@@ -95,23 +95,11 @@ void SingleChoiceBlockEditor::add_option() {
 
     auto *delete_button = new QPushButton(row_widget);
     delete_button->setObjectName("dangerIconButton");
-    delete_button->setToolTip("Delete option");
-    delete_button->setCursor(Qt::PointingHandCursor);
     delete_button->setFixedSize(36, 36);
     row_layout->addWidget(delete_button);
 
-    options_layout_->addWidget(row_widget);
-
     connect(delete_button, &QPushButton::clicked, this,
         [this, row_widget, option, link_enabling, link, correct_button]() {
-
-            const auto option_it =
-                std::find(options_.begin(), options_.end(), option);
-            const int removed_index =
-                option_it != options_.end()
-                    ? static_cast<int>(std::distance(options_.begin(), option_it))
-                    : -1;
-
             options_.erase(
                 std::remove(options_.begin(), options_.end(), option),
                 options_.end()
@@ -124,27 +112,15 @@ void SingleChoiceBlockEditor::add_option() {
                 std::remove(links_.begin(), links_.end(), link),
                 links_.end()
             );
-
             if (correct_button) {
                 correct_answers_->removeButton(correct_button);
             }
-
             options_layout_->removeWidget(row_widget);
             row_widget->deleteLater();
-
-            if (removed_index >= 0) {
-                for (auto *link_box : links_) {
-                    const int current_index = link_box->currentIndex();
-                    if (current_index - 1 == removed_index) {
-                        link_box->setCurrentIndex(0);
-                        link_box->setEnabled(false);
-                    } else if (current_index - 1 > removed_index) {
-                        link_box->setCurrentIndex(current_index - 1);
-                    }
-                }
-            }
         }
     );
+
+    options_layout_->addWidget(row_widget);
 }
 
 nlohmann::json SingleChoiceBlockEditor::to_json() const {
