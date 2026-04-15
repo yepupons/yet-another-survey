@@ -12,6 +12,13 @@
 #include "text_block.hpp"
 
 namespace survey {
+nlohmann::json extract_saved_answer(nlohmann::json &saved_answer) {
+    if (saved_answer.is_object() && saved_answer.contains("answer")) {
+        return saved_answer.at("answer");
+    }
+    return saved_answer;
+}
+
 ViewPassedSurveys::ViewPassedSurveys(
     QWidget *parent
 ) : QDialog(parent) {
@@ -119,7 +126,9 @@ ViewSurveyResults::ViewSurveyResults(
                     section_index < answers_sections.size()) {
                     auto &answers = answers_sections.at(section_index);
                     if (answers.is_array() && question_index < answers.size()) {
-                        block->set_answer(answers.at(question_index));
+                        block->set_answer(extract_saved_answer(
+                            answers.at(question_index)
+                        ));
                     }
                 }
                 block->set_read_only(true);
