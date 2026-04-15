@@ -4,6 +4,7 @@
         "creator_id": 1488,
         "type": "survey"
     },
+    "title": "Example survey",
     "sections": [
         {
             "title": "First section",

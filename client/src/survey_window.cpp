@@ -1,5 +1,7 @@
 #include "survey_window.hpp"
 #include <curl/curl.h>
+#include <qlabel.h>
+#include <qobject.h>
 #include <QList>
 #include <QMessageBox>
 #include <QPushButton>
@@ -32,7 +34,7 @@ SurveyWindow::SurveyWindow(
       section_data_(survey_data.at("sections").at(section_id)),
       answer_data_(answer_data.at("sections").at(section_id)) {
     setWindowTitle(
-        QString::fromStdString(section_data_.at("title").get<std::string>())
+        QString::fromStdString("[" + survey_data.at("title").get<std::string>() + "] " + section_data_.at("title").get<std::string>())
     );
 
     auto *central = new QWidget(this);
@@ -42,6 +44,28 @@ SurveyWindow::SurveyWindow(
     central_layout->setAlignment(Qt::AlignTop);
     central_layout->setContentsMargins(24, 24, 24, 24);
     central_layout->setSpacing(16);
+
+    auto *title = new QWidget(this);
+    title->setObjectName("questionCard");
+    title->setFixedWidth(720);
+    title->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Preferred
+    );
+
+    auto *title_layout = new QVBoxLayout(title);
+    title_layout->setAlignment(Qt::AlignTop);
+    title_layout->setContentsMargins(24, 24, 24, 24);
+    title_layout->setSpacing(16);
+
+    auto *survey_title_label = new QLabel(QString::fromStdString(survey_data.at("title").get<std::string>()), title);
+    survey_title_label->setObjectName("titleLabel");
+    title_layout->addWidget(survey_title_label);
+
+    auto *section_title_label = new QLabel(QString::fromStdString(section_data_.at("title").get<std::string>()), title);
+    section_title_label->setObjectName("subtitleLabel");
+    title_layout->addWidget(section_title_label);
+
+    central_layout->addWidget(title, 0, Qt::AlignHCenter);
 
     auto *scroll_area = new QScrollArea(central);
     scroll_area->setFrameShape(QFrame::NoFrame);

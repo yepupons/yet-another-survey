@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <exception>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -31,8 +32,14 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
     for (int id : surveys_ids) {
         auto *row = new QHBoxLayout();
-        row->addWidget(new QLabel(QString::number(id), this));
-
+        try {
+            auto title = ServerInteraction::get_survey(id).at("title").get<std::string>();
+            row->addWidget(new QLabel(QString::fromStdString(title), this));
+        } catch (const std::exception &e) {
+            show_message_box(this, QMessageBox::Warning, "Error", e.what());
+            deleteLater();
+            return;
+        }
         auto *txt_import_button = new QPushButton("Import to txt", this);
         row->addWidget(txt_import_button);
         connect(txt_import_button, &QPushButton::clicked, this, [this, id]() {
@@ -61,6 +68,7 @@ void CreatedSurveysWindow::import_statistics_txt(int survey_id) {
     }
     nlohmann::json survey = ServerInteraction::get_survey(survey_id);
     nlohmann::json stats = ServerInteraction::get_survey_statistics(survey_id);
+    file << "Survey: \"" << survey["title"] << "\"\n\n";
     file << "Total number of answers: " << stats["total_answers"] << "\n\n";
     file << "Statistic by sections:\n\n";
     for (int i = 0; i < survey["sections"].size(); ++i) {

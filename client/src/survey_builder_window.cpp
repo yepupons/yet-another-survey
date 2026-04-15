@@ -1,5 +1,6 @@
 #include "survey_builder_window.hpp"
 #include <qglobal.h>
+#include <qlineedit.h>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMainWindow>
@@ -25,9 +26,13 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
         is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)"
     );
 
-    auto *title = new QLabel("Survey Builder", central);
-    title->setObjectName("titleLabel");
-    central_layout->addWidget(title);
+    auto *title_label = new QLabel("Survey Builder", central);
+    title_label->setObjectName("titleLabel");
+    central_layout->addWidget(title_label);
+
+    title_ = new QLineEdit(this);
+    title_->setPlaceholderText("Write survey title here");
+    central_layout->addWidget(title_);
 
     auto *scroll_area = new QScrollArea(central);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -92,6 +97,7 @@ nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     survey["data"]["id"] = id;
     survey["data"]["creator_id"] = session().get_id();
     survey["data"]["type"] = is_test_ ? "test" : "survey";
+    survey["title"] = title_->text().trimmed().toStdString();
     survey["sections"] = nlohmann::json::array();
     for (auto *section : sections_) {
         survey["sections"].push_back(section->to_json());

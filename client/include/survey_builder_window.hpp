@@ -1,5 +1,6 @@
 #ifndef SURVEY_BUILDER_WINDOW_HPP_
 #define SURVEY_BUILDER_WINDOW_HPP_
+#include <QLineEdit>
 #include <qtmetamacros.h>
 #include <QList>
 #include <QMainWindow>
@@ -25,6 +26,7 @@ private:
 
     QWidget *content_ = nullptr;
 
+    QLineEdit *title_ = nullptr;
     QList<SectionEditor *> sections_;
     QVBoxLayout *sections_layout_ = nullptr;
     QStringListModel *sections_list_ = nullptr;

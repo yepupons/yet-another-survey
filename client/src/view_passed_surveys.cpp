@@ -3,6 +3,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include "pretty_view.hpp"
 #include <nlohmann/json.hpp>
 #include "multiple_choice_block.hpp"
 #include "server_interaction.hpp"
@@ -12,24 +13,39 @@
 
 namespace survey {
 ViewPassedSurveys::ViewPassedSurveys(
-    const QStringList &survey_ids,
     QWidget *parent
-)
-    : QDialog(parent) {
+) : QDialog(parent) {
     setWindowTitle("Passed surveys");
 
     auto *layout = new QVBoxLayout(this);
-    if (survey_ids.isEmpty()) {
+    nlohmann::json surveys_ids;
+    try {
+        surveys_ids =
+            ServerInteraction::get_passed_surveys(session().get_id());
+    } catch (const std::exception &e) {
+        show_message_box(this, QMessageBox::Warning, "Error", e.what());
+        deleteLater();
+        return;
+    }
+    if (surveys_ids.empty()) {
         layout->addWidget(new QLabel("No passed surveys yet.", this));
         setLayout(layout);
         return;
     }
 
-    for (const auto &id : survey_ids) {
-        auto *button = new QPushButton(id, this);
+    for (int id : surveys_ids) {
+        QPushButton *button = nullptr;
+        try {
+            auto title = ServerInteraction::get_survey(id).at("title").get<std::string>();
+            button = new QPushButton(QString::fromStdString(title), this);
+        } catch (const std::exception &e) {
+            show_message_box(this, QMessageBox::Warning, "Error", e.what());
+            deleteLater();
+            return;
+        }
         layout->addWidget(button);
         connect(button, &QPushButton::clicked, this, [this, id]() {
-            int survey_id = id.toInt();
+            int survey_id = id;
             int session_id = session().get_id();
             auto *dialog = new ViewSurveyResults(survey_id, session_id, this);
             dialog->exec();

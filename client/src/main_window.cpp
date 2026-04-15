@@ -316,20 +316,7 @@ void MainWindow::get_created_surveys() {
 }
 
 void MainWindow::get_passed_surveys() {
-    nlohmann::json passed_ids;
-    try {
-        passed_ids = ServerInteraction::get_passed_surveys(session().get_id());
-    } catch (const std::exception &e) {
-        show_message_box(this, QMessageBox::Warning, "Error", e.what());
-        return;
-    }
-
-    QStringList survey_ids;
-    for (const auto &id : passed_ids) {
-        survey_ids.append(QString::number(id.get<int>()));
-    }
-
-    auto *view = new ViewPassedSurveys(survey_ids, this);
+    auto *view = new ViewPassedSurveys(this);
     view->setAttribute(Qt::WA_DeleteOnClose);
     view->showFullScreen();
 }

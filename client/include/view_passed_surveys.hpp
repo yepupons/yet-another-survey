@@ -2,7 +2,6 @@
 
 #include <QDialog>
 #include <QObject>
-#include <QStringList>
 
 namespace survey {
 class ViewPassedSurveys : public QDialog {
@@ -10,7 +9,6 @@ class ViewPassedSurveys : public QDialog {
 
 public:
     explicit ViewPassedSurveys(
-        const QStringList &survey_ids,
         QWidget *parent = nullptr
     );
 };
