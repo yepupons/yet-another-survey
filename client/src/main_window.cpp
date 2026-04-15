@@ -1,4 +1,12 @@
 #include "main_window.hpp"
+#include "created_surveys_window.hpp"
+#include "pretty_view.hpp"
+#include "server_interaction.hpp"
+#include "session.hpp"
+#include "survey_builder_window.hpp"
+#include "survey_taking.hpp"
+#include "survey_window.hpp"
+#include "view_passed_surveys.hpp"
 #include <curl/curl.h>
 #include <QAction>
 #include <QGridLayout>
@@ -13,14 +21,6 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
-#include "created_surveys_window.hpp"
-#include "pretty_view.hpp"
-#include "server_interaction.hpp"
-#include "session.hpp"
-#include "survey_builder_window.hpp"
-#include "survey_taking.hpp"
-#include "survey_window.hpp"
-#include "view_passed_surveys.hpp"
 
 namespace survey {
 
@@ -312,12 +312,12 @@ void MainWindow::change_session_id() {
 void MainWindow::get_created_surveys() {
     auto *created_surveys = new CreatedSurveysWindow(this);
     created_surveys->setAttribute(Qt::WA_DeleteOnClose);
-    created_surveys->show();
+    created_surveys->showMaximized();
 }
 
 void MainWindow::get_passed_surveys() {
     auto *view = new ViewPassedSurveys(this);
     view->setAttribute(Qt::WA_DeleteOnClose);
-    view->showFullScreen();
+    view->showMaximized();
 }
 }  // namespace survey

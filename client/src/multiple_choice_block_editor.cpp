@@ -1,7 +1,13 @@
 #include "multiple_choice_block_editor.hpp"
+#include "pretty_view.hpp"
+#include <QAbstractButton>
+#include <QCheckBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
-#include <QRadioButton>
+#include <QPushButton>
+#include <QWidget>
+#include <algorithm>
 #include <vector>
 
 namespace survey {
@@ -24,6 +30,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     }
 
     options_layout_ = new QVBoxLayout();
+    options_layout_->setSpacing(10);
     layout->addLayout(options_layout_);
 
     add_option();
@@ -45,22 +52,48 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
 }
 
 void MultipleChoiceBlockEditor::add_option() {
-    auto *row_layout = new QHBoxLayout();
+    auto *row_widget = new QWidget(this);
+    auto *row_layout = new QHBoxLayout(row_widget);
+    row_layout->setContentsMargins(0, 0, 0, 0);
+    row_layout->setSpacing(8);
 
-    auto *option = new QLineEdit(this);
+    auto *option = new QLineEdit(row_widget);
     option->setPlaceholderText("Write option text here");
     row_layout->addWidget(option);
     options_.push_back(option);
 
+    QAbstractButton *correct_button = nullptr;
     if (is_test_) {
-        auto *correct = new QRadioButton("Correct", this);
+        auto *correct = new QCheckBox("Correct", row_widget);
+        correct->setObjectName("correctOptionToggle");
         row_layout->addWidget(correct);
-        correct_answers_->addButton(
-            correct, correct_answers_->buttons().size()
-        );
+        correct_answers_->addButton(correct);
+        correct_button = correct;
     }
 
-    options_layout_->addLayout(row_layout);
+    auto *delete_button = new QPushButton(row_widget);
+    delete_button->setObjectName("dangerIconButton");
+    delete_button->setToolTip("Delete option");
+    delete_button->setCursor(Qt::PointingHandCursor);
+    delete_button->setFixedSize(36, 36);
+    row_layout->addWidget(delete_button);
+
+    options_layout_->addWidget(row_widget);
+
+    connect(delete_button, &QPushButton::clicked, this, [this, row_widget, option, correct_button]() {
+
+        options_.erase(
+            std::remove(options_.begin(), options_.end(), option),
+            options_.end()
+        );
+
+        if (correct_button) {
+            correct_answers_->removeButton(correct_button);
+        }
+
+        options_layout_->removeWidget(row_widget);
+        row_widget->deleteLater();
+    });
 }
 
 nlohmann::json MultipleChoiceBlockEditor::to_json() const {
@@ -78,9 +111,16 @@ nlohmann::json MultipleChoiceBlockEditor::to_json() const {
 
     if (is_test_) {
         std::vector<int> answers;
-        for (const auto answer : correct_answers_->buttons()) {
-            if (answer->isChecked()) {
-                answers.push_back(correct_answers_->id(answer) + 1);
+        for (int i = 0; i < options_layout_->count(); ++i) {
+            auto *item = options_layout_->itemAt(i);
+            if (!item || !item->widget()) {
+                continue;
+            }
+
+            auto *answer =
+                item->widget()->findChild<QAbstractButton *>("correctOptionToggle");
+            if (answer && answer->isChecked()) {
+                answers.push_back(i + 1);
             }
         }
         block["answer"] = answers;

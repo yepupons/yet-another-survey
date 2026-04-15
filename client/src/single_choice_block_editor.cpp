@@ -1,11 +1,15 @@
 #include "single_choice_block_editor.hpp"
-#include <qradiobutton.h>
+#include "pretty_view.hpp"
+#include <QAbstractButton>
 #include <QButtonGroup>
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QRadioButton>
-#include <QSignalBlocker>
+#include <QWidget>
+#include <algorithm>
 
 namespace survey {
 SingleChoiceBlockEditor::SingleChoiceBlockEditor(
@@ -53,9 +57,12 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
 }
 
 void SingleChoiceBlockEditor::add_option() {
-    auto *row_layout = new QHBoxLayout();
+    auto *row_widget = new QWidget(this);
+    auto *row_layout = new QHBoxLayout(row_widget);
+    row_layout->setContentsMargins(0, 0, 0, 0);
+    row_layout->setSpacing(8);
 
-    auto *option = new QLineEdit(this);
+    auto *option = new QLineEdit(row_widget);
     option->setPlaceholderText("Write option text here");
     row_layout->addWidget(option);
     options_.push_back(option);
@@ -66,7 +73,7 @@ void SingleChoiceBlockEditor::add_option() {
     row_layout->addWidget(link_enabling);
     link_enablings_.push_back(link_enabling);
 
-    auto *link = new QComboBox(this);
+    auto *link = new QComboBox(row_widget);
     link->setModel(sections_list_);
     link->setObjectName("secondaryButton");
     link->setEnabled(false);
@@ -77,16 +84,67 @@ void SingleChoiceBlockEditor::add_option() {
         link->setEnabled(checked);
     });
 
+    QAbstractButton *correct_button = nullptr;
     if (is_test_) {
-        auto *correct = new QRadioButton("Correct", this);
+        auto *correct = new QRadioButton("Correct", row_widget);
         correct->setObjectName("sectionLabel");
         row_layout->addWidget(correct);
-        correct_answers_->addButton(
-            correct, correct_answers_->buttons().size()
-        );
+        correct_answers_->addButton(correct);
+        correct_button = correct;
     }
 
-    options_layout_->addLayout(row_layout);
+    auto *delete_button = new QPushButton(row_widget);
+    delete_button->setObjectName("dangerIconButton");
+    delete_button->setToolTip("Delete option");
+    delete_button->setCursor(Qt::PointingHandCursor);
+    delete_button->setFixedSize(36, 36);
+    row_layout->addWidget(delete_button);
+
+    options_layout_->addWidget(row_widget);
+
+    connect(delete_button, &QPushButton::clicked, this,
+        [this, row_widget, option, link_enabling, link, correct_button]() {
+
+            const auto option_it =
+                std::find(options_.begin(), options_.end(), option);
+            const int removed_index =
+                option_it != options_.end()
+                    ? static_cast<int>(std::distance(options_.begin(), option_it))
+                    : -1;
+
+            options_.erase(
+                std::remove(options_.begin(), options_.end(), option),
+                options_.end()
+            );
+            link_enablings_.erase(
+                std::remove(link_enablings_.begin(), link_enablings_.end(), link_enabling),
+                link_enablings_.end()
+            );
+            links_.erase(
+                std::remove(links_.begin(), links_.end(), link),
+                links_.end()
+            );
+
+            if (correct_button) {
+                correct_answers_->removeButton(correct_button);
+            }
+
+            options_layout_->removeWidget(row_widget);
+            row_widget->deleteLater();
+
+            if (removed_index >= 0) {
+                for (auto *link_box : links_) {
+                    const int current_index = link_box->currentIndex();
+                    if (current_index - 1 == removed_index) {
+                        link_box->setCurrentIndex(0);
+                        link_box->setEnabled(false);
+                    } else if (current_index - 1 > removed_index) {
+                        link_box->setCurrentIndex(current_index - 1);
+                    }
+                }
+            }
+        }
+    );
 }
 
 nlohmann::json SingleChoiceBlockEditor::to_json() const {
@@ -113,7 +171,20 @@ nlohmann::json SingleChoiceBlockEditor::to_json() const {
     block["required"] = required_->isChecked();
 
     if (is_test_) {
-        block["answer"] = correct_answers_->checkedId() + 1;
+        int answer_index = 0;
+        for (int i = 0; i < options_layout_->count(); ++i) {
+            auto *item = options_layout_->itemAt(i);
+            if (!item || !item->widget()) {
+                continue;
+            }
+
+            auto *answer = item->widget()->findChild<QRadioButton *>();
+            if (answer && answer->text() == "Correct" && answer->isChecked()) {
+                answer_index = i + 1;
+                break;
+            }
+        }
+        block["answer"] = answer_index;
     }
 
     return block;
