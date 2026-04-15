@@ -1,5 +1,6 @@
 #include "view_passed_surveys.hpp"
 #include <QLabel>
+#include <QHBoxLayout>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -22,9 +23,44 @@ nlohmann::json extract_saved_answer(nlohmann::json &saved_answer) {
 ViewPassedSurveys::ViewPassedSurveys(
     QWidget *parent
 ) : QDialog(parent) {
-    setWindowTitle("Passed surveys");
-
     auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    auto *scroll_area = new QScrollArea(this);
+    scroll_area->setFrameShape(QFrame::NoFrame);
+    scroll_area->setWidgetResizable(true);
+
+    auto *content = new QWidget(scroll_area);
+    content->setObjectName("centralWidget");
+    auto *content_layout = new QVBoxLayout(content);
+    content_layout->setAlignment(Qt::AlignTop);
+    content_layout->setContentsMargins(0, 24, 0, 0);
+    content_layout->setSpacing(16);
+
+    auto *title_card = new QWidget(content);
+    title_card->setObjectName("questionCard");
+    title_card->setFixedWidth(720);
+    title_card->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Preferred
+    );
+
+    auto *title_layout = new QVBoxLayout(title_card);
+    title_layout->setAlignment(Qt::AlignTop);
+    title_layout->setContentsMargins(24, 24, 24, 24);
+    title_layout->setSpacing(8);
+
+    auto *title_label = new QLabel("Passed surveys", title_card);
+    title_label->setObjectName("titleLabel");
+    title_layout->addWidget(title_label);
+
+    auto *subtitle_label = new QLabel(
+        "Select a survey to view your answers.", title_card
+    );
+    subtitle_label->setObjectName("subtitleLabel");
+    title_layout->addWidget(subtitle_label);
+
+    content_layout->addWidget(title_card, 0, Qt::AlignHCenter);
+
     nlohmann::json surveys_ids;
     try {
         surveys_ids =
@@ -35,22 +71,62 @@ ViewPassedSurveys::ViewPassedSurveys(
         return;
     }
     if (surveys_ids.empty()) {
-        layout->addWidget(new QLabel("No passed surveys yet.", this));
+        auto *surveys_card = new QWidget(content);
+        surveys_card->setObjectName("questionCard");
+        surveys_card->setFixedWidth(720);
+        surveys_card->setSizePolicy(
+            QSizePolicy::Expanding, QSizePolicy::Preferred
+        );
+
+        auto *surveys_layout = new QVBoxLayout(surveys_card);
+        surveys_layout->setContentsMargins(24, 24, 24, 24);
+        surveys_layout->setSpacing(12);
+
+        auto *empty_label = new QLabel("No passed surveys yet.", surveys_card);
+        empty_label->setObjectName("subtitleLabel");
+        surveys_layout->addWidget(empty_label);
+
+        content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
+        content_layout->addStretch();
+        scroll_area->setWidget(content);
+        layout->addWidget(scroll_area);
         setLayout(layout);
         return;
     }
 
+    auto *surveys_card = new QWidget(content);
+    surveys_card->setObjectName("questionCard");
+    surveys_card->setFixedWidth(720);
+    surveys_card->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Preferred
+    );
+
+    auto *surveys_layout = new QVBoxLayout(surveys_card);
+    surveys_layout->setContentsMargins(24, 24, 24, 24);
+    surveys_layout->setSpacing(12);
+
     for (int id : surveys_ids) {
+        auto *row_widget = new QWidget(surveys_card);
+        auto *row_layout = new QHBoxLayout(row_widget);
+        row_layout->setContentsMargins(0, 0, 0, 0);
+        row_layout->setSpacing(12);
+
         QPushButton *button = nullptr;
         try {
-            auto title = ServerInteraction::get_survey(id).at("title").get<std::string>();
-            button = new QPushButton(QString::fromStdString(title), this);
+            auto title =
+                ServerInteraction::get_survey(id).at("title").get<std::string>();
+            button = new QPushButton(QString::fromStdString(title), row_widget);
         } catch (const std::exception &e) {
             show_message_box(this, QMessageBox::Warning, "Error", e.what());
             deleteLater();
             return;
         }
-        layout->addWidget(button);
+
+        button->setObjectName("primaryButton");
+        button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        row_layout->addWidget(button);
+        surveys_layout->addWidget(row_widget);
+
         connect(button, &QPushButton::clicked, this, [this, id]() {
             int survey_id = id;
             int session_id = session().get_id();
@@ -59,6 +135,10 @@ ViewPassedSurveys::ViewPassedSurveys(
         });
     }
 
+    content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
+    content_layout->addStretch();
+    scroll_area->setWidget(content);
+    layout->addWidget(scroll_area);
     setLayout(layout);
 }
 

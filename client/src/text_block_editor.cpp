@@ -9,17 +9,38 @@
 namespace survey {
 TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
     : BlockEditor(is_test, parent) {
-    auto *layout = new QVBoxLayout();
+        auto *layout = new QVBoxLayout();
+
+    auto *header_layout = new QHBoxLayout();
     auto *title_label = new QLabel("Text", this);
     title_label->setObjectName("sectionLabel");
-    layout->addWidget(title_label);
+
+    auto *delete_label = new QLabel("Delete", this);
+    delete_label->setObjectName("sectionLabel");
+
+    auto *delete_block_button = new QPushButton(this);
+    delete_block_button->setObjectName("dangerIconButton");
+    delete_block_button->setFixedSize(36, 36);
+
+    header_layout->addWidget(title_label);
+    header_layout->addStretch();
+    header_layout->addWidget(delete_label);
+    header_layout->addWidget(delete_block_button);
+
+    layout->addLayout(header_layout);
+
+    connect(delete_block_button, &QPushButton::clicked, this, [this]() {
+        emit remove_requested(this);
+    });
 
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Write your question here");
     layout->addWidget(question_);
 
     if (is_test_) {
-        layout->addWidget(new QLabel("Correct answers", this));
+        auto *correct_label = new QLabel("Correct answer(s)", this);
+        correct_label->setObjectName("sectionLabel");
+        layout->addWidget(correct_label);
 
         correct_answers_layout_ = new QVBoxLayout();
         layout->addLayout(correct_answers_layout_);
@@ -44,9 +65,36 @@ TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
 }
 
 void TextBlockEditor::add_correct_answer() {
-    correct_answers_.push_back(new QLineEdit(this));
-    correct_answers_.back()->setPlaceholderText("Write correct answer here");
-    correct_answers_layout_->addWidget(correct_answers_.back());
+    auto *row_widget = new QWidget(this);
+    auto *row_layout = new QHBoxLayout(row_widget);
+    row_layout->setContentsMargins(0, 0, 0, 0);
+    row_layout->setSpacing(8);
+
+    auto answer_edit_ = new QLineEdit(row_widget);
+    answer_edit_->setPlaceholderText("Write correct answer here");
+    row_layout->addWidget(answer_edit_);
+
+    auto *delete_button = new QPushButton(row_widget);
+    delete_button->setObjectName("dangerIconButton");
+    delete_button->setFixedSize(36, 36);
+    row_layout->addWidget(delete_button);
+
+    correct_answers_.push_back(answer_edit_);
+    correct_answers_layout_->addWidget(row_widget);
+
+    connect(delete_button, &QPushButton::clicked, this, [this, row_widget, answer_edit_]() {
+        if (correct_answers_.size() <= 1) {
+            return;
+        }
+
+        correct_answers_.erase(
+            std::remove(correct_answers_.begin(), correct_answers_.end(), answer_edit_),
+            correct_answers_.end()
+        );
+
+        correct_answers_layout_->removeWidget(row_widget);
+        row_widget->deleteLater();
+    });
 }
 
 nlohmann::json TextBlockEditor::to_json() const {

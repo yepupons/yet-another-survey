@@ -1,6 +1,7 @@
 #include "created_surveys_window.hpp"
 #include <matplot/matplot.h>
 #include <QHBoxLayout>
+#include <QScrollArea>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -14,7 +15,46 @@
 
 namespace survey {
 CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
-    auto *layout = new QVBoxLayout();
+    auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    auto *scroll_area = new QScrollArea(this);
+    scroll_area->setFrameShape(QFrame::NoFrame);
+    scroll_area->setWidgetResizable(true);
+
+    auto *content = new QWidget(scroll_area);
+    content->setObjectName("centralWidget");
+
+    auto *content_layout = new QVBoxLayout(content);
+    content_layout->setAlignment(Qt::AlignTop);
+    content_layout->setContentsMargins(0, 24, 0, 0);
+    content_layout->setSpacing(16);
+
+    auto *title_card = new QWidget(content);
+    title_card->setObjectName("questionCard");
+    title_card->setFixedWidth(720);
+    title_card->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Preferred
+    );
+
+    auto *title_layout = new QVBoxLayout(title_card);
+    title_layout->setAlignment(Qt::AlignTop);
+    title_layout->setContentsMargins(24, 24, 24, 24);
+    title_layout->setSpacing(8);
+
+    auto *title_label = new QLabel("Created surveys", title_card);
+    title_label->setObjectName("titleLabel");
+    title_layout->addWidget(title_label);
+
+    auto *subtitle_label = new QLabel(
+        "Export survey statistics to txt or jpg.", title_card
+    );
+    subtitle_label->setObjectName("subtitleLabel");
+    title_layout->addWidget(subtitle_label);
+
+    content_layout->addWidget(title_card, 0, Qt::AlignHCenter);
+
     nlohmann::json surveys_ids;
     try {
         surveys_ids =
@@ -24,37 +64,71 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
         deleteLater();
         return;
     }
+
+    auto *surveys_card = new QWidget(content);
+    surveys_card->setObjectName("questionCard");
+    surveys_card->setFixedWidth(720);
+    surveys_card->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Preferred
+    );
+
+    auto *surveys_layout = new QVBoxLayout(surveys_card);
+    surveys_layout->setContentsMargins(24, 24, 24, 24);
+    surveys_layout->setSpacing(12);
+
     if (surveys_ids.empty()) {
-        layout->addWidget(new QLabel("No created surveys yet.", this));
+        auto *empty_label = new QLabel("No created surveys yet.", surveys_card);
+        empty_label->setObjectName("subtitleLabel");
+        surveys_layout->addWidget(empty_label);
+        content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
+        content_layout->addStretch();
+        scroll_area->setWidget(content);
+        layout->addWidget(scroll_area);
         setLayout(layout);
         return;
     }
 
     for (int id : surveys_ids) {
-        auto *row = new QHBoxLayout();
+        auto *row_widget = new QWidget(surveys_card);
+        auto *row_layout = new QHBoxLayout(row_widget);
+        row_layout->setContentsMargins(0, 0, 0, 0);
+        row_layout->setSpacing(12);
+
+        auto *survey_title = new QLabel(row_widget);
+        survey_title->setObjectName("sectionLabel");
+        survey_title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         try {
-            auto title = ServerInteraction::get_survey(id).at("title").get<std::string>();
-            row->addWidget(new QLabel(QString::fromStdString(title), this));
+            auto title =
+                ServerInteraction::get_survey(id).at("title").get<std::string>();
+            survey_title->setText(QString::fromStdString(title));
         } catch (const std::exception &e) {
             show_message_box(this, QMessageBox::Warning, "Error", e.what());
             deleteLater();
             return;
         }
-        auto *txt_export_button = new QPushButton("Export to txt", this);
-        row->addWidget(txt_export_button);
+        row_layout->addWidget(survey_title);
+
+        auto *txt_export_button = new QPushButton("Export to txt", row_widget);
+        txt_export_button->setObjectName("primaryButton");
+        row_layout->addWidget(txt_export_button);
         connect(txt_export_button, &QPushButton::clicked, this, [this, id]() {
             export_statistics_txt(id);
         });
 
-        auto *jpg_export_button = new QPushButton("Export to jpg", this);
-        row->addWidget(jpg_export_button);
+        auto *jpg_export_button = new QPushButton("Export to jpg", row_widget);
+        jpg_export_button->setObjectName("primaryButton");
+        row_layout->addWidget(jpg_export_button);
         connect(jpg_export_button, &QPushButton::clicked, this, [this, id]() {
             export_statistics_jpg(id);
         });
 
-        layout->addLayout(row);
+        surveys_layout->addWidget(row_widget);
     }
 
+    content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
+    content_layout->addStretch();
+    scroll_area->setWidget(content);
+    layout->addWidget(scroll_area);
     setLayout(layout);
 }
 

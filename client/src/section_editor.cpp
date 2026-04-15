@@ -63,16 +63,27 @@ void SectionEditor::add_block() {
     if (!chosen) {
         return;
     }
+
+    BlockEditor *block = nullptr;
     if (chosen == single) {
-        questions_.push_back(
-            new SingleChoiceBlockEditor(is_test_, sections_list_, this)
-        );
+        block = new SingleChoiceBlockEditor(is_test_, sections_list_, this);
     } else if (chosen == multiple) {
-        questions_.push_back(new MultipleChoiceBlockEditor(is_test_, this));
+        block = new MultipleChoiceBlockEditor(is_test_, this);
     } else if (chosen == text) {
-        questions_.push_back(new TextBlockEditor(is_test_, this));
+        block = new TextBlockEditor(is_test_, this);
     }
+    
+    questions_.push_back(block);
     questions_layout_->addWidget(questions_.back());
+
+    connect(block, &BlockEditor::remove_requested, this, [this, block]() {
+    questions_.erase(
+        std::remove(questions_.begin(), questions_.end(), block),
+        questions_.end()
+    );
+    questions_layout_->removeWidget(block);
+    block->deleteLater();
+});
 }
 
 nlohmann::json SectionEditor::to_json() const {

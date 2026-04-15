@@ -19,9 +19,28 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
 )
     : BlockEditor(is_test, parent), sections_list_(sections_list) {
     auto *layout = new QVBoxLayout();
+
+    auto *header_layout = new QHBoxLayout();
     auto *title_label = new QLabel("Single choice", this);
     title_label->setObjectName("sectionLabel");
-    layout->addWidget(title_label);
+
+    auto *delete_label = new QLabel("Delete", this);
+    delete_label->setObjectName("sectionLabel");
+
+    auto *delete_block_button = new QPushButton(this);
+    delete_block_button->setObjectName("dangerIconButton");
+    delete_block_button->setFixedSize(36, 36);
+
+    header_layout->addWidget(title_label);
+    header_layout->addStretch();
+    header_layout->addWidget(delete_label);
+    header_layout->addWidget(delete_block_button);
+
+    layout->addLayout(header_layout);
+
+    connect(delete_block_button, &QPushButton::clicked, this, [this]() {
+        emit remove_requested(this);
+    });
 
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Write your question here");
@@ -100,6 +119,10 @@ void SingleChoiceBlockEditor::add_option() {
 
     connect(delete_button, &QPushButton::clicked, this,
         [this, row_widget, option, link_enabling, link, correct_button]() {
+            if (options_.size() <= 1) {
+                return;
+            }
+
             options_.erase(
                 std::remove(options_.begin(), options_.end(), option),
                 options_.end()
