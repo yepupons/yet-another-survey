@@ -1,5 +1,4 @@
 #include "multiple_choice_block_editor.hpp"
-#include "pretty_view.hpp"
 #include <QAbstractButton>
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -8,6 +7,8 @@
 #include <QPushButton>
 #include <QWidget>
 #include <algorithm>
+#include <QFileDialog>
+#include "server_interaction.hpp"
 #include <vector>
 
 namespace survey {
@@ -43,6 +44,17 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Write your question here");
     layout->addWidget(question_);
+
+    upload_image_button_ = new QPushButton("Upload Image", this);
+    layout->addWidget(upload_image_button_);
+
+    connect(
+        upload_image_button_, &QPushButton::clicked, this,
+        &MultipleChoiceBlockEditor::upload_image
+    );
+    
+    image_preview_ = new QLabel(this);
+    layout->addWidget(image_preview_);
 
     if (is_test_) {
         auto *correct_label = new QLabel("Mark the correct answer(s)", this);
@@ -121,6 +133,9 @@ nlohmann::json MultipleChoiceBlockEditor::to_json() const {
     nlohmann::json block;
     block["type"] = "multiple";
     block["text"] = question_->text().trimmed().toStdString();
+    if (!image_path_.isEmpty()) {
+        block["image"] = ServerInteraction::post_image(image_path_.toStdString());
+    }
     block["options"] = nlohmann::json::array();
 
     for (auto *option : options_) {

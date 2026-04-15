@@ -320,4 +320,26 @@ std::string Database::get_result(const std::string &user_result_data) {
     out["data"]["correct_answers"] = correct_answers;
     return out.dump();
 }
+
+std::string Database::write_image(const drogon::HttpFile &file) {
+    auto upload_stream = bucket().open_upload_stream(file.getFileName());
+    auto data = file.fileContent();
+    upload_stream.write(
+        reinterpret_cast<const uint8_t *>(data.data()), 
+        data.size()
+    );
+    auto result = upload_stream.close();
+    return result.id().get_oid().value.to_string();
+}
+
+std::string Database::read_image(const std::string &image_oid) {
+    bsoncxx::types::b_oid oid{bsoncxx::oid(image_oid)};
+    auto download_stream = bucket().open_download_stream(bsoncxx::types::bson_value::view(oid));
+
+    std::string data;
+    data.resize(download_stream.file_length());
+    download_stream.read(reinterpret_cast<uint8_t*>(&data[0]), download_stream.file_length());
+
+    return data;
+}
 }  // namespace survey

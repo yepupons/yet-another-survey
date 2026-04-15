@@ -3,6 +3,7 @@
 
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
+#include <string>
 
 namespace survey {
 class ServerInteraction {
@@ -28,6 +29,8 @@ public:
     static nlohmann::json get_created_surveys(int user_id);
     static nlohmann::json get_survey_statistics(int survey_id);
     static nlohmann::json get_survey_results(int session_id, int survey_id);
+    static std::string post_image(const std::string &image_path);
+    static std::string get_image(const std::string &image_oid);
 };
 #endif  // SERVER_INTERACTION_HPP_
 }

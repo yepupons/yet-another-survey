@@ -4,6 +4,8 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QFileDialog>
+#include "server_interaction.hpp"
 #include <string>
 
 namespace survey {
@@ -36,6 +38,17 @@ TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
     question_ = new QLineEdit(this);
     question_->setPlaceholderText("Write your question here");
     layout->addWidget(question_);
+
+    upload_image_button_ = new QPushButton("Upload Image", this);
+    layout->addWidget(upload_image_button_);
+
+    connect(
+        upload_image_button_, &QPushButton::clicked, this,
+        &TextBlockEditor::upload_image
+    );
+    
+    image_preview_ = new QLabel(this);
+    layout->addWidget(image_preview_);
 
     if (is_test_) {
         auto *correct_label = new QLabel("Correct answer(s)", this);
@@ -101,6 +114,9 @@ nlohmann::json TextBlockEditor::to_json() const {
     nlohmann::json block;
     block["type"] = "text";
     block["text"] = question_->text().trimmed().toStdString();
+    if (!image_path_.isEmpty()) {
+        block["image"] = ServerInteraction::post_image(image_path_.toStdString());
+    }
     block["required"] = required_->isChecked();
 
     if (is_test_) {

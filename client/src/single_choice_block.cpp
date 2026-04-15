@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <stdexcept>
+#include "server_interaction.hpp"
 
 namespace survey {
 SingleChoiceBlock::SingleChoiceBlock(
@@ -20,6 +21,22 @@ SingleChoiceBlock::SingleChoiceBlock(
     : Block(parent, block.value("required", false)) {
     setObjectName("questionBlockContainer");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+   QLabel *image = nullptr;
+    if (block.contains("image")) {
+        image = new QLabel(this);
+        image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        std::string image_data = ServerInteraction::get_image(block.at("image").get<std::string>()); 
+        QByteArray byte_array = QByteArray::fromStdString(image_data);
+        QPixmap pixmap;
+        if (pixmap.loadFromData(byte_array)) {
+            image->setPixmap(pixmap.scaled(
+                700, 700,
+                Qt::KeepAspectRatio,
+                Qt::SmoothTransformation
+            ));
+        }
+    }
 
     question_ = new QLabel(QString::fromStdString(block.at("text")), this);
     question_->setObjectName("questionTitle");
@@ -62,6 +79,7 @@ SingleChoiceBlock::SingleChoiceBlock(
     card_layout->setContentsMargins(24, 24, 24, 24);
     card_layout->setSpacing(14);
     card_layout->addWidget(question_);
+    card_layout->addWidget(image);
 
     int id = 0;
     for (const std::string &option : block.at("options")) {

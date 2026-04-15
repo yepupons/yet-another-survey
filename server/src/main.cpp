@@ -256,6 +256,57 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
+    app().registerHandler(
+        "/image",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
+            MultiPartParser file_upload;
+            if (file_upload.parse(request) != 0 || file_upload.getFiles().empty()) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k400BadRequest);
+                resp->setBody("No file uploaded or invalid form data");
+                cb(resp);
+                return;
+            }
+            const auto &file = file_upload.getFiles()[0];
+            try {
+                resp->setBody(db.write_image(file));
+                cb(resp);
+            } catch (const std::exception &e) {
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/image",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                std::string image_oid = request->getParameter("id");
+                const auto image_data = db.read_image(image_oid);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_IMAGE_JPG);
+                resp->setBody(image_data);
+                cb(resp);
+            } catch (const std::exception &e) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k404NotFound);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
     app().run();
     return 0;
 }

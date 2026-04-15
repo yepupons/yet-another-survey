@@ -28,8 +28,6 @@ private slots:
     void add_option();
 
 private:
-    QLineEdit *question_ = nullptr;
-
     QList<QLineEdit *> options_;
     QList<QRadioButton *> link_enablings_;
     QList<QComboBox *> links_;

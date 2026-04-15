@@ -21,7 +21,6 @@ private slots:
     void add_correct_answer();
 
 private:
-    QLineEdit *question_ = nullptr;
     QCheckBox *required_ = nullptr;
 
     QList<QLineEdit *> correct_answers_;

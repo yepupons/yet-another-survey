@@ -157,8 +157,42 @@ nlohmann::json ServerInteraction::check_answer(const nlohmann::json &answer_data
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     CURLcode res = curl_easy_perform(curl);
 
-    handle_http_code(curl, res, readBuffer, nullptr);
+    handle_http_code(curl, res, readBuffer, headers);
     return nlohmann::json::parse(readBuffer);
 }
 
+std::string ServerInteraction::post_image(const std::string &image_path) {
+    CURL *curl = curl_easy_init();
+    std::string readBuffer;
+    std::string url = "http://127.0.0.1:8080/image";
+
+    curl_mime* mime;
+    curl_mimepart* part;
+    mime = curl_mime_init(curl);
+    part = curl_mime_addpart(mime);
+    curl_mime_name(part, "image");
+    curl_mime_filedata(part, image_path.c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    CURLcode res = curl_easy_perform(curl);
+
+    handle_http_code(curl, res, readBuffer, nullptr);
+    return readBuffer;
+}
+
+std::string ServerInteraction::get_image(const std::string &image_oid) {
+    CURL *curl = curl_easy_init();
+    std::string readBuffer;
+    std::string url = "http://127.0.0.1:8080/image?id=" + image_oid;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    CURLcode res = curl_easy_perform(curl);
+
+    handle_http_code(curl, res, readBuffer, nullptr);
+    return readBuffer;
+}
 }  // namespace survey

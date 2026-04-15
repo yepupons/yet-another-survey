@@ -22,7 +22,6 @@ private slots:
     void add_option();
 
 private:
-    QLineEdit *question_ = nullptr;
     QList<QLineEdit *> options_;
     QVBoxLayout *options_layout_ = nullptr;
     QPushButton *add_option_button_ = nullptr;

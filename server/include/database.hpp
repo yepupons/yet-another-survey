@@ -1,6 +1,7 @@
 #ifndef DATABASE_HPP_
 #define DATABASE_HPP_
 
+#include <drogon/MultiPart.h>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
@@ -13,6 +14,9 @@ class Database {
 
     mongocxx::database db() {
         return client_["yas_db"];
+    }
+    mongocxx::gridfs::bucket bucket() {
+        return client_["yas_db"].gridfs_bucket();
     }
 
 public:
@@ -31,6 +35,9 @@ public:
     std::string read_statistics(int survey_id);
     std::string read_survey_results(int session_id, int survey_id);
     std::string get_result(const std::string &user_result_data);
+
+    std::string write_image(const drogon::HttpFile &file);
+    std::string read_image(const std::string &image_oid);
 };
 }  // namespace survey
 

@@ -12,6 +12,7 @@
                 {
                     "type": "text",
                     "text": "How old are you?",
+                    "image": "...",
                     "required": true
                 },
                 {
@@ -23,6 +24,7 @@
                 {
                     "type": "single",
                     "text": "Who is the best",
+                    "image": "...",
                     "options": ["Cristiano Ronaldo", "Lionel Messi", "Lamine Yamal"],
                     "required": false,
                     "links": [
@@ -54,6 +56,7 @@
                 {
                     "type": "multiple",
                     "text": "What u want to eat?",
+                    "image": "...",
                     "options": ["big special", "borsch", "bulka pro max"],
                     "required": true
 
