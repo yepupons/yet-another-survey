@@ -66,7 +66,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
 
     central_layout->addLayout(bottom_row);
 
-    save_survey_button_ = new QPushButton("Save survey", central);
+    save_survey_button_ = new QPushButton(is_test_ ? "Save test" : "Save survey", central);
     save_survey_button_->setObjectName("primaryButton");
     central_layout->addWidget(save_survey_button_);
 
