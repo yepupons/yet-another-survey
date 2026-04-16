@@ -124,6 +124,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
             int survey_id = id;
             int session_id = session().get_id();
             auto *dialog = new ViewSurveyResults(survey_id, session_id, this);
+            dialog->showMaximized();
             dialog->exec();
         });
     }
@@ -171,12 +172,33 @@ ViewSurveyResults::ViewSurveyResults(
         for (int section_index = 0; section_index < sections.size();
              section_index++) {
             auto &section = sections.at(section_index);
-            auto *section_title = new QLabel(
+            auto *title = new QWidget(this);
+            title->setObjectName("questionCard");
+            title->setFixedWidth(720);
+            title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+            auto *title_layout = new QVBoxLayout(title);
+            title_layout->setAlignment(Qt::AlignTop);
+            title_layout->setContentsMargins(24, 24, 24, 24);
+            title_layout->setSpacing(16);
+
+            auto *section_number_label = new QLabel(
+                "Section " + QString::number(section_index + 1),
+                content
+            );
+
+            section_number_label->setObjectName("titleLabel");
+            title_layout->addWidget(section_number_label);
+
+            auto *survey_title_label = new QLabel(
                 QString::fromStdString(section.value("title", "Section")),
                 content
             );
-            section_title->setObjectName("titleLabel");
-            content_layout->addWidget(section_title);
+
+            survey_title_label->setObjectName("subtitleLabel");
+            title_layout->addWidget(survey_title_label);
+
+            content_layout->addWidget(title, 0, Qt::AlignHCenter);
 
             const auto &questions = section.at("questions");
             for (int question_index = 0; question_index < questions.size();

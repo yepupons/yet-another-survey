@@ -97,7 +97,7 @@ nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     survey["data"]["id"] = id;
     survey["data"]["creator_id"] = session().get_id();
     survey["data"]["type"] = is_test_ ? "test" : "survey";
-    survey["title"] = title_->text().trimmed().toStdString();
+    survey["title"] = title_->text().trimmed().isEmpty() ? "Unnamed" : title_->text().trimmed().toStdString();
     survey["sections"] = nlohmann::json::array();
     for (auto *section : sections_) {
         survey["sections"].push_back(section->to_json());

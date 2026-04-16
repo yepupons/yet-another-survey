@@ -73,7 +73,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
     if (surveys_ids.empty()) {
         auto *empty_label = new QLabel("No created surveys yet.", surveys_card);
-        empty_label->setObjectName("subtitleLabel");
+        empty_label->setObjectName("titleLabel");
         surveys_layout->addWidget(empty_label);
         content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
         content_layout->addStretch();
@@ -90,7 +90,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
         row_layout->setSpacing(12);
 
         auto *survey_title = new QLabel(row_widget);
-        survey_title->setObjectName("sectionLabel");
+        survey_title->setObjectName("titleLabel");
         survey_title->setSizePolicy(
             QSizePolicy::Expanding, QSizePolicy::Preferred
         );
