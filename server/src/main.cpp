@@ -264,7 +264,8 @@ int main(int argc, char *argv[]) {
         ) {
             auto resp = HttpResponse::newHttpResponse();
             MultiPartParser file_upload;
-            if (file_upload.parse(request) != 0 || file_upload.getFiles().empty()) {
+            if (file_upload.parse(request) != 0 ||
+                file_upload.getFiles().empty()) {
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k400BadRequest);
                 resp->setBody("No file uploaded or invalid form data");

@@ -1,15 +1,15 @@
 #include "multiple_choice_block_editor.hpp"
 #include <QAbstractButton>
 #include <QCheckBox>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QWidget>
 #include <algorithm>
-#include <QFileDialog>
-#include "server_interaction.hpp"
 #include <vector>
+#include "server_interaction.hpp"
 
 namespace survey {
 MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
@@ -52,7 +52,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
         upload_image_button_, &QPushButton::clicked, this,
         &MultipleChoiceBlockEditor::upload_image
     );
-    
+
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
@@ -113,20 +113,23 @@ void MultipleChoiceBlockEditor::add_option() {
 
     options_layout_->addWidget(row_widget);
 
-    connect(delete_button, &QPushButton::clicked, this, [this, row_widget, option, correct_button]() {
-        if (options_.size() <= 1) {
-            return;
+    connect(
+        delete_button, &QPushButton::clicked, this,
+        [this, row_widget, option, correct_button]() {
+            if (options_.size() <= 1) {
+                return;
+            }
+            options_.erase(
+                std::remove(options_.begin(), options_.end(), option),
+                options_.end()
+            );
+            if (correct_button) {
+                correct_answers_->removeButton(correct_button);
+            }
+            options_layout_->removeWidget(row_widget);
+            row_widget->deleteLater();
         }
-        options_.erase(
-            std::remove(options_.begin(), options_.end(), option),
-            options_.end()
-        );
-        if (correct_button) {
-            correct_answers_->removeButton(correct_button);
-        }
-        options_layout_->removeWidget(row_widget);
-        row_widget->deleteLater();
-    });
+    );
 }
 
 nlohmann::json MultipleChoiceBlockEditor::to_json() const {
@@ -134,7 +137,8 @@ nlohmann::json MultipleChoiceBlockEditor::to_json() const {
     block["type"] = "multiple";
     block["text"] = question_->text().trimmed().toStdString();
     if (!image_path_.isEmpty()) {
-        block["image"] = ServerInteraction::post_image(image_path_.toStdString());
+        block["image"] =
+            ServerInteraction::post_image(image_path_.toStdString());
     }
     block["options"] = nlohmann::json::array();
 
@@ -153,8 +157,9 @@ nlohmann::json MultipleChoiceBlockEditor::to_json() const {
                 continue;
             }
 
-            auto *answer =
-                item->widget()->findChild<QAbstractButton *>("correctOptionToggle");
+            auto *answer = item->widget()->findChild<QAbstractButton *>(
+                "correctOptionToggle"
+            );
             if (answer && answer->isChecked()) {
                 answers.push_back(i + 1);
             }

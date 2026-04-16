@@ -1,7 +1,7 @@
 #ifndef SURVEY_BUILDER_WINDOW_HPP_
 #define SURVEY_BUILDER_WINDOW_HPP_
-#include <QLineEdit>
 #include <qtmetamacros.h>
+#include <QLineEdit>
 #include <QList>
 #include <QMainWindow>
 #include <QPushButton>

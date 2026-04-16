@@ -72,18 +72,18 @@ void SectionEditor::add_block() {
     } else if (chosen == text) {
         block = new TextBlockEditor(is_test_, this);
     }
-    
+
     questions_.push_back(block);
     questions_layout_->addWidget(questions_.back());
 
     connect(block, &BlockEditor::remove_requested, this, [this, block]() {
-    questions_.erase(
-        std::remove(questions_.begin(), questions_.end(), block),
-        questions_.end()
-    );
-    questions_layout_->removeWidget(block);
-    block->deleteLater();
-});
+        questions_.erase(
+            std::remove(questions_.begin(), questions_.end(), block),
+            questions_.end()
+        );
+        questions_layout_->removeWidget(block);
+        block->deleteLater();
+    });
 }
 
 nlohmann::json SectionEditor::to_json() const {

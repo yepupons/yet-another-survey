@@ -1,9 +1,9 @@
 #include "created_surveys_window.hpp"
 #include <matplot/matplot.h>
 #include <QHBoxLayout>
-#include <QScrollArea>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QVBoxLayout>
 #include <exception>
 #include <fstream>
@@ -34,9 +34,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
     title_card->setFixedWidth(720);
-    title_card->setSizePolicy(
-        QSizePolicy::Expanding, QSizePolicy::Preferred
-    );
+    title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title_card);
     title_layout->setAlignment(Qt::AlignTop);
@@ -47,9 +45,8 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     title_label->setObjectName("titleLabel");
     title_layout->addWidget(title_label);
 
-    auto *subtitle_label = new QLabel(
-        "Export survey statistics to txt or jpg.", title_card
-    );
+    auto *subtitle_label =
+        new QLabel("Export survey statistics to txt or jpg.", title_card);
     subtitle_label->setObjectName("subtitleLabel");
     title_layout->addWidget(subtitle_label);
 
@@ -68,9 +65,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     auto *surveys_card = new QWidget(content);
     surveys_card->setObjectName("questionCard");
     surveys_card->setFixedWidth(720);
-    surveys_card->setSizePolicy(
-        QSizePolicy::Expanding, QSizePolicy::Preferred
-    );
+    surveys_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *surveys_layout = new QVBoxLayout(surveys_card);
     surveys_layout->setContentsMargins(24, 24, 24, 24);
@@ -96,10 +91,13 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
         auto *survey_title = new QLabel(row_widget);
         survey_title->setObjectName("sectionLabel");
-        survey_title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        survey_title->setSizePolicy(
+            QSizePolicy::Expanding, QSizePolicy::Preferred
+        );
         try {
             auto title =
-                ServerInteraction::get_survey(id).at("title").get<std::string>();
+                ServerInteraction::get_survey(id).at("title").get<std::string>(
+                );
             survey_title->setText(QString::fromStdString(title));
         } catch (const std::exception &e) {
             show_message_box(this, QMessageBox::Warning, "Error", e.what());

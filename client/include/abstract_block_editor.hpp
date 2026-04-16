@@ -1,11 +1,11 @@
 #ifndef ABSTRACT_BLOCK_EDITOR_HPP_
 #define ABSTRACT_BLOCK_EDITOR_HPP_
-#include <QWidget>
-#include <nlohmann/json.hpp>
+#include <QFileDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QLabel>
-#include <QFileDialog>
+#include <QWidget>
+#include <nlohmann/json.hpp>
 #include "pretty_view.hpp"
 
 namespace survey {
@@ -31,26 +31,24 @@ protected:
     QString image_path_;
 
 protected slots:
+
     void upload_image() {
         QString file_path = QFileDialog::getOpenFileName(
-            this, 
-            "Choose Image", 
-            "", 
-            "Images (*.jpg *.jpeg)"
+            this, "Choose Image", "", "Images (*.jpg *.jpeg)"
         );
         if (file_path.isEmpty()) {
             return;
         }
         QFileInfo file_info(file_path);
         if (file_info.size() > 5 * 1024 * 1024) {
-            show_message_box(this, QMessageBox::Warning, "Error", "File size too big");
+            show_message_box(
+                this, QMessageBox::Warning, "Error", "File size too big"
+            );
             return;
         }
         image_path_ = file_path;
         QPixmap pixmap = QPixmap(file_path).scaled(
-            700, 700,
-            Qt::KeepAspectRatio,
-            Qt::SmoothTransformation
+            700, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation
         );
         image_preview_->setPixmap(pixmap);
     }

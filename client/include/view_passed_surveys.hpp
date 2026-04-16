@@ -8,9 +8,7 @@ class ViewPassedSurveys : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ViewPassedSurveys(
-        QWidget *parent = nullptr
-    );
+    explicit ViewPassedSurveys(QWidget *parent = nullptr);
 };
 
 class ViewSurveyResults : public QDialog {

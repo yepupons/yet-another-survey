@@ -1,12 +1,12 @@
 #include "view_passed_surveys.hpp"
-#include <QLabel>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
-#include "pretty_view.hpp"
 #include <nlohmann/json.hpp>
 #include "multiple_choice_block.hpp"
+#include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
 #include "single_choice_block.hpp"
@@ -20,9 +20,7 @@ nlohmann::json extract_saved_answer(nlohmann::json &saved_answer) {
     return saved_answer;
 }
 
-ViewPassedSurveys::ViewPassedSurveys(
-    QWidget *parent
-) : QDialog(parent) {
+ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -40,9 +38,7 @@ ViewPassedSurveys::ViewPassedSurveys(
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
     title_card->setFixedWidth(720);
-    title_card->setSizePolicy(
-        QSizePolicy::Expanding, QSizePolicy::Preferred
-    );
+    title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title_card);
     title_layout->setAlignment(Qt::AlignTop);
@@ -53,9 +49,8 @@ ViewPassedSurveys::ViewPassedSurveys(
     title_label->setObjectName("titleLabel");
     title_layout->addWidget(title_label);
 
-    auto *subtitle_label = new QLabel(
-        "Select a survey to view your answers.", title_card
-    );
+    auto *subtitle_label =
+        new QLabel("Select a survey to view your answers.", title_card);
     subtitle_label->setObjectName("subtitleLabel");
     title_layout->addWidget(subtitle_label);
 
@@ -63,8 +58,7 @@ ViewPassedSurveys::ViewPassedSurveys(
 
     nlohmann::json surveys_ids;
     try {
-        surveys_ids =
-            ServerInteraction::get_passed_surveys(session().get_id());
+        surveys_ids = ServerInteraction::get_passed_surveys(session().get_id());
     } catch (const std::exception &e) {
         show_message_box(this, QMessageBox::Warning, "Error", e.what());
         deleteLater();
@@ -97,9 +91,7 @@ ViewPassedSurveys::ViewPassedSurveys(
     auto *surveys_card = new QWidget(content);
     surveys_card->setObjectName("questionCard");
     surveys_card->setFixedWidth(720);
-    surveys_card->setSizePolicy(
-        QSizePolicy::Expanding, QSizePolicy::Preferred
-    );
+    surveys_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *surveys_layout = new QVBoxLayout(surveys_card);
     surveys_layout->setContentsMargins(24, 24, 24, 24);
@@ -114,7 +106,8 @@ ViewPassedSurveys::ViewPassedSurveys(
         QPushButton *button = nullptr;
         try {
             auto title =
-                ServerInteraction::get_survey(id).at("title").get<std::string>();
+                ServerInteraction::get_survey(id).at("title").get<std::string>(
+                );
             button = new QPushButton(QString::fromStdString(title), row_widget);
         } catch (const std::exception &e) {
             show_message_box(this, QMessageBox::Warning, "Error", e.what());
@@ -206,9 +199,9 @@ ViewSurveyResults::ViewSurveyResults(
                     section_index < answers_sections.size()) {
                     auto &answers = answers_sections.at(section_index);
                     if (answers.is_array() && question_index < answers.size()) {
-                        block->set_answer(extract_saved_answer(
-                            answers.at(question_index)
-                        ));
+                        block->set_answer(
+                            extract_saved_answer(answers.at(question_index))
+                        );
                     }
                 }
                 block->set_read_only(true);

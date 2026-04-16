@@ -33,9 +33,10 @@ SurveyWindow::SurveyWindow(
     : QMainWindow(parent),
       section_data_(survey_data.at("sections").at(section_id)),
       answer_data_(answer_data.at("sections").at(section_id)) {
-    setWindowTitle(
-        QString::fromStdString("[" + survey_data.at("title").get<std::string>() + "] " + section_data_.at("title").get<std::string>())
-    );
+    setWindowTitle(QString::fromStdString(
+        "[" + survey_data.at("title").get<std::string>() + "] " +
+        section_data_.at("title").get<std::string>()
+    ));
 
     auto *central = new QWidget(this);
     central->setObjectName("centralWidget");
@@ -48,20 +49,24 @@ SurveyWindow::SurveyWindow(
     auto *title = new QWidget(this);
     title->setObjectName("questionCard");
     title->setFixedWidth(720);
-    title->setSizePolicy(
-        QSizePolicy::Expanding, QSizePolicy::Preferred
-    );
+    title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title);
     title_layout->setAlignment(Qt::AlignTop);
     title_layout->setContentsMargins(24, 24, 24, 24);
     title_layout->setSpacing(16);
 
-    auto *survey_title_label = new QLabel(QString::fromStdString(survey_data.at("title").get<std::string>()), title);
+    auto *survey_title_label = new QLabel(
+        QString::fromStdString(survey_data.at("title").get<std::string>()),
+        title
+    );
     survey_title_label->setObjectName("titleLabel");
     title_layout->addWidget(survey_title_label);
 
-    auto *section_title_label = new QLabel(QString::fromStdString(section_data_.at("title").get<std::string>()), title);
+    auto *section_title_label = new QLabel(
+        QString::fromStdString(section_data_.at("title").get<std::string>()),
+        title
+    );
     section_title_label->setObjectName("subtitleLabel");
     title_layout->addWidget(section_title_label);
 

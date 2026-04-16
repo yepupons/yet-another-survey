@@ -1,17 +1,17 @@
 #include "text_block_editor.hpp"
+#include <QFileDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QFileDialog>
-#include "server_interaction.hpp"
 #include <string>
+#include "server_interaction.hpp"
 
 namespace survey {
 TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
     : BlockEditor(is_test, parent) {
-        auto *layout = new QVBoxLayout();
+    auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
     auto *title_label = new QLabel("Text", this);
@@ -46,7 +46,7 @@ TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
         upload_image_button_, &QPushButton::clicked, this,
         &TextBlockEditor::upload_image
     );
-    
+
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
@@ -95,19 +95,25 @@ void TextBlockEditor::add_correct_answer() {
     correct_answers_.push_back(answer_edit_);
     correct_answers_layout_->addWidget(row_widget);
 
-    connect(delete_button, &QPushButton::clicked, this, [this, row_widget, answer_edit_]() {
-        if (correct_answers_.size() <= 1) {
-            return;
+    connect(
+        delete_button, &QPushButton::clicked, this,
+        [this, row_widget, answer_edit_]() {
+            if (correct_answers_.size() <= 1) {
+                return;
+            }
+
+            correct_answers_.erase(
+                std::remove(
+                    correct_answers_.begin(), correct_answers_.end(),
+                    answer_edit_
+                ),
+                correct_answers_.end()
+            );
+
+            correct_answers_layout_->removeWidget(row_widget);
+            row_widget->deleteLater();
         }
-
-        correct_answers_.erase(
-            std::remove(correct_answers_.begin(), correct_answers_.end(), answer_edit_),
-            correct_answers_.end()
-        );
-
-        correct_answers_layout_->removeWidget(row_widget);
-        row_widget->deleteLater();
-    });
+    );
 }
 
 nlohmann::json TextBlockEditor::to_json() const {
@@ -115,7 +121,8 @@ nlohmann::json TextBlockEditor::to_json() const {
     block["type"] = "text";
     block["text"] = question_->text().trimmed().toStdString();
     if (!image_path_.isEmpty()) {
-        block["image"] = ServerInteraction::post_image(image_path_.toStdString());
+        block["image"] =
+            ServerInteraction::post_image(image_path_.toStdString());
     }
     block["required"] = required_->isChecked();
 

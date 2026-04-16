@@ -166,8 +166,8 @@ std::string ServerInteraction::post_image(const std::string &image_path) {
     std::string readBuffer;
     std::string url = "http://127.0.0.1:8080/image";
 
-    curl_mime* mime;
-    curl_mimepart* part;
+    curl_mime *mime;
+    curl_mimepart *part;
     mime = curl_mime_init(curl);
     part = curl_mime_addpart(mime);
     curl_mime_name(part, "image");

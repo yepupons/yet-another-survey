@@ -15,6 +15,7 @@ class Database {
     mongocxx::database db() {
         return client_["yas_db"];
     }
+
     mongocxx::gridfs::bucket bucket() {
         return client_["yas_db"].gridfs_bucket();
     }

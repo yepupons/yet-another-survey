@@ -1,12 +1,4 @@
 #include "main_window.hpp"
-#include "created_surveys_window.hpp"
-#include "pretty_view.hpp"
-#include "server_interaction.hpp"
-#include "session.hpp"
-#include "survey_builder_window.hpp"
-#include "survey_taking.hpp"
-#include "survey_window.hpp"
-#include "view_passed_surveys.hpp"
 #include <curl/curl.h>
 #include <QAction>
 #include <QGridLayout>
@@ -21,6 +13,14 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "created_surveys_window.hpp"
+#include "pretty_view.hpp"
+#include "server_interaction.hpp"
+#include "session.hpp"
+#include "survey_builder_window.hpp"
+#include "survey_taking.hpp"
+#include "survey_window.hpp"
+#include "view_passed_surveys.hpp"
 
 namespace survey {
 
@@ -275,12 +275,8 @@ void MainWindow::change_session_id() {
     } else if (chosen == set_session_id_button) {
         bool ok;
         QString text = QInputDialog::getText(
-            this,
-            "Set Session ID",
-            "Enter new session ID:",
-            QLineEdit::Normal,
-            QString::number(session().get_id()),
-            &ok
+            this, "Set Session ID", "Enter new session ID:", QLineEdit::Normal,
+            QString::number(session().get_id()), &ok
         );
 
         if (!ok) {
@@ -291,9 +287,7 @@ void MainWindow::change_session_id() {
         int new_id = text.trimmed().toInt(&convert_ok);
         if (!convert_ok || new_id <= 0) {
             show_message_box(
-                this,
-                QMessageBox::Warning,
-                "Error",
+                this, QMessageBox::Warning, "Error",
                 "Please enter a valid session id."
             );
             return;
@@ -301,9 +295,7 @@ void MainWindow::change_session_id() {
 
         session().set_id(new_id);
         show_message_box(
-            this,
-            QMessageBox::Information,
-            "Info",
+            this, QMessageBox::Information, "Info",
             "Session ID changed to " + QString::number(session().get_id())
         );
     }
