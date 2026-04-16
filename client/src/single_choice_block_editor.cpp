@@ -2,15 +2,15 @@
 #include <QAbstractButton>
 #include <QButtonGroup>
 #include <QComboBox>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QWidget>
-#include <QFileDialog>
-#include "server_interaction.hpp"
 #include <algorithm>
+#include "server_interaction.hpp"
 
 namespace survey {
 SingleChoiceBlockEditor::SingleChoiceBlockEditor(
@@ -54,7 +54,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
         upload_image_button_, &QPushButton::clicked, this,
         &SingleChoiceBlockEditor::upload_image
     );
-    
+
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
@@ -129,7 +129,8 @@ void SingleChoiceBlockEditor::add_option() {
     delete_button->setFixedSize(36, 36);
     row_layout->addWidget(delete_button);
 
-    connect(delete_button, &QPushButton::clicked, this,
+    connect(
+        delete_button, &QPushButton::clicked, this,
         [this, row_widget, option, link_enabling, link, correct_button]() {
             if (options_.size() <= 1) {
                 return;
@@ -140,12 +141,14 @@ void SingleChoiceBlockEditor::add_option() {
                 options_.end()
             );
             link_enablings_.erase(
-                std::remove(link_enablings_.begin(), link_enablings_.end(), link_enabling),
+                std::remove(
+                    link_enablings_.begin(), link_enablings_.end(),
+                    link_enabling
+                ),
                 link_enablings_.end()
             );
             links_.erase(
-                std::remove(links_.begin(), links_.end(), link),
-                links_.end()
+                std::remove(links_.begin(), links_.end(), link), links_.end()
             );
             if (correct_button) {
                 correct_answers_->removeButton(correct_button);
@@ -163,7 +166,8 @@ nlohmann::json SingleChoiceBlockEditor::to_json() const {
     block["type"] = "single";
     block["text"] = question_->text().trimmed().toStdString();
     if (!image_path_.isEmpty()) {
-        block["image"] = ServerInteraction::post_image(image_path_.toStdString());
+        block["image"] =
+            ServerInteraction::post_image(image_path_.toStdString());
     }
 
     block["options"] = nlohmann::json::array();
@@ -186,16 +190,15 @@ nlohmann::json SingleChoiceBlockEditor::to_json() const {
 
     if (is_test_) {
         int answer_index = 0;
-        for (int i = 0; i < options_layout_->count(); ++i) {
-            auto *item = options_layout_->itemAt(i);
-            if (!item || !item->widget()) {
-                continue;
-            }
-
-            auto *answer = item->widget()->findChild<QRadioButton *>();
-            if (answer && answer->text() == "Correct" && answer->isChecked()) {
-                answer_index = i + 1;
-                break;
+        if (auto *checked = correct_answers_->checkedButton()) {
+            const auto buttons = correct_answers_->buttons();
+            const auto answer_it =
+                std::find(buttons.begin(), buttons.end(), checked);
+            if (answer_it != buttons.end()) {
+                answer_index =
+                    static_cast<int>(std::distance(buttons.begin(), answer_it)
+                    ) +
+                    1;
             }
         }
         block["answer"] = answer_index;

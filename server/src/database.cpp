@@ -1,4 +1,5 @@
 #include "database.hpp"
+#include <algorithm>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
@@ -256,62 +257,46 @@ std::string Database::get_result(const std::string &user_result_data) {
     out["sections"] = nlohmann::json::array();
     int question_amount = 0;
     int correct_answers = 0;
-    for (size_t section_indx = 0; section_indx < survey_json["sections"].size();
-         section_indx++) {
+    for (int section_indx = 0; section_indx < survey_json["sections"].size();
+         ++section_indx) {
+        if (user_json["sections"].at(section_indx).empty()) {
+            out["sections"].push_back(nlohmann::json::array());
+            continue;
+        }
         nlohmann::json section_result = nlohmann::json::array();
-        for (size_t question_indx = 0;
+        for (int question_indx = 0;
              question_indx <
              survey_json["sections"].at(section_indx)["questions"].size();
-             question_indx++) {
-            question_amount++;
-            auto question =
+             ++question_indx) {
+            ++question_amount;
+            const auto &question =
                 survey_json["sections"].at(section_indx)["questions"].at(
                     question_indx
                 );
             std::string type = question.at("type");
-            auto correct_answer = question.at("answer");
-            auto user_answer =
-                user_json["sections"].at(section_indx).at(question_indx).at("answer");
+            const auto &correct_answer = question.at("answer");
+            const auto &user_answer = user_json["sections"]
+                                          .at(section_indx)
+                                          .at(question_indx)
+                                          .at("answer");
 
-            if (type == "single") {
-                // 1 correct, 0 isnt
-                int status =
-                    correct_answer.get<int>() == user_answer.get<int>();
-                correct_answers += status;
-                section_result.emplace_back(status);
-            } else if (type == "multiple") {
-                std::set<int> user_set;
-                std::set<int> correct_set;
-                for (auto &v : user_answer) {
-                    user_set.insert(v.get<int>());
+            if (type == "single" || type == "multiple") {
+                if (correct_answer == user_answer) {
+                    ++correct_answers;
+                    section_result.emplace_back(1);
+                    continue;
                 }
-                for (auto &v : correct_answer) {
-                    correct_set.insert(v.get<int>());
-                }
-                int status = user_set == correct_set;
-                correct_answers += status;
-                section_result.emplace_back(status);
+                section_result.emplace_back(0);
             } else if (type == "text") {
-                if (correct_answer.is_string()) {
-                    section_result.emplace_back(
-                        user_answer.get<std::string>() ==
-                        correct_answer.get<std::string>()
-                    );
-                } else if (correct_answer.is_array()) {
-                    bool ok = false;
-                    for (auto &v : correct_answer) {
-                        if (user_answer.get<std::string>() ==
-                            v.get<std::string>()) {
-                            section_result.emplace_back(1);
-                            ok = true;
-                            correct_answers++;
-                            break;
-                        }
-                    }
-                    if (!ok) {
-                        section_result.emplace_back(0);
-                    }
+                if (std::find(
+                        correct_answer.begin(), correct_answer.end(),
+                        user_answer
+                    ) != correct_answer.end()) {
+                    ++correct_answers;
+                    section_result.emplace_back(1);
+                    continue;
                 }
+                section_result.emplace_back(0);
             }
         }
         out["sections"].push_back(section_result);
@@ -325,8 +310,7 @@ std::string Database::write_image(const drogon::HttpFile &file) {
     auto upload_stream = bucket().open_upload_stream(file.getFileName());
     auto data = file.fileContent();
     upload_stream.write(
-        reinterpret_cast<const uint8_t *>(data.data()), 
-        data.size()
+        reinterpret_cast<const uint8_t *>(data.data()), data.size()
     );
     auto result = upload_stream.close();
     return result.id().get_oid().value.to_string();
@@ -334,11 +318,14 @@ std::string Database::write_image(const drogon::HttpFile &file) {
 
 std::string Database::read_image(const std::string &image_oid) {
     bsoncxx::types::b_oid oid{bsoncxx::oid(image_oid)};
-    auto download_stream = bucket().open_download_stream(bsoncxx::types::bson_value::view(oid));
+    auto download_stream =
+        bucket().open_download_stream(bsoncxx::types::bson_value::view(oid));
 
     std::string data;
     data.resize(download_stream.file_length());
-    download_stream.read(reinterpret_cast<uint8_t*>(&data[0]), download_stream.file_length());
+    download_stream.read(
+        reinterpret_cast<uint8_t *>(&data[0]), download_stream.file_length()
+    );
 
     return data;
 }

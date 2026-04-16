@@ -21,14 +21,13 @@ MultipleChoiceBlock::MultipleChoiceBlock(
     if (block.contains("image")) {
         image = new QLabel(this);
         image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        std::string image_data = ServerInteraction::get_image(block.at("image").get<std::string>()); 
+        std::string image_data =
+            ServerInteraction::get_image(block.at("image").get<std::string>());
         QByteArray byte_array = QByteArray::fromStdString(image_data);
         QPixmap pixmap;
         if (pixmap.loadFromData(byte_array)) {
             image->setPixmap(pixmap.scaled(
-                700, 700,
-                Qt::KeepAspectRatio,
-                Qt::SmoothTransformation
+                700, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation
             ));
         }
     }
@@ -68,7 +67,9 @@ MultipleChoiceBlock::MultipleChoiceBlock(
     card_layout->setContentsMargins(24, 24, 24, 24);
     card_layout->setSpacing(14);
     card_layout->addWidget(question_);
-    card_layout->addWidget(image);
+    if (image != nullptr) {
+        card_layout->addWidget(image);
+    }
 
     int id = 0;
     for (const std::string &option : block.at("options")) {

@@ -130,5 +130,6 @@ void SurveyBuilderWindow::save_survey() {
         this, QMessageBox::Information, "Saved",
         "Survey has been saved.\nYour ID:\n" + QString::number(id)
     );
+    deleteLater();
 }
 }  // namespace survey
