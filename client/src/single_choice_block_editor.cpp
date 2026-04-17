@@ -108,6 +108,7 @@ void SingleChoiceBlockEditor::add_option() {
     link->setModel(sections_list_);
     link->setObjectName("secondaryButton");
     link->setEnabled(false);
+    link->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     row_layout->addWidget(link);
     links_.push_back(link);
 

@@ -156,10 +156,10 @@ void SurveyWindow::save_answer() {
     QString message =
         all_answered
             ? "Are you sure you want to continue?"
-            : "Some answers sre missing. Are you sure you want to continue?";
-    auto want_to_save = QMessageBox::question(
-        this, "Save?", message, QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No
+            : "Some answers are missing. Are you sure you want to continue?";
+    auto want_to_save = show_question_box(
+        this, QMessageBox::Question, "Save?", message, QMessageBox::Yes,
+        QMessageBox::No, QMessageBox::No
     );
 
     if (want_to_save == QMessageBox::No) {
