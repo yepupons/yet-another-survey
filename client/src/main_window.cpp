@@ -1,5 +1,6 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
+#include <QUrl>
 #include <QAction>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -12,6 +13,8 @@
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QVBoxLayout>
+#include <QToolButton>
+#include <QDesktopServices>
 #include <nlohmann/json.hpp>
 #include "created_surveys_window.hpp"
 #include "pretty_view.hpp"
@@ -57,6 +60,32 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     );
     header_layout->addWidget(header_spacer);
 
+    auto *profile_button = new QToolButton(header);
+    profile_button->setObjectName("profileButton");
+    profile_button->setIcon(QIcon(":/icons/profile.svg"));
+    profile_button->setIconSize(QSize(24, 24));
+    profile_button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    profile_button->setFixedSize(44, 44);
+    profile_button->setPopupMode(QToolButton::InstantPopup);
+
+    auto *profile_menu = new QMenu(profile_button);
+    profile_menu->setObjectName("profileMenu");
+    
+    auto *get_session_id_button_ = profile_menu->addAction("Get привет session ID");
+    auto *set_session_id_button_ = profile_menu->addAction("Set Session ID");
+
+    profile_menu->addSeparator();
+
+    auto *get_created_surveys_button_ = profile_menu->addAction("Your surveys");
+    auto *get_passed_surveys_button_ = profile_menu->addAction("Passed surveys");
+
+    profile_menu->addSeparator();
+
+    auto *auth_button = profile_menu->addAction("Log in with Telegram");
+
+    profile_button->setMenu(profile_menu);
+    header_layout->addWidget(profile_button);
+
     auto *content = new QWidget(central);
     content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     content->setMaximumWidth(720);
@@ -69,6 +98,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     open_label->setObjectName("titleLabel");
     open_label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     content_layout->addWidget(open_label, 0, Qt::AlignHCenter);
+
+    // auto *auth_button = new QPushButton("Log in with Telegram", content);
+    // auth_button->setObjectName("telegramAuthButton");
+    // auth_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    // auth_button->setMinimumWidth(240);
+    // content_layout->addWidget(auth_button, 0, Qt::AlignHCenter);
 
     auto *card = new QWidget(content);
     card->setObjectName("card");
@@ -140,28 +175,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     );
     card_layout->addWidget(create_survey_button_);
 
-    change_session_id_button_ =
-        new QPushButton("Get or Set Session ID", header);
-    change_session_id_button_->setObjectName("headerNavButton");
-    change_session_id_button_->setSizePolicy(
-        QSizePolicy::Preferred, QSizePolicy::Fixed
-    );
-    header_layout->addWidget(change_session_id_button_);
-
-    get_created_surveys_button_ = new QPushButton("Your surveys", header);
-    get_created_surveys_button_->setObjectName("headerNavButton");
-    get_created_surveys_button_->setSizePolicy(
-        QSizePolicy::Preferred, QSizePolicy::Fixed
-    );
-    header_layout->addWidget(get_created_surveys_button_);
-
-    get_passed_surveys_button_ = new QPushButton("Passed surveys", header);
-    get_passed_surveys_button_->setObjectName("headerNavButton");
-    get_passed_surveys_button_->setSizePolicy(
-        QSizePolicy::Preferred, QSizePolicy::Fixed
-    );
-    header_layout->addWidget(get_passed_surveys_button_);
-
     auto *content_wrapper = new QWidget(central);
     content_wrapper->setSizePolicy(
         QSizePolicy::Expanding, QSizePolicy::Preferred
@@ -191,17 +204,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         &MainWindow::create_survey
     );
     connect(
-        change_session_id_button_, &QPushButton::clicked, this,
+        set_session_id_button_, &QAction::triggered, this,
         &MainWindow::change_session_id
     );
     connect(
-        get_created_surveys_button_, &QPushButton::clicked, this,
+        get_created_surveys_button_, &QAction::triggered, this,
         &MainWindow::get_created_surveys
     );
     connect(
-        get_passed_surveys_button_, &QPushButton::clicked, this,
+        get_passed_surveys_button_, &QAction::triggered, this,
         &MainWindow::get_passed_surveys
     );
+    connect(get_session_id_button_, &QAction::triggered, this, [this]() {
+        show_message_box(
+            this, QMessageBox::Information, "Info",
+            "Your session ID is: " + QString::number(session().get_id())
+        );
+    });
+    connect(auth_button, &QAction::triggered, this, []() {
+        QDesktopServices::openUrl(QUrl("https://t.me/yet_another_survey_auth_bot?start=test_login_token"));
+    });
 }
 
 void MainWindow::open_survey() {
@@ -252,27 +274,6 @@ void MainWindow::create_survey() {
 }
 
 void MainWindow::change_session_id() {
-    auto *menu = new QMenu(this);
-    menu->setMinimumWidth(change_session_id_button_->width());
-    menu->setStyleSheet(styleSheet());
-    auto *get_session_id_button = menu->addAction("Get Session ID");
-    auto *set_session_id_button = menu->addAction("Set Session ID");
-
-    QAction *chosen = menu->exec(change_session_id_button_->mapToGlobal(
-        QPoint(0, change_session_id_button_->height())
-    ));
-
-    if (!chosen) {
-        return;
-    }
-
-    if (chosen == get_session_id_button) {
-        show_message_box(
-            this, QMessageBox::Information, "Info",
-            "Your session ID is: " + QString::number(session().get_id())
-        );
-        return;
-    } else if (chosen == set_session_id_button) {
         bool ok;
         QString text = QInputDialog::getText(
             this, "Set Session ID", "Enter new session ID:", QLineEdit::Normal,
@@ -298,7 +299,6 @@ void MainWindow::change_session_id() {
             this, QMessageBox::Information, "Info",
             "Session ID changed to " + QString::number(session().get_id())
         );
-    }
 }
 
 void MainWindow::get_created_surveys() {
