@@ -18,7 +18,7 @@ public:
     }
 
     virtual ~BlockEditor() = default;
-    virtual nlohmann::json to_json() const = 0;
+    virtual nlohmann::json to_json(bool preview_mode) const = 0;
 
 signals:
     void remove_requested(BlockEditor *editor);

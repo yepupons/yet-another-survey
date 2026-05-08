@@ -116,14 +116,20 @@ void TextBlockEditor::add_correct_answer() {
     );
 }
 
-nlohmann::json TextBlockEditor::to_json() const {
+nlohmann::json TextBlockEditor::to_json(bool preview_mode) const {
     nlohmann::json block;
     block["type"] = "text";
     block["text"] = question_->text().trimmed().toStdString();
-    if (!image_path_.isEmpty()) {
+ 
+    if (preview_mode && !image_path_.isEmpty()) {
+        block["image_path"] = image_path_.toStdString();
+    }
+
+    if (!preview_mode && !image_path_.isEmpty()) {
         block["image"] =
             ServerInteraction::post_image(image_path_.toStdString());
     }
+    
     block["required"] = required_->isChecked();
 
     if (is_test_) {

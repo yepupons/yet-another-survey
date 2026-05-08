@@ -86,13 +86,13 @@ void SectionEditor::add_block() {
     });
 }
 
-nlohmann::json SectionEditor::to_json() const {
+nlohmann::json SectionEditor::to_json(bool preview_mode) const {
     nlohmann::json section;
     section["title"] = title_->text().trimmed().toStdString();
 
     section["questions"] = nlohmann::json::array();
     for (auto *block : questions_) {
-        section["questions"].push_back(block->to_json());
+        section["questions"].push_back(block->to_json(preview_mode));
     }
 
     section["next_section_id"] = next_section_->currentIndex() - 1;

@@ -1,4 +1,5 @@
 #include "survey_builder_window.hpp"
+#include "survey_taking.hpp"
 #include <qglobal.h>
 #include <qlineedit.h>
 #include <QHBoxLayout>
@@ -26,9 +27,20 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
         is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)"
     );
 
+    auto *top_row = new QHBoxLayout();
+
     auto *title_label = new QLabel("Survey Builder", central);
     title_label->setObjectName("titleLabel");
-    central_layout->addWidget(title_label);
+
+    auto *preview_button = new QPushButton("Preview", central);
+    preview_button->setObjectName("primaryButton");
+    preview_button->setFixedSize(140, 40);
+
+    top_row->addWidget(title_label);
+    top_row->addStretch();
+    top_row->addWidget(preview_button);
+
+    central_layout->addLayout(top_row);
 
     title_ = new QLineEdit(this);
     title_->setPlaceholderText("Write survey title here");
@@ -59,9 +71,9 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
     auto *bottom_row = new QHBoxLayout();
     bottom_row->addStretch();
 
-    add_section_button_ = new QPushButton("+", central);
+    add_section_button_ = new QPushButton("New section", central);
     add_section_button_->setObjectName("primaryButton");
-    add_section_button_->setFixedSize(60, 60);
+    add_section_button_->setFixedSize(180, 40);
     bottom_row->addWidget(add_section_button_);
 
     central_layout->addLayout(bottom_row);
@@ -81,6 +93,15 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
         save_survey_button_, &QPushButton::clicked, this,
         &SurveyBuilderWindow::save_survey
     );
+    connect(preview_button, &QPushButton::clicked, this, [this]() {
+        const int preview_id = generate_survey_id();
+        nlohmann::json survey = build_survey_json(preview_id, true);
+
+        auto *preview = new SurveyTaking(survey, true, this);
+        preview->setAttribute(Qt::WA_DeleteOnClose);
+        preview->setWindowTitle("Preview");
+        preview->show();
+    });
 }
 
 void SurveyBuilderWindow::add_section() {
@@ -92,7 +113,7 @@ void SurveyBuilderWindow::add_section() {
     sections_layout_->addWidget(sections_.back());
 }
 
-nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
+nlohmann::json SurveyBuilderWindow::build_survey_json(int id, bool preview_mode) const {
     nlohmann::json survey;
     survey["data"]["id"] = id;
     survey["data"]["creator_id"] = session().get_id();
@@ -100,7 +121,7 @@ nlohmann::json SurveyBuilderWindow::build_survey_json(int id) const {
     survey["title"] = title_->text().trimmed().isEmpty() ? "Unnamed" : title_->text().trimmed().toStdString();
     survey["sections"] = nlohmann::json::array();
     for (auto *section : sections_) {
-        survey["sections"].push_back(section->to_json());
+        survey["sections"].push_back(section->to_json(preview_mode));
     }
     return survey;
 }
@@ -117,7 +138,7 @@ int SurveyBuilderWindow::generate_survey_id() {
 
 void SurveyBuilderWindow::save_survey() {
     const int id = generate_survey_id();
-    nlohmann::json survey = build_survey_json(id);
+    nlohmann::json survey = build_survey_json(id, false);
 
     try {
         ServerInteraction::post_survey(survey);

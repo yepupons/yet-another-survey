@@ -71,7 +71,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     auto *profile_menu = new QMenu(profile_button);
     profile_menu->setObjectName("profileMenu");
     
-    auto *get_session_id_button_ = profile_menu->addAction("Get привет session ID");
+    auto *get_session_id_button_ = profile_menu->addAction("Get session ID");
     auto *set_session_id_button_ = profile_menu->addAction("Set Session ID");
 
     profile_menu->addSeparator();

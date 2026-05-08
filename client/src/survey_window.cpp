@@ -28,9 +28,11 @@ SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,
     nlohmann::json &answer_data,
     int section_id,
+    bool preview_mode,
     QWidget *parent
 )
     : QMainWindow(parent),
+    preview_mode_(preview_mode),
       section_data_(survey_data.at("sections").at(section_id)),
       answer_data_(answer_data.at("sections").at(section_id)) {
     setWindowTitle(QString::fromStdString(
@@ -121,6 +123,10 @@ SurveyWindow::SurveyWindow(
     central->setLayout(central_layout);
     setCentralWidget(central);
 
+    if (preview_mode_) {
+        save_answer_button_->setText("Next / finish preview");
+    }
+
     connect(
         save_answer_button_, &QPushButton::clicked, this,
         &SurveyWindow::save_answer
@@ -128,7 +134,7 @@ SurveyWindow::SurveyWindow(
 }
 
 void SurveyWindow::closeEvent(QCloseEvent *event) {
-    if (!answer_saved) {
+    if (!preview_mode_ && !answer_saved) {
         emit closed_without_answer();
     }
     event->accept();
@@ -137,11 +143,22 @@ void SurveyWindow::closeEvent(QCloseEvent *event) {
 void SurveyWindow::save_answer() {
     for (auto question : questions_) {
         if (!question->is_valid()) {
-            show_message_box(
-                this, QMessageBox::Warning, "Error",
-                "Some answers are missing. Please complete all sections."
-            );
-            return;
+            if (preview_mode_) {
+                auto want_to_continue = show_question_box(
+                    this, QMessageBox::Question, "Continue?", "Some required answers are missing. Are you sure you want to continue?", QMessageBox::Yes,
+                    QMessageBox::No, QMessageBox::No
+                );
+
+                if (want_to_continue == QMessageBox::No) {
+                    return;
+                }
+            } else {
+                show_message_box(
+                    this, QMessageBox::Warning, "Error",
+                    "Some required answers are missing. Please complete all sections."
+                );
+                return;
+            }
         }
     }
 
@@ -153,18 +170,21 @@ void SurveyWindow::save_answer() {
         }
     }
 
-    QString message =
+    if (!preview_mode_) {
+        QString message =
         all_answered
             ? "Are you sure you want to continue?"
             : "Some answers are missing. Are you sure you want to continue?";
-    auto want_to_save = show_question_box(
-        this, QMessageBox::Question, "Save?", message, QMessageBox::Yes,
-        QMessageBox::No, QMessageBox::No
-    );
+        auto want_to_save = show_question_box(
+            this, QMessageBox::Question, "Save?", message, QMessageBox::Yes,
+            QMessageBox::No, QMessageBox::No
+        );
 
-    if (want_to_save == QMessageBox::No) {
-        return;
+        if (want_to_save == QMessageBox::No) {
+            return;
+        }
     }
+
     for (auto question : questions_) {
         question->save_answer(answer_data_);
     }

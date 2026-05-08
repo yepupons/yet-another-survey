@@ -17,6 +17,7 @@ public:
         const nlohmann::json &survey_data,
         nlohmann::json &answer_data,
         int section_id,
+        bool preview_mode,
         QWidget *parent = nullptr
     );
 
@@ -34,6 +35,7 @@ private:
     const nlohmann::json &section_data_;
     nlohmann::json &answer_data_;
     bool answer_saved;
+    bool preview_mode_ = false;
 
     QList<Block *> questions_;
     QPushButton *save_answer_button_;
