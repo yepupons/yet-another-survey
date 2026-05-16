@@ -80,11 +80,10 @@ void ServerInteraction::post_answer(const nlohmann::json &answer_data) {
     handle_http_code(curl, res, readBuffer, headers);
 }
 
-nlohmann::json ServerInteraction::get_passed_surveys(int user_id) {
+nlohmann::json ServerInteraction::get_passed_surveys(const std::string &user_id) {
     CURL *curl = curl_easy_init();
     std::string readBuffer;
-    std::string url = "http://127.0.0.1:8080/passed-surveys?session-id=" +
-                      std::to_string(user_id);
+    std::string url = "http://127.0.0.1:8080/passed-surveys?session-id=" + user_id;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -95,11 +94,10 @@ nlohmann::json ServerInteraction::get_passed_surveys(int user_id) {
     return nlohmann::json::parse(readBuffer);
 }
 
-nlohmann::json ServerInteraction::get_created_surveys(int user_id) {
+nlohmann::json ServerInteraction::get_created_surveys(const std::string &user_id) {
     CURL *curl = curl_easy_init();
     std::string readBuffer;
-    std::string url = "http://127.0.0.1:8080/created-surveys?session-id=" +
-                      std::to_string(user_id);
+    std::string url = "http://127.0.0.1:8080/created-surveys?session-id=" + user_id;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -126,11 +124,11 @@ nlohmann::json ServerInteraction::get_survey_statistics(int survey_id) {
 }
 
 nlohmann::json
-ServerInteraction::get_survey_results(int session_id, int survey_id) {
+ServerInteraction::get_survey_results(const std::string &session_id, int survey_id) {
     CURL *curl = curl_easy_init();
     std::string readBuffer;
     std::string url = "http://127.0.0.1:8080/survey-results?session-id=" +
-                      std::to_string(session_id) +
+                      session_id +
                       "&survey-id=" + std::to_string(survey_id);
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);

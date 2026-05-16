@@ -99,6 +99,75 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
+    app().registerHandler(
+        "/account",
+        [&db](const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb) {
+            try {
+                std::string session_id = request->getParameter("session-id");
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                resp->setBody(db.read_account(session_id));
+                cb(resp);
+#ifdef YAZ_DEBUG
+                std::cerr << "Account read for session "
+                          << request->getParameter("session-id") << std::endl;
+#endif
+            } catch (const std::exception &e) {
+#ifdef YAZ_DEBUG
+                std::cerr << "Error reading account for "
+                          << request->getParameter("session-id") << ": " << e.what()
+                          << std::endl;
+#endif
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k404NotFound);
+                resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
+    app().registerHandler(
+        "/account/telegram",
+        [&db](const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb) {
+            auto resp = HttpResponse::newHttpResponse();
+            try {
+                std::string session_id = request->getParameter("session-id");
+                auto json = request->getJsonObject();
+                std::int64_t telegram_id = json->get("telegram_id", 0).asInt64();
+                db.link_telegram(session_id, telegram_id);
+                resp->setBody("Linked");
+            } catch (const std::exception &e) {
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
+            }
+            cb(resp);
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/account/telegram",
+        [&db](const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb) {
+            auto resp = HttpResponse::newHttpResponse();
+            try {
+                std::string session_id = request->getParameter("session-id");
+                db.unlink_telegram(session_id);
+                resp->setBody("Unlinked");
+            } catch (const std::exception &e) {
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
+            }
+            cb(resp);
+        },
+        {Delete}
+    );
+
+
+
     /*
     app().registerHandler(
         "/answer",
@@ -129,7 +198,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                int session_id = std::stoi(request->getParameter("session-id"));
+                std::string session_id = request->getParameter("session-id");
                 const auto passed_surveys_data =
                     db.read_passed_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -159,7 +228,7 @@ int main(int argc, char *argv[]) {
         ) {
             try {
                 // ?session-id=...&survey-id=...
-                int session_id = std::stoi(request->getParameter("session-id"));
+                std::string session_id = request->getParameter("session-id");
                 int survey_id = std::stoi(request->getParameter("survey-id"));
                 const auto survey_results_data =
                     db.read_survey_results(session_id, survey_id);
@@ -191,7 +260,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                int session_id = std::stoi(request->getParameter("session-id"));
+                std::string session_id = request->getParameter("session-id");
                 const auto created_surveys_data =
                     db.read_created_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();

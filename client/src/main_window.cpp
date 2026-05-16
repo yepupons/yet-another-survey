@@ -218,7 +218,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(get_session_id_button_, &QAction::triggered, this, [this]() {
         show_message_box(
             this, QMessageBox::Information, "Info",
-            "Your session ID is: " + QString::number(session().get_id())
+            "Your session ID is: " + QString::fromStdString(session().get_id())
         );
     });
     connect(auth_button, &QAction::triggered, this, []() {
@@ -277,16 +277,15 @@ void MainWindow::change_session_id() {
         bool ok;
         QString text = QInputDialog::getText(
             this, "Set Session ID", "Enter new session ID:", QLineEdit::Normal,
-            QString::number(session().get_id()), &ok
+            QString::fromStdString(session().get_id()), &ok
         );
 
         if (!ok) {
             return;
         }
 
-        bool convert_ok;
-        int new_id = text.trimmed().toInt(&convert_ok);
-        if (!convert_ok || new_id <= 0) {
+        std::string new_id = text.trimmed().toStdString();
+        if (new_id.empty()) {
             show_message_box(
                 this, QMessageBox::Warning, "Error",
                 "Please enter a valid session id."
@@ -297,7 +296,7 @@ void MainWindow::change_session_id() {
         session().set_id(new_id);
         show_message_box(
             this, QMessageBox::Information, "Info",
-            "Session ID changed to " + QString::number(session().get_id())
+            "Session ID changed to " + QString::fromStdString(session().get_id())
         );
 }
 

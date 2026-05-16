@@ -36,8 +36,9 @@ void Database::write_survey(const std::string &survey_data) {
         throw std::runtime_error("Writing survey into database failed");
     }
 
-    int survey_id = doc.view()["data"]["id"].get_int32().value;
-    int creator_id = doc.view()["data"]["creator_id"].get_int32().value;
+    nlohmann::json json = nlohmann::json::parse(survey_data);
+    int survey_id = json["data"]["id"].get<int>();
+    std::string creator_id = json["data"]["creator_id"].get<std::string>();
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << creator_id << finalize);
@@ -74,8 +75,9 @@ void Database::write_answer(const std::string &answer_data) {
         throw std::runtime_error("Writing answer into database failed");
     }
 
-    int answer_id = doc.view()["data"]["id"].get_int32().value;
-    int respondent_id = doc.view()["data"]["respondent_id"].get_int32().value;
+    nlohmann::json json = nlohmann::json::parse(answer_data);
+    int answer_id = json["data"]["id"].get<int>();
+    std::string respondent_id = json["data"]["respondent_id"].get<std::string>();
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << respondent_id << finalize);
@@ -93,7 +95,7 @@ void Database::write_answer(const std::string &answer_data) {
     );
 }
 
-std::string Database::read_passed_surveys(int session_id) {
+std::string Database::read_passed_surveys(const std::string &session_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
@@ -105,9 +107,12 @@ std::string Database::read_passed_surveys(int session_id) {
     );
     std::set<int> passed_surveys;
     for (auto &&doc : cursor) {
-        if (doc["data"] && doc["data"]["survey_id"]) {
-            passed_surveys.insert(doc["data"]["survey_id"].get_int32().value);
-        }
+        auto elem = doc["data"]["survey_id"];
+        if (!elem) continue;
+        if (elem.type() == bsoncxx::type::k_int32)
+            passed_surveys.insert(elem.get_int32().value);
+        else if (elem.type() == bsoncxx::type::k_int64)
+            passed_surveys.insert(static_cast<int>(elem.get_int64().value));
     }
     nlohmann::json result = nlohmann::json::array();
     for (int id : passed_surveys) {
@@ -116,7 +121,7 @@ std::string Database::read_passed_surveys(int session_id) {
     return result.dump();
 }
 
-std::string Database::read_created_surveys(int session_id) {
+std::string Database::read_created_surveys(const std::string &session_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
@@ -206,13 +211,18 @@ std::string Database::read_statistics(int survey_id) {
             default:
                 continue;
         }
+        auto count = doc["count"];
         result.at("sections")[section][question][answer] =
-            doc["count"].get_int32().value;
+            count.type() == bsoncxx::type::k_int32
+                ? count.get_int32().value
+                : static_cast<int>(count.get_int64().value);
     }
     return result.dump();
 }
 
-std::string Database::read_survey_results(int session_id, int survey_id) {
+std::string Database::read_survey_results(
+    const std::string &session_id, int survey_id
+) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
@@ -328,5 +338,41 @@ std::string Database::read_image(const std::string &image_oid) {
     );
 
     return data;
+}
+
+std::string Database::read_account(const std::string &session_id) {
+    auto result = db()["users"].find_one(
+        document{} << "id" << session_id << finalize
+    );
+    if (!result) throw std::runtime_error("Account not found");
+    return bsoncxx::to_json(result->view());
+}
+
+void Database::link_telegram(
+    const std::string &session_id, std::int64_t telegram_id
+) {
+    auto find = db()["users"].find_one(
+        document{} << "id" << session_id << finalize
+    );
+    if (!find) throw std::runtime_error("User not found");
+
+    db()["users"].update_one(
+        document{} << "id" << session_id << finalize,
+        document{} << "$set" << open_document << "telegram_id" << telegram_id
+                   << close_document << finalize
+    );
+}
+
+void Database::unlink_telegram(const std::string &session_id) {
+    auto find = db()["users"].find_one(
+        document{} << "id" << session_id << finalize
+    );
+    if (!find) throw std::runtime_error("User not found");
+
+    db()["users"].update_one(
+        document{} << "id" << session_id << finalize,
+        document{} << "$unset" << open_document << "telegram_id" << ""
+                   << close_document << finalize
+    );
 }
 }  // namespace survey
