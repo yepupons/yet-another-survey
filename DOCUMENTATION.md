@@ -8,15 +8,19 @@
     - [macOS: проверить/установить Qt6](#macos-проверитьустановить-qt6)
     - [macOS: установить и запустить mongodb](#macos-установить-и-запустить-mongodb)
     - [macos: установить gnuplot](#macos-установить-gnuplot)
+    - [macOS: установить Boost](#macos-установить-boost)
     - [Linux: проверить/установить Qt6](#linux-проверитьустановить-qt6)
     - [Linux: установить и запустить mongodb](#linux-установить-и-запустить-mongodb)
+    - [Linux: установить Boost](#linux-установить-boost)
     - [Windows: проверить/установить Qt6](#windows-проверитьустановить-qt6)
     - [Windows: установить и запустить mongodb](#windows-установить-и-запустить-mongodb)
+    - [Windows: установить Boost](#windows-установить-boost)
     - [Билд](#билд)
     - [Если запустился из корня cmake .](#если-запустился-из-корня-cmake-)
   - [Что и где запускается?](#что-и-где-запускается)
     - [Сервер](#сервер)
     - [Клиент (Qt)](#клиент-qt)
+    - [Telegram-бот](#telegram-бот)
 
 ## Как подтянуть сабмодули?
 Надо один раз запустить код ниже, чтобы их всех подтянуть.
@@ -29,7 +33,7 @@ git submodule update --init --recursive
 ```
 
 ## Сборка проекта
-Проект теперь использует Qt6для клиента, поэтому перед сборкой нужно установить его установить.
+Проект использует Qt6 для клиента, MongoDB для сервера, gnuplot для экспорта графиков и Boost для Telegram-бота.
 
 
 ### macOS: проверить/установить Qt6
@@ -54,6 +58,13 @@ brew services start mongodb-community
 ### macos: установить gnuplot
 ```bash
 brew install gnuplot
+```
+
+### macOS: установить Boost
+Boost нужен для сборки Telegram-бота
+
+```bash
+brew install boost
 ```
 
 ### Linux: проверить/установить Qt6
@@ -98,6 +109,25 @@ sudo systemctl start mongod
 sudo systemctl enable mongod
 ```
 
+### Linux: установить Boost
+Boost нужен для сборки Telegram-бота
+
+Для Ubuntu/Debian:
+```bash
+sudo apt update
+sudo apt install -y libboost-all-dev
+```
+
+Для Arch:
+```bash
+sudo pacman -S boost
+```
+
+Для Fedora:
+```bash
+sudo dnf install boost-devel
+```
+
 ### Windows: проверить/установить Qt6
 
 Проверить, установлен ли Qt6 через Chocolatey:
@@ -114,6 +144,14 @@ choco install qt6
 
 Установи MongoDB Community Server через MSI и включи опцию установки как Windows Service.
 После установки запусти сервис через Windows Services (Services.msc), нажав Start у MongoDB.
+
+### Windows: установить Boost
+Boost нужен для сборки Telegram-бота
+
+Через Chocolatey:
+```bash
+choco install boost-msvc-14.3
+```
 
 ### Билд
 Собираем билд, все будет лежать в папочке ./build в корне репозитория.
@@ -166,3 +204,26 @@ make server
 ```bash
 make client
 ```
+
+### Telegram-бот
+
+Бот запускается отдельным процессом. Перед запуском нужно передать токен через переменную окружения `BOT_TOKEN`.
+
+Передать токен только для одной команды:
+```bash
+BOT_TOKEN="your_bot_token" make bot
+```
+
+ИЛИ прописать токен в текущей bash-сессии:
+```bash
+export BOT_TOKEN="your_bot_token"
+make bot
+```
+
+Если запускаешь бинарник напрямую:
+```bash
+export BOT_TOKEN="your_bot_token"
+./build/telegram_bot
+```
+
+ВАЖНО: сервер должен быть запущен, потому что бот обращается к серверным endpoint-ам.
