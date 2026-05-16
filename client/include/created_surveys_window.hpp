@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QLabel>
 #include <QList>
+#include <nlohmann/json.hpp>
 
 namespace survey {
 class CreatedSurveysWindow : public QDialog {
@@ -13,6 +14,9 @@ public:
     explicit CreatedSurveysWindow(QWidget *parent = nullptr);
 
 public slots:
+    void show_qr_code(int id);
+    void
+    show_survey_preview(QWidget *parent, const nlohmann::json &survey_data);
     void export_statistics_txt(int survey_id);
     void export_statistics_jpg(int survey_id);
 };

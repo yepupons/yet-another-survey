@@ -20,7 +20,7 @@ if(CCACHE_PROGRAM)
 endif()
 
 # Dependencies
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
@@ -39,6 +39,25 @@ if (EXISTS "${MATPLOTPLUSPLUS_LOCAL_DIR}/CMakeLists.txt")
     add_subdirectory("${MATPLOTPLUSPLUS_LOCAL_DIR}" third_party/matplotplusplus)
 else()
     message(FATAL_ERROR "matplotplusplus submodule missing. Run: git submodule update --init --recursive")
+endif()
+
+set(QRCODEGENERATOR_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/Qt-QrCodeGenerator")
+if (EXISTS "${QRCODEGENERATOR_LOCAL_DIR}/src/QrCodeGenerator.cpp")
+    add_library(qrcodegenerator
+        "${QRCODEGENERATOR_LOCAL_DIR}/src/QrCodeGenerator.cpp"
+        "${QRCODEGENERATOR_LOCAL_DIR}/src/qrcodegen/qrcodegen.cpp"
+    )
+
+    target_include_directories(qrcodegenerator PUBLIC
+        "${QRCODEGENERATOR_LOCAL_DIR}/src"
+    )
+
+    target_link_libraries(qrcodegenerator PUBLIC
+        Qt6::Widgets
+        Qt6::Svg
+    )
+else()
+    message(FATAL_ERROR "Qt-QrCodeGenerator submodule missing. Run: git submodule update --init --recursive")
 endif()
 
 # Drogon Options
@@ -101,6 +120,7 @@ target_link_libraries(client PRIVATE
     CURL::libcurl
     nlohmann_json::nlohmann_json
     matplot
+    qrcodegenerator
 )
 
 # Server

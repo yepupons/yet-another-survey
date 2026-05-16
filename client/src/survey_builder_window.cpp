@@ -1,11 +1,14 @@
 #include "survey_builder_window.hpp"
 #include "survey_taking.hpp"
+#include <QrCodeGenerator.h>
 #include <qglobal.h>
 #include <qlineedit.h>
 #include <QHBoxLayout>
+#include <QImage>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QPixmap>
 #include <chrono>
 #include "pretty_view.hpp"
 #include "section_editor.hpp"
@@ -78,7 +81,8 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
 
     central_layout->addLayout(bottom_row);
 
-    save_survey_button_ = new QPushButton(is_test_ ? "Save test" : "Save survey", central);
+    save_survey_button_ =
+        new QPushButton(is_test_ ? "Save test" : "Save survey", central);
     save_survey_button_->setObjectName("primaryButton");
     central_layout->addWidget(save_survey_button_);
 
@@ -118,7 +122,9 @@ nlohmann::json SurveyBuilderWindow::build_survey_json(int id, bool preview_mode)
     survey["data"]["id"] = id;
     survey["data"]["creator_id"] = session().get_id();
     survey["data"]["type"] = is_test_ ? "test" : "survey";
-    survey["title"] = title_->text().trimmed().isEmpty() ? "Unnamed" : title_->text().trimmed().toStdString();
+    survey["title"] = title_->text().trimmed().isEmpty()
+                          ? "Unnamed"
+                          : title_->text().trimmed().toStdString();
     survey["sections"] = nlohmann::json::array();
     for (auto *section : sections_) {
         survey["sections"].push_back(section->to_json(preview_mode));
@@ -147,8 +153,10 @@ void SurveyBuilderWindow::save_survey() {
         return;
     }
 
+    QrCodeGenerator generator(this);
+    const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
     show_message_box(
-        this, QMessageBox::Information, "Saved",
+        this, QPixmap::fromImage(qr_image), "Saved",
         "Survey has been saved.\nYour ID:\n" + QString::number(id)
     );
     deleteLater();

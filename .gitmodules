@@ -7,3 +7,6 @@
 [submodule "third_party/matplotplusplus"]
 	path = third_party/matplotplusplus
 	url = https://github.com/alandefreitas/matplotplusplus.git
+[submodule "third_party/Qt-QrCodeGenerator"]
+	path = third_party/Qt-QrCodeGenerator
+	url = https://github.com/alex-spataru/Qt-QrCodeGenerator.git
