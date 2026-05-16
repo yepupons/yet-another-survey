@@ -256,8 +256,14 @@ void MainWindow::create_survey() {
     menu->setStyleSheet(styleSheet());
 
     auto *survey = menu->addAction("Survey");
+    survey->setData(SurveyBuilderWindow::SURVEY);
     menu->addSeparator();
     auto *test = menu->addAction("Test");
+    test->setData(SurveyBuilderWindow::TEST);
+    menu->addSeparator();
+    auto *quiz = menu->addAction("Quiz");
+    quiz->setData(SurveyBuilderWindow::QUIZ);
+    /// 
 
     QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
         QPoint(0, create_survey_button_->height())
@@ -266,7 +272,8 @@ void MainWindow::create_survey() {
     if (!chosen) {
         return;
     }
-    auto *builder = new SurveyBuilderWindow(chosen == test);
+    auto chosen_type = static_cast<SurveyBuilderWindow::Created_Type>(chosen->data().toInt( ));
+    auto *builder = new SurveyBuilderWindow(chosen_type);
     builder->setAttribute(Qt::WA_DeleteOnClose);
     builder->showMaximized();
     builder->raise();

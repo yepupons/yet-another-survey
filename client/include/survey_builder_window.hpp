@@ -8,6 +8,7 @@
 #include <QScrollArea>
 #include <QStringListModel>
 #include <QVBoxLayout>
+#include <QString>
 #include <nlohmann/json.hpp>
 #include "section_editor.hpp"
 
@@ -15,14 +16,15 @@ namespace survey {
 class SurveyBuilderWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit SurveyBuilderWindow(bool is_test, QWidget *parent = nullptr);
+    enum Created_Type {SURVEY, TEST, QUIZ};
+    explicit SurveyBuilderWindow(Created_Type type, QWidget *parent = nullptr);
 
 private slots:
     void add_section();
     void save_survey();
 
 private:
-    bool is_test_;
+    Created_Type type_;
 
     QWidget *content_ = nullptr;
 
@@ -36,6 +38,7 @@ private:
 
     nlohmann::json build_survey_json(int id, bool preview_mode) const;
     static int generate_survey_id();
+    static const QString write_type(Created_Type type);
 };
 }  // namespace survey
 

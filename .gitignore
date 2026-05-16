@@ -42,6 +42,7 @@
 
 # vscode leftovers
 .vscode
+.clangd
 
 # cmake 
 CMakeFiles/
