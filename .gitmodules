@@ -10,3 +10,6 @@
 [submodule "third_party/Qt-QrCodeGenerator"]
 	path = third_party/Qt-QrCodeGenerator
 	url = https://github.com/alex-spataru/Qt-QrCodeGenerator.git
+[submodule "third_party/tgbot-cpp"]
+	path = third_party/tgbot-cpp
+	url = https://github.com/reo7sp/tgbot-cpp.git

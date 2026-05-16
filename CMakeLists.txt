@@ -23,6 +23,7 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
 find_package(Drogon CONFIG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(Boost 1.65.1 REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
 
@@ -58,6 +59,15 @@ if (EXISTS "${QRCODEGENERATOR_LOCAL_DIR}/src/QrCodeGenerator.cpp")
     )
 else()
     message(FATAL_ERROR "Qt-QrCodeGenerator submodule missing. Run: git submodule update --init --recursive")
+endif()
+
+set(TGBOT_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/tgbot-cpp")
+if (EXISTS "${TGBOT_LOCAL_DIR}/CMakeLists.txt")
+    set(ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
+    add_subdirectory("${TGBOT_LOCAL_DIR}" third_party/tgbot-cpp)
+else()
+    message(FATAL_ERROR "tgbot-cpp submodule missing. Run: git submodule update --init --recursive")
 endif()
 
 # Drogon Options
@@ -139,6 +149,25 @@ target_link_libraries(server PRIVATE
     mongo::bsoncxx_shared
     mongo::mongocxx_shared
 )
+
+# TG bot
+add_executable(telegram_bot
+    server/telegram_bot/main.cpp
+)
+
+target_link_libraries(telegram_bot PRIVATE
+    TgBot
+    CURL::libcurl
+)
+
+if (TARGET Boost::headers)
+    target_link_libraries(telegram_bot PRIVATE Boost::headers)
+elseif (TARGET Boost::boost)
+    target_link_libraries(telegram_bot PRIVATE Boost::boost)
+else()
+    target_include_directories(telegram_bot PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
+
 # Debug (enabling reading errors and recieved data on server)
 option(YAZ_DEBUG OFF)
 if (YAZ_DEBUG) 

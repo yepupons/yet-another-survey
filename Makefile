@@ -1,4 +1,4 @@
-.PHONY: configure build build-server build-client server client format clean
+.PHONY: configure build server client bot format clean
 
 configure:
 	cmake -S . -B build
@@ -16,6 +16,10 @@ server:
 client:
 	./build/client
 
+bot: configure
+	cmake --build build --target telegram_bot
+	BOT_TOKEN=$(BOT_TOKEN) ./build/telegram_bot
+	
 format:
 	clang-format -i client/*/*.*pp server/*/*.*pp
 
