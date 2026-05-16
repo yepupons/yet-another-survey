@@ -1,7 +1,10 @@
 #include "created_surveys_window.hpp"
+#include <QrCodeGenerator.h>
 #include <matplot/matplot.h>
 #include <QHBoxLayout>
+#include <QImage>
 #include <QLabel>
+#include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -12,6 +15,7 @@
 #include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
+#include "survey_window.hpp"
 
 namespace survey {
 CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
@@ -45,8 +49,9 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     title_label->setObjectName("titleLabel");
     title_layout->addWidget(title_label);
 
-    auto *subtitle_label =
-        new QLabel("Export survey statistics to txt or jpg.", title_card);
+    auto *subtitle_label = new QLabel(
+        "Preview surveys, share QR codes, or export statistics.", title_card
+    );
     subtitle_label->setObjectName("subtitleLabel");
     title_layout->addWidget(subtitle_label);
 
@@ -85,20 +90,24 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
     for (int id : surveys_ids) {
         auto *row_widget = new QWidget(surveys_card);
-        auto *row_layout = new QHBoxLayout(row_widget);
+        auto *row_layout = new QVBoxLayout(row_widget);
         row_layout->setContentsMargins(0, 0, 0, 0);
-        row_layout->setSpacing(12);
+        row_layout->setSpacing(10);
 
         auto *survey_title = new QLabel(row_widget);
         survey_title->setObjectName("titleLabel");
         survey_title->setSizePolicy(
             QSizePolicy::Expanding, QSizePolicy::Preferred
         );
+        survey_title->setWordWrap(true);
         try {
             auto title =
                 ServerInteraction::get_survey(id).at("title").get<std::string>(
                 );
-            survey_title->setText(QString::fromStdString(title));
+            survey_title->setText(
+                QString::fromStdString(title) + " (id: " + QString::number(id) +
+                ")"
+            );
         } catch (const std::exception &e) {
             show_message_box(this, QMessageBox::Warning, "Error", e.what());
             deleteLater();
@@ -106,20 +115,40 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
         }
         row_layout->addWidget(survey_title);
 
-        auto *txt_export_button = new QPushButton("Export to txt", row_widget);
+        auto *actions_layout = new QHBoxLayout();
+        actions_layout->setContentsMargins(0, 0, 0, 0);
+        actions_layout->setSpacing(10);
+
+        auto *show_qr_button = new QPushButton("Show QR", row_widget);
+        show_qr_button->setObjectName("primaryButton");
+        actions_layout->addWidget(show_qr_button, 1);
+        connect(show_qr_button, &QPushButton::clicked, this, [this, id]() {
+            show_qr_code(id);
+        });
+
+        auto *view_survey_button = new QPushButton("Preview", row_widget);
+        view_survey_button->setObjectName("primaryButton");
+        actions_layout->addWidget(view_survey_button, 1);
+        connect(view_survey_button, &QPushButton::clicked, this, [this, id]() {
+            auto survey_data = ServerInteraction::get_survey(id);
+            show_survey_preview(this, survey_data);
+        });
+
+        auto *txt_export_button = new QPushButton("Export TXT", row_widget);
         txt_export_button->setObjectName("primaryButton");
-        row_layout->addWidget(txt_export_button);
+        actions_layout->addWidget(txt_export_button, 1);
         connect(txt_export_button, &QPushButton::clicked, this, [this, id]() {
             export_statistics_txt(id);
         });
 
-        auto *jpg_export_button = new QPushButton("Export to jpg", row_widget);
+        auto *jpg_export_button = new QPushButton("Export JPG", row_widget);
         jpg_export_button->setObjectName("primaryButton");
-        row_layout->addWidget(jpg_export_button);
+        actions_layout->addWidget(jpg_export_button, 1);
         connect(jpg_export_button, &QPushButton::clicked, this, [this, id]() {
             export_statistics_jpg(id);
         });
 
+        row_layout->addLayout(actions_layout);
         surveys_layout->addWidget(row_widget);
     }
 
@@ -257,4 +286,33 @@ void CreatedSurveysWindow::export_statistics_jpg(int survey_id) {
     };
     close();
 }
+
+void CreatedSurveysWindow::show_survey_preview(
+    QWidget *parent,
+    const nlohmann::json &survey_data
+) {
+    auto *preview_answers = new nlohmann::json;
+    (*preview_answers)["sections"] = nlohmann::json::array();
+    for (size_t i = 0; i < survey_data.at("sections").size(); ++i) {
+        (*preview_answers)["sections"].push_back(nlohmann::json::array());
+    }
+
+    SurveyWindow *preview_window =
+        new SurveyWindow(survey_data, *preview_answers, 0, parent);
+    preview_window->setAttribute(Qt::WA_DeleteOnClose);
+    connect(preview_window, &QObject::destroyed, this, [preview_answers]() {
+        delete preview_answers;
+    });
+    preview_window->show();
+}
+
+void CreatedSurveysWindow::show_qr_code(int id) {
+    QrCodeGenerator generator(this);
+    const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
+    show_message_box(
+        this, QPixmap::fromImage(qr_image), "QR code",
+        "Survey ID:\n" + QString::number(id)
+    );
+}
+
 }  // namespace survey
