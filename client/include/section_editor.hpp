@@ -21,7 +21,7 @@ public:
         QWidget *parent = nullptr
     );
 
-    nlohmann::json to_json() const;
+    nlohmann::json to_json(bool preview_mode) const;
 
 private slots:
     void add_block();

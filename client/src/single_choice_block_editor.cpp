@@ -162,11 +162,16 @@ void SingleChoiceBlockEditor::add_option() {
     options_layout_->addWidget(row_widget);
 }
 
-nlohmann::json SingleChoiceBlockEditor::to_json() const {
+nlohmann::json SingleChoiceBlockEditor::to_json(bool preview_mode) const {
     nlohmann::json block;
     block["type"] = "single";
     block["text"] = question_->text().trimmed().toStdString();
-    if (!image_path_.isEmpty()) {
+
+    if (preview_mode && !image_path_.isEmpty()) {
+        block["image_path"] = image_path_.toStdString();
+    }
+
+    if (!preview_mode && !image_path_.isEmpty()) {
         block["image"] =
             ServerInteraction::post_image(image_path_.toStdString());
     }

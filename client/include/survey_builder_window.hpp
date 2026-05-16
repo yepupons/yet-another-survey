@@ -34,7 +34,7 @@ private:
     QPushButton *add_section_button_ = nullptr;
     QPushButton *save_survey_button_ = nullptr;
 
-    nlohmann::json build_survey_json(int id) const;
+    nlohmann::json build_survey_json(int id, bool preview_mode) const;
     static int generate_survey_id();
 };
 }  // namespace survey

@@ -18,22 +18,44 @@ TextBlock::TextBlock(
     setObjectName("questionBlockContainer");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
+
     QLabel *image = nullptr;
-    if (block.contains("image")) {
-        image = new QLabel(this);
-        image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        std::string image_data =
-            ServerInteraction::get_image(block.at("image").get<std::string>());
-        QByteArray byte_array = QByteArray::fromStdString(image_data);
-        QPixmap pixmap;
-        if (pixmap.loadFromData(byte_array)) {
-            image->setPixmap(pixmap.scaled(
-                700, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation
-            ));
+    QPixmap pixmap;
+
+    if (block.contains("image_path") && block.at("image_path").is_string()) {
+        const QString image_path =
+            QString::fromStdString(block.at("image_path").get<std::string>());
+        pixmap.load(image_path);
+    } else if (block.contains("image") && block.at("image").is_string()) {
+        try {
+            const std::string image_data =
+                ServerInteraction::get_image(block.at("image").get<std::string>());
+
+            const QByteArray byte_array = QByteArray::fromStdString(image_data);
+            pixmap.loadFromData(byte_array);
+        } catch (const std::exception &) {
+            pixmap = QPixmap();
         }
     }
 
-    question_ = new QLabel(QString::fromStdString(block.at("text")), this);
+    if (!pixmap.isNull()) {
+        image = new QLabel(this);
+        image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        image->setAlignment(Qt::AlignCenter);
+        image->setPixmap(pixmap.scaled(
+            700, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation
+        ));
+    }
+
+    QString question_text = QString::fromStdString(block.at("text"));
+    QString html = question_text.toHtmlEscaped();
+
+    if (block.value("required", false)) {
+        html += " <span style='color: red; font-weight: 400; '>*</span>";
+    }
+
+    question_ = new QLabel(html, this);
+    question_->setTextFormat(Qt::RichText);
     question_->setObjectName("questionTitle");
     question_->setWordWrap(true);
     question_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);

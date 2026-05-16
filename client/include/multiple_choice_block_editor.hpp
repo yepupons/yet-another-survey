@@ -16,7 +16,7 @@ class MultipleChoiceBlockEditor : public BlockEditor {
 public:
     explicit MultipleChoiceBlockEditor(bool is_test, QWidget *parent = nullptr);
 
-    nlohmann::json to_json() const override;
+    nlohmann::json to_json(bool preview_mode) const override;
 
 private slots:
     void add_option();

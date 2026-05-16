@@ -122,7 +122,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
 
         connect(button, &QPushButton::clicked, this, [this, id]() {
             int survey_id = id;
-            int session_id = session().get_id();
+            std::string session_id = session().get_id();
             auto *dialog = new ViewSurveyResults(survey_id, session_id, this);
             dialog->showMaximized();
             dialog->exec();
@@ -138,7 +138,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
 
 ViewSurveyResults::ViewSurveyResults(
     int survey_id,
-    int session_id,
+    const std::string &session_id,
     QWidget *parent
 )
     : QDialog(parent) {

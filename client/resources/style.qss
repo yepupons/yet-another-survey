@@ -505,9 +505,49 @@ QPushButton#dangerIconButton {
     background-color: #ffffff;
     border: 1px solid #d8e0ea;
     border-radius: 10px;
-    image: url(:/icons/close.svg);
+    image: url(:/icons/trash.svg);
 }
 
 QCheckBox#choiceOption::indicator:checked {
     image: url(:/icons/check_white.svg);
+}
+
+QToolButton#profileButton {
+    background-color: transparent;
+    border: 1px solid #6b7280;
+    border-radius: 22px;
+    padding: 8px;
+}
+
+QToolButton#profileButton:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: #9ca3af;
+}
+
+QToolButton#profileButton:pressed {
+    background-color: rgba(255, 255, 255, 0.20);
+    border-color: #d1d5db;
+}
+
+QToolButton#profileButton::menu-indicator {
+    image: none;
+    width: 0px;
+}
+
+QPushButton#telegramAuthButton {
+    background-color: #229ED9;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+QPushButton#telegramAuthButton:hover {
+    background-color: #1d8fc4;
+}
+
+QPushButton#telegramAuthButton:pressed {
+    background-color: #187daa;
 }
