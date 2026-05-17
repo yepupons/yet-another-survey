@@ -193,4 +193,41 @@ std::string ServerInteraction::get_image(const std::string &image_oid) {
     handle_http_code(curl, res, readBuffer, nullptr);
     return readBuffer;
 }
+
+nlohmann::json ServerInteraction::request_challenge() {
+    CURL *curl = curl_easy_init();
+    std::string readBuffer;
+    std::string url = "http://127.0.0.1:8080/api/auth/telegram/challenge";
+    std::string payload = "{}";
+    curl_slist *headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    CURLcode res = curl_easy_perform(curl);
+
+    handle_http_code(curl, res, readBuffer, headers);
+    return nlohmann::json::parse(readBuffer);
+}
+
+nlohmann::json ServerInteraction::get_challenge_status(const std::string &challenge_id){
+    CURL *curl = curl_easy_init();
+    std::string readBuffer;
+    std::string url = "http://127.0.0.1:8080/api/auth/telegram/challenge" + challenge_id;
+    curl_slist *headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    CURLcode res = curl_easy_perform(curl);
+
+    handle_http_code(curl, res, readBuffer, headers);
+    return nlohmann::json::parse(readBuffer);
+};
+
 }  // namespace survey

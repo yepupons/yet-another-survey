@@ -6,6 +6,7 @@
 
 class QPushButton;
 class QLabel;
+class QTimer;
 
 namespace survey {
 class LoginWindow : public QMainWindow {
@@ -20,7 +21,13 @@ public slots:
 private:
     QPushButton *login_button_;
     QLabel *status_label_;
+    
     QString telegram_url_;
+    int expires_in_ = 0;
+    QString challenge_id_;
+
+    QTimer *countdown_timer_;
+    QTimer *poll_timer_;
 };
 }  // namespace survey
 

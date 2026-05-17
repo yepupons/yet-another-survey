@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QApplication>
 #include <QClipboard>
+#include <QTimer>
 
 namespace survey {
 LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
@@ -41,6 +42,54 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
         login_button_, &QPushButton::clicked, this,
         &LoginWindow::start_telegram_login
     );
+
+    countdown_timer_ = new QTimer(this);
+    connect(countdown_timer_, &QTimer::timeout, this, [this]() {
+        --expires_in_;
+        if (expires_in_ <= 0) {
+            countdown_timer_->stop();
+            poll_timer_->stop();
+            status_label_->setText("Login link expired.");
+            login_button_->setText("Login with Telegram");
+            login_button_->setEnabled(true);
+            disconnect(login_button_, nullptr, this, nullptr);
+            connect(
+                login_button_, &QPushButton::clicked, this,
+                &LoginWindow::start_telegram_login
+            );
+            return;
+        }
+
+        status_label_->setText(
+            "Open Telegram to authorize. This link expires in " +
+            QString::number(expires_in_) + " seconds."
+        );
+    });
+
+    poll_timer_ = new QTimer(this);
+    connect(poll_timer_, &QTimer::timeout, this, [this]() {
+        auto status_json = ServerInteraction::get_challenge_status(challenge_id_.toStdString());
+        std::string status = status_json.at("status");
+        if (status == "pending") {
+            return;
+        }
+        if (status == "confirmed") {
+            poll_timer_->stop();
+            completeTelegramLogin();
+            return;
+        }
+        if (status == "expired") {
+            poll_timer_->stop();
+            status_label_->setText("Link expired. Please, login again.");
+            return;
+        }
+        if (status == "used") {
+            poll_timer_->stop();
+            status_label_->setText("This link was already used");
+            return;
+        }
+    });
+
 }
 
 void LoginWindow::start_telegram_login() {
@@ -50,22 +99,20 @@ void LoginWindow::start_telegram_login() {
     try {
         const nlohmann::json challenge_info = ServerInteraction::request_challenge();
         telegram_url_ = QString::fromStdString(challenge_info.at("telegram_url").get<std::string>());
-        const int expires_in = challenge_info.at("expires_in").get<int>();
+        expires_in_ = challenge_info.at("expires_in").get<int>();
 
+        countdown_timer_->start(1000);
+        poll_timer_->start(2000);
         QDesktopServices::openUrl(QUrl(telegram_url_));
 
-        status_label_->setText(
-            "Open Telegram to authorize. This link expires in " +
-            QString::number(expires_in / 60) + " minutes."
-        );
-        
         login_button_->setText("Copy link");
         login_button_->setEnabled(true);
         disconnect(login_button_, &QPushButton::clicked, this, &LoginWindow::start_telegram_login);
         connect(login_button_, &QPushButton::clicked, this, [this]() {
             QApplication::clipboard()->setText(telegram_url_);
-            status_label_->setText("Telegram link copied to clipboard.");
+            login_button_->setText("Telegram link copied to clipboard.");
         });
+
 
     } catch (const std::exception &e) {
         status_label_->setText(

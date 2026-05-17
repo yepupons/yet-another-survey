@@ -162,6 +162,7 @@ add_executable(telegram_bot
 target_link_libraries(telegram_bot PRIVATE
     TgBot
     CURL::libcurl
+    nlohmann_json::nlohmann_json
 )
 
 if (TARGET Boost::headers)

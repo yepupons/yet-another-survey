@@ -330,6 +330,14 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
+            auto login_data = request->getJsonObject()->toStyledString();
+            auto login_status = db.bot_check_login_data(login_data);
+            if (login_status == 1){
+                resp->setBody("{\"success\" : true}");
+            } else{
+                 resp->setBody("{\"success\" : false}");
+            }
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
             cb(resp);
 
         },

@@ -31,6 +31,8 @@ public:
     static nlohmann::json get_survey_results(const std::string &session_id, int survey_id);
     static std::string post_image(const std::string &image_path);
     static std::string get_image(const std::string &image_oid);
+    static nlohmann::json request_challenge();
+    static nlohmann::json get_challenge_status(const std::string &challenge_id);
 };
 #endif  // SERVER_INTERACTION_HPP_
 }
