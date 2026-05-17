@@ -56,9 +56,11 @@ public:
     bool bot_check_login_data(const std::string &user_login_data);
     void confirm_telegram_challenge(
         const std::string &token_hashed,
-        int telegram_id
+        const std::string &telegram_user_data
     );
     std::string get_challenge_status(const std::string &challenge_id);
+    std::string complete_login(const std::string &user_challenge_data);
+    std::string user_id_by_access_token(const std::string &access_token);
 };
 }  // namespace survey
 

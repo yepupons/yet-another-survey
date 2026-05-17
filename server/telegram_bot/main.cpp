@@ -101,8 +101,13 @@ int main() {
         auth_data["telegram_user"]["first_name"] = first_name;
         const std::string response = http_post(link_url, auth_data.dump());
 
-        nlohmann::json login_response;
-        login_response = nlohmann::json::parse(response);
+        if (response.empty()) {
+            bot.getApi().sendMessage(
+                message->chat->id, "Server did not return a response."
+            );
+            return;
+        }
+        nlohmann::json login_response = nlohmann::json::parse(response);
         std::string answer;
         if (login_response.value("success", false)) {
             answer = username + ", вход подтвержден. Вернитесь в приложение.";

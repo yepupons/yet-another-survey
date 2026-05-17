@@ -1,11 +1,25 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon.h>
+#include <nlohmann/json.hpp>
 #include "database.hpp"
 
 using namespace drogon;
 
 // TODO: maybe not throw raw error to client, but just write it in debug mode +
 // log?
+
+static std::string bearer_token(const HttpRequestPtr &request) {
+    std::string auth = request->getHeader("authorization");
+    if (auth.empty()) {
+        auth = request->getHeader("Authorization");
+    }
+
+    const std::string prefix = "Bearer ";
+    if (auth.rfind(prefix, 0) != 0) {
+        throw std::invalid_argument("Missing access token");
+    }
+    return auth.substr(prefix.size());
+}
 
 int main(int argc, char *argv[]) {
     survey::Database db;
@@ -47,10 +61,13 @@ int main(int argc, char *argv[]) {
         ) {
             auto resp = HttpResponse::newHttpResponse();
             try {
-                auto json = request->getJsonObject();
-                db.write_survey(json->toStyledString());
+                auto survey_data =
+                    nlohmann::json::parse(std::string(request->getBody()));
+                survey_data["data"]["creator_id"] =
+                    db.user_id_by_access_token(bearer_token(request));
+                db.write_survey(survey_data.dump());
 #ifdef YAZ_DEBUG
-                std::cerr << "Received survey: " << json->toStyledString()
+                std::cerr << "Received survey: " << survey_data.dump(2)
                           << std::endl;
 #endif
             } catch (const std::exception &e) {
@@ -78,10 +95,13 @@ int main(int argc, char *argv[]) {
         ) {
             auto resp = HttpResponse::newHttpResponse();
             try {
-                auto json = request->getJsonObject();
-                db.write_answer(json->toStyledString());
+                auto answer_data =
+                    nlohmann::json::parse(std::string(request->getBody()));
+                answer_data["data"]["respondent_id"] =
+                    db.user_id_by_access_token(bearer_token(request));
+                db.write_answer(answer_data.dump());
 #ifdef YAZ_DEBUG
-                std::cerr << "Received answer: " << json->toStyledString()
+                std::cerr << "Received answer: " << answer_data.dump(2)
                           << std::endl;
 #endif
             } catch (const std::exception &e) {
@@ -106,7 +126,8 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                std::string session_id = request->getParameter("session-id");
+                std::string session_id =
+                    db.user_id_by_access_token(bearer_token(request));
                 const auto passed_surveys_data =
                     db.read_passed_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -135,8 +156,8 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                // ?session-id=...&survey-id=...
-                std::string session_id = request->getParameter("session-id");
+                std::string session_id =
+                    db.user_id_by_access_token(bearer_token(request));
                 int survey_id = std::stoi(request->getParameter("survey-id"));
                 const auto survey_results_data =
                     db.read_survey_results(session_id, survey_id);
@@ -168,7 +189,8 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                std::string session_id = request->getParameter("session-id");
+                std::string session_id =
+                    db.user_id_by_access_token(bearer_token(request));
                 const auto created_surveys_data =
                     db.read_created_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -368,8 +390,20 @@ int main(int argc, char *argv[]) {
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
-            auto resp = HttpResponse::newHttpResponse();
-            cb(resp);
+            try {
+                auto login_data = request->getJsonObject()->toStyledString();
+                auto user_data = db.complete_login(login_data);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody(user_data);
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
         },
         {Post}
     );

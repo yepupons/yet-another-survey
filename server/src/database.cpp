@@ -4,6 +4,7 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
+#include <cstdint>
 #include <iomanip>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
@@ -410,19 +411,24 @@ void Database::write_telegram_challenge(
 
 void Database::confirm_telegram_challenge(
     const std::string &token_hashed,
-    int telegram_id
+    const std::string &telegram_user_data
 ) {
+    nlohmann::json telegram_user = nlohmann::json::parse(telegram_user_data);
     auto now = std::chrono::system_clock::now();
     auto result = db()["telegram_challenges"].update_one(
         document{} << "token_hash" << token_hashed << "status"
                    << "pending" << finalize,
         document{} << "$set" << open_document << "status"
                    << "confirmed"
-                   << "telegram_user" << telegram_id << "confirmed_at"
-                   << bsoncxx::types::b_date{now} << close_document << finalize
+                   << "telegram_user" << open_document << "id"
+                   << telegram_user.at("id").get<std::int64_t>() << "username"
+                   << telegram_user.value("username", "") << "first_name"
+                   << telegram_user.value("first_name", "") << close_document
+                   << "confirmed_at" << bsoncxx::types::b_date{now}
+                   << close_document << finalize
     );
 
-    if (!result) {
+    if (!result || result->modified_count() != 1) {
         throw std::runtime_error("Challenge was not updated");
     }
 }
@@ -451,18 +457,123 @@ bool Database::bot_check_login_data(const std::string &user_login_data) {
         throw std::invalid_argument("Challenge expired");
     }
     confirm_telegram_challenge(
-        token_sha256, login_data.at("telegram_user").at("id").get<int>()
+        token_sha256, login_data.at("telegram_user").dump()
     );
     return true;
 }
 
 std::string Database::get_challenge_status(const std::string &challenge_id) {
-    mongocxx::options::find opts;
-    opts.projection(document{} << "status" << 1 << finalize);
     auto result = db()["telegram_challenges"].find_one(
-        document{} << "data._id" << challenge_id << finalize, opts
+        document{} << "_id" << challenge_id << finalize
     );
-    return bsoncxx::to_json(result->view());
+    if (!result) {
+        throw std::invalid_argument("Challenge not found");
+    }
+    auto view = result->view();
+    return std::string(view["status"].get_string().value);
+}
+
+std::string Database::complete_login(const std::string &user_challenge_data) {
+    const nlohmann::json challenge_data =
+        nlohmann::json::parse(user_challenge_data);
+    const std::string challenge_id =
+        challenge_data.at("challenge_id").get<std::string>();
+
+    auto result = db()["telegram_challenges"].find_one(
+        document{} << "_id" << challenge_id << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Challenge not found");
+    }
+
+    auto view = result->view();
+    const std::string status(view["status"].get_string().value);
+    if (status != "confirmed") {
+        throw std::invalid_argument("Challenge is not confirmed");
+    }
+
+    auto used_at = view["used_at"];
+    if (!used_at || used_at.type() != bsoncxx::type::k_null) {
+        throw std::invalid_argument("Challenge was already used");
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()
+    );
+    auto expires_at = view["expires_at"].get_date().value;
+    if (expires_at <= now_ms) {
+        throw std::invalid_argument("Challenge expired");
+    }
+
+    auto telegram_user = view["telegram_user"].get_document().view();
+    const std::int64_t telegram_user_id = telegram_user["id"].get_int64().value;
+    const std::string telegram_username =
+        std::string(telegram_user["username"].get_string().value);
+    const std::string telegram_first_name =
+        std::string(telegram_user["first_name"].get_string().value);
+    const std::string access_token = "access_" + generate_token();
+    auto user_result = db()["users"].find_one(
+        document{} << "telegram_user_id" << telegram_user_id << finalize
+    );
+
+    std::string user_id;
+    if (user_result) {
+        user_id = std::string(user_result->view()["id"].get_string().value);
+        auto update_user_result = db()["users"].update_one(
+            document{} << "telegram_user_id" << telegram_user_id << finalize,
+            document{} << "$set" << open_document << "telegram_username"
+                       << telegram_username << "telegram_first_name"
+                       << telegram_first_name << "updated_at"
+                       << bsoncxx::types::b_date{now} << "access_token"
+                       << access_token << close_document << finalize
+        );
+    } else {
+        user_id = generate_uuid();
+        auto insert_user_result = db()["users"].insert_one(
+            document{} << "id" << user_id << "telegram_user_id"
+                       << telegram_user_id << "telegram_username"
+                       << telegram_username << "telegram_first_name"
+                       << telegram_first_name << "created_at"
+                       << bsoncxx::types::b_date{now} << "updated_at"
+                       << bsoncxx::types::b_date{now} << "access_token"
+                       << access_token << "created_surveys" << open_array
+                       << close_array << "given_answers" << open_array
+                       << close_array << finalize
+        );
+    }
+
+    auto update_challenge_result = db()["telegram_challenges"].update_one(
+        document{} << "_id" << challenge_id << "status"
+                   << "confirmed"
+                   << "used_at" << bsoncxx::types::b_null{} << finalize,
+        document{} << "$set" << open_document << "status"
+                   << "used"
+                   << "used_at" << bsoncxx::types::b_date{now} << close_document
+                   << finalize
+    );
+    if (!update_challenge_result ||
+        update_challenge_result->modified_count() != 1) {
+        throw std::runtime_error("Challenge was not completed");
+    }
+
+    nlohmann::json user_data;
+    user_data["access_token"] = access_token;
+    user_data["user"]["id"] = user_id;
+    user_data["user"]["telegram_user_id"] = telegram_user_id;
+    user_data["user"]["telegram_username"] = telegram_username;
+    user_data["user"]["telegram_first_name"] = telegram_first_name;
+    return user_data.dump();
+}
+
+std::string Database::user_id_by_access_token(const std::string &access_token) {
+    auto result = db()["users"].find_one(
+        document{} << "access_token" << access_token << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Invalid access token");
+    }
+    return std::string(result->view()["id"].get_string().value);
 }
 
 }  // namespace survey
