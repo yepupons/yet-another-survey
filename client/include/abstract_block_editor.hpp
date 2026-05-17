@@ -9,12 +9,14 @@
 #include "pretty_view.hpp"
 
 namespace survey {
+enum Created_Type { SURVEY, TEST, QUIZ };
+
 class BlockEditor : public QWidget {
     Q_OBJECT
 
 public:
-    BlockEditor(bool is_test, QWidget *parent)
-        : QWidget(parent), is_test_(is_test) {
+    BlockEditor(Created_Type type, QWidget *parent)
+        : QWidget(parent), type_(type) {
     }
 
     virtual ~BlockEditor() = default;
@@ -24,7 +26,7 @@ signals:
     void remove_requested(BlockEditor *editor);
 
 protected:
-    bool is_test_;
+    Created_Type type_;
     QLineEdit *question_ = nullptr;
     QPushButton *upload_image_button_ = nullptr;
     QLabel *image_preview_ = nullptr;

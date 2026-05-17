@@ -14,7 +14,7 @@ namespace survey {
 class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit MultipleChoiceBlockEditor(bool is_test, QWidget *parent = nullptr);
+    explicit MultipleChoiceBlockEditor(Created_Type type, QWidget *parent = nullptr);
 
     nlohmann::json to_json(bool preview_mode) const override;
 

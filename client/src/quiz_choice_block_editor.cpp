@@ -1,24 +1,17 @@
-#include "single_choice_block_editor.hpp"
-#include <QAbstractButton>
-#include <QButtonGroup>
-#include <QComboBox>
-#include <QFileDialog>
+#include "quiz_choice_block_editor.hpp"
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
-#include <QRadioButton>
 #include <QWidget>
 #include <algorithm>
 #include "server_interaction.hpp"
 
 namespace survey {
-SingleChoiceBlockEditor::SingleChoiceBlockEditor(
-    Created_Type type,
-    QStringListModel *sections_list,
+QuizChoiceBlockEditor::QuizChoiceBlockEditor(
+    QStringListModel *outcomes_model,
     QWidget *parent
 )
-    : BlockEditor(type, parent), sections_list_(sections_list) {
+    : BlockEditor(QUIZ, parent), outcomes_model_(outcomes_model) {
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
@@ -36,7 +29,6 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     header_layout->addStretch();
     header_layout->addWidget(delete_label);
     header_layout->addWidget(delete_block_button);
-
     layout->addLayout(header_layout);
 
     connect(delete_block_button, &QPushButton::clicked, this, [this]() {
@@ -49,21 +41,13 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
 
     upload_image_button_ = new QPushButton("Upload Image", this);
     layout->addWidget(upload_image_button_);
-
     connect(
         upload_image_button_, &QPushButton::clicked, this,
-        &SingleChoiceBlockEditor::upload_image
+        &QuizChoiceBlockEditor::upload_image
     );
 
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
-
-    if (type_ == TEST) {
-        auto *correct_label = new QLabel("Mark the correct answer", this);
-        correct_label->setObjectName("sectionLabel");
-        layout->addWidget(correct_label);
-        correct_answers_ = new QButtonGroup(this);
-    }
 
     options_layout_ = new QVBoxLayout();
     layout->addLayout(options_layout_);
@@ -76,7 +60,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
 
     connect(
         add_option_button_, &QPushButton::clicked, this,
-        &SingleChoiceBlockEditor::add_option
+        &QuizChoiceBlockEditor::add_option
     );
 
     required_ = new QCheckBox("Required", this);
@@ -87,7 +71,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     setLayout(layout);
 }
 
-void SingleChoiceBlockEditor::add_option() {
+void QuizChoiceBlockEditor::add_option() {
     auto *row_widget = new QWidget(this);
     auto *row_layout = new QHBoxLayout(row_widget);
     row_layout->setContentsMargins(0, 0, 0, 0);
@@ -98,32 +82,12 @@ void SingleChoiceBlockEditor::add_option() {
     row_layout->addWidget(option);
     options_.push_back(option);
 
-    auto *link_enabling = new QRadioButton("After answer:");
-    link_enabling->setAutoExclusive(false);
-    link_enabling->setObjectName("sectionLabel");
-    row_layout->addWidget(link_enabling);
-    link_enablings_.push_back(link_enabling);
-
-    auto *link = new QComboBox(row_widget);
-    link->setModel(sections_list_);
-    link->setObjectName("secondaryButton");
-    link->setEnabled(false);
-    link->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    row_layout->addWidget(link);
-    links_.push_back(link);
-
-    connect(link_enabling, &QRadioButton::toggled, link, [link](bool checked) {
-        link->setEnabled(checked);
-    });
-
-    QAbstractButton *correct_button = nullptr;
-    if (type_ == TEST) {
-        auto *correct = new QRadioButton("Correct", row_widget);
-        correct->setObjectName("sectionLabel");
-        row_layout->addWidget(correct);
-        correct_answers_->addButton(correct);
-        correct_button = correct;
-    }
+    auto *outcome_selector = new QComboBox(row_widget);
+    outcome_selector->setModel(outcomes_model_);
+    outcome_selector->setObjectName("secondaryButton");
+    outcome_selector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    row_layout->addWidget(outcome_selector);
+    outcome_selectors_.push_back(outcome_selector);
 
     auto *delete_button = new QPushButton(row_widget);
     delete_button->setObjectName("dangerIconButton");
@@ -132,28 +96,21 @@ void SingleChoiceBlockEditor::add_option() {
 
     connect(
         delete_button, &QPushButton::clicked, this,
-        [this, row_widget, option, link_enabling, link, correct_button]() {
+        [this, row_widget, option, outcome_selector]() {
             if (options_.size() <= 1) {
                 return;
             }
-
             options_.erase(
                 std::remove(options_.begin(), options_.end(), option),
                 options_.end()
             );
-            link_enablings_.erase(
+            outcome_selectors_.erase(
                 std::remove(
-                    link_enablings_.begin(), link_enablings_.end(),
-                    link_enabling
+                    outcome_selectors_.begin(), outcome_selectors_.end(),
+                    outcome_selector
                 ),
-                link_enablings_.end()
+                outcome_selectors_.end()
             );
-            links_.erase(
-                std::remove(links_.begin(), links_.end(), link), links_.end()
-            );
-            if (correct_button) {
-                correct_answers_->removeButton(correct_button);
-            }
             options_layout_->removeWidget(row_widget);
             row_widget->deleteLater();
         }
@@ -162,7 +119,7 @@ void SingleChoiceBlockEditor::add_option() {
     options_layout_->addWidget(row_widget);
 }
 
-nlohmann::json SingleChoiceBlockEditor::to_json(bool preview_mode) const {
+nlohmann::json QuizChoiceBlockEditor::to_json(bool preview_mode) const {
     nlohmann::json block;
     block["type"] = "single";
     block["text"] = question_->text().trimmed().toStdString();
@@ -170,7 +127,6 @@ nlohmann::json SingleChoiceBlockEditor::to_json(bool preview_mode) const {
     if (preview_mode && !image_path_.isEmpty()) {
         block["image_path"] = image_path_.toStdString();
     }
-
     if (!preview_mode && !image_path_.isEmpty()) {
         block["image"] =
             ServerInteraction::post_image(image_path_.toStdString());
@@ -178,37 +134,15 @@ nlohmann::json SingleChoiceBlockEditor::to_json(bool preview_mode) const {
 
     block["options"] = nlohmann::json::array();
     for (auto *option : options_) {
-        const std::string option_text = option->text().trimmed().toStdString();
-        block["options"].push_back(option_text);
+        block["options"].push_back(option->text().trimmed().toStdString());
     }
 
-    block["links"] = nlohmann::json::array();
-    for (int i = 0; i < links_.size(); ++i) {
-        if (link_enablings_[i]->isChecked()) {
-            nlohmann::json link;
-            link["condition"] = i + 1;
-            link["section_id"] = links_[i]->currentIndex() - 1;
-            block["links"].push_back(link);
-        }
+    block["scores"] = nlohmann::json::array();
+    for (auto *selector : outcome_selectors_) {
+        block["scores"].push_back(selector->currentText().toStdString());
     }
 
     block["required"] = required_->isChecked();
-
-    if (type_ == TEST) {
-        int answer_index = 0;
-        if (auto *checked = correct_answers_->checkedButton()) {
-            const auto buttons = correct_answers_->buttons();
-            const auto answer_it =
-                std::find(buttons.begin(), buttons.end(), checked);
-            if (answer_it != buttons.end()) {
-                answer_index =
-                    static_cast<int>(std::distance(buttons.begin(), answer_it)
-                    ) +
-                    1;
-            }
-        }
-        block["answer"] = answer_index;
-    }
 
     return block;
 }

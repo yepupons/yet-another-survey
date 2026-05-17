@@ -9,8 +9,8 @@
 #include "server_interaction.hpp"
 
 namespace survey {
-TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
-    : BlockEditor(is_test, parent) {
+TextBlockEditor::TextBlockEditor(Created_Type type, QWidget *parent)
+    : BlockEditor(type, parent) {
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
@@ -50,7 +50,7 @@ TextBlockEditor::TextBlockEditor(bool is_test, QWidget *parent)
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
-    if (is_test_) {
+    if (type_ == TEST) {
         auto *correct_label = new QLabel("Correct answer(s)", this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
@@ -132,7 +132,7 @@ nlohmann::json TextBlockEditor::to_json(bool preview_mode) const {
     
     block["required"] = required_->isChecked();
 
-    if (is_test_) {
+    if (type_ == TEST) {
         std::vector<std::string> answers;
         for (QLineEdit *answer : correct_answers_) {
             const std::string answer_text =

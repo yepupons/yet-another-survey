@@ -189,7 +189,10 @@ void SurveyWindow::save_answer() {
         question->save_answer(answer_data_);
     }
 
-    int next_section_id = section_data_.at("next_section_id");
+    int next_section_id = -1;
+    try {
+        next_section_id = section_data_.at("next_section_id").get<int>();
+    } catch (const nlohmann::json::exception &) {}
     for (auto question : questions_) {
         if (question->next_section()) {
             next_section_id = *(question->next_section());

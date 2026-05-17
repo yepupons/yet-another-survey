@@ -13,10 +13,10 @@
 
 namespace survey {
 MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
-    bool is_test,
+    Created_Type type,
     QWidget *parent
 )
-    : BlockEditor(is_test, parent) {
+    : BlockEditor(type, parent) {
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
@@ -56,7 +56,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
-    if (is_test_) {
+    if (type_ == TEST) {
         auto *correct_label = new QLabel("Mark the correct answer(s)", this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
@@ -98,7 +98,7 @@ void MultipleChoiceBlockEditor::add_option() {
     options_.push_back(option);
 
     QAbstractButton *correct_button = nullptr;
-    if (is_test_) {
+    if (type_ == TEST) {
         auto *correct = new QCheckBox("Correct", row_widget);
         correct->setObjectName("correctOptionToggle");
         row_layout->addWidget(correct);
@@ -154,7 +154,7 @@ nlohmann::json MultipleChoiceBlockEditor::to_json(bool preview_mode) const {
 
     block["required"] = required_->isChecked();
 
-    if (is_test_) {
+    if (type_ == TEST) {
         std::vector<int> answers;
         for (int i = 0; i < options_layout_->count(); ++i) {
             auto *item = options_layout_->itemAt(i);

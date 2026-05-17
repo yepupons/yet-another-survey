@@ -16,8 +16,9 @@ class SectionEditor : public QWidget {
     Q_OBJECT
 public:
     explicit SectionEditor(
-        bool is_test,
+        Created_Type type,
         QStringListModel *sections_list,
+        QStringListModel *outcomes_model = nullptr,
         QWidget *parent = nullptr
     );
 
@@ -32,9 +33,10 @@ private:
     QVBoxLayout *questions_layout_ = nullptr;
     QComboBox *next_section_ = nullptr;
     QStringListModel *sections_list_ = nullptr;
+    QStringListModel *outcomes_model_ = nullptr;
     QPushButton *add_block_button_ = nullptr;
 
-    bool is_test_;
+    Created_Type type_;
 };
 }  // namespace survey
 

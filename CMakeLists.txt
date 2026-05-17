@@ -90,6 +90,7 @@ add_executable(client
     client/src/text_block_editor.cpp
     client/src/single_choice_block_editor.cpp
     client/src/multiple_choice_block_editor.cpp
+    client/src/quiz_choice_block_editor.cpp
 
     client/src/session.cpp
     client/src/server_interaction.cpp
@@ -113,6 +114,7 @@ add_executable(client
     client/include/single_choice_block_editor.hpp
     client/include/multiple_choice_block_editor.hpp
     client/include/abstract_block_editor.hpp
+    client/include/quiz_choice_block_editor.hpp
 
     client/include/view_passed_surveys.hpp
     client/include/test_results.hpp

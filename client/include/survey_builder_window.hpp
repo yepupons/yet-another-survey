@@ -16,14 +16,18 @@ namespace survey {
 class SurveyBuilderWindow : public QMainWindow {
     Q_OBJECT
 public:
-    enum Created_Type {SURVEY, TEST, QUIZ};
     explicit SurveyBuilderWindow(Created_Type type, QWidget *parent = nullptr);
 
 private slots:
     void add_section();
     void save_survey();
+    void add_outcome();
 
 private:
+    QList<QLineEdit *> outcomes_;
+    QVBoxLayout *outcomes_layout_ = nullptr;
+    QStringListModel *outcomes_model_ = nullptr;
+
     Created_Type type_;
 
     QWidget *content_ = nullptr;

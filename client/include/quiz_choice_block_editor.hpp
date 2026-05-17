@@ -1,11 +1,11 @@
-#ifndef SINGLE_CHOICE_BLOCK_EDITOR_HPP_
-#define SINGLE_CHOICE_BLOCK_EDITOR_HPP_
+#ifndef QUIZ_CHOICE_BLOCK_EDITOR_HPP_
+#define QUIZ_CHOICE_BLOCK_EDITOR_HPP_
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QLineEdit>
 #include <QList>
 #include <QPushButton>
-#include <QRadioButton>
 #include <QStringListModel>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -13,12 +13,11 @@
 #include "abstract_block_editor.hpp"
 
 namespace survey {
-class SingleChoiceBlockEditor : public BlockEditor {
+class QuizChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit SingleChoiceBlockEditor(
-        Created_Type type,
-        QStringListModel *sections_list,
+    explicit QuizChoiceBlockEditor(
+        QStringListModel *outcomes_model,
         QWidget *parent = nullptr
     );
 
@@ -28,16 +27,14 @@ private slots:
     void add_option();
 
 private:
+    QStringListModel *outcomes_model_ = nullptr;
+
     QList<QLineEdit *> options_;
-    QList<QRadioButton *> link_enablings_;
-    QList<QComboBox *> links_;
-    QStringListModel *sections_list_ = nullptr;
+    QList<QComboBox *> outcome_selectors_;
 
     QVBoxLayout *options_layout_ = nullptr;
     QPushButton *add_option_button_ = nullptr;
     QCheckBox *required_ = nullptr;
-
-    QButtonGroup *correct_answers_ = nullptr;
 };
 }  // namespace survey
 
