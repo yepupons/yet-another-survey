@@ -58,6 +58,41 @@ void http_delete(const std::string &url) {
     curl_easy_cleanup(curl);
 }
 
+void confirm_login(
+    TgBot::Bot &bot,
+    std::int64_t chat_id,
+    TgBot::User::Ptr user,
+    const std::string &login_token
+) {
+    const std::int64_t telegram_id = user->id;
+    const std::string name = user->username;
+    const std::string username = name.empty() ? "(не задан)" : "@" + name;
+    const std::string first_name = user->firstName;
+
+    const std::string link_url =
+        "http://127.0.0.1:8080/api/auth/telegram/confirm";
+    nlohmann::json auth_data = {};
+    auth_data["token"] = login_token;
+    auth_data["telegram_user"]["id"] = telegram_id;
+    auth_data["telegram_user"]["username"] = username;
+    auth_data["telegram_user"]["first_name"] = first_name;
+    const std::string response = http_post(link_url, auth_data.dump());
+
+    if (response.empty()) {
+        bot.getApi().sendMessage(chat_id, "Server did not return a response.");
+        return;
+    }
+    nlohmann::json login_response = nlohmann::json::parse(response);
+    std::string answer;
+    if (login_response.value("success", false)) {
+        answer = username + ", вход подтвержден. Вернитесь в приложение.";
+    } else {
+        answer = "Ошибка входа: " +
+                 login_response.value("error", "unknown error");
+    }
+    bot.getApi().sendMessage(chat_id, answer);
+}
+
 int main() {
     const char *token_env = std::getenv("BOT_TOKEN");
 
@@ -67,8 +102,9 @@ int main() {
     }
 
     TgBot::Bot bot(token_env);
+    std::map<std::string, std::string> pending_logins;
 
-    bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
+    bot.getEvents().onCommand("start", [&bot, &pending_logins](TgBot::Message::Ptr message) {
         const std::string text = message->text;
         std::string login_token;
         const std::string prefix = "/start ";
@@ -87,36 +123,43 @@ int main() {
             return;
         }
 
-        const std::int64_t telegram_id = message->from->id;
-        const std::string name = message->from->username;
-        const std::string username = name.empty() ? "(не задан)" : "@" + name;
-        const std::string first_name = message->from->firstName;
+        const std::string callback_data =
+            "confirm_login:" + std::to_string(message->from->id);
+        pending_logins[callback_data] = login_token;
 
-        const std::string link_url =
-            "http://127.0.0.1:8080/api/auth/telegram/confirm";
-        nlohmann::json auth_data = {};
-        auth_data["token"] = login_token;
-        auth_data["telegram_user"]["id"] = telegram_id;
-        auth_data["telegram_user"]["username"] = username;
-        auth_data["telegram_user"]["first_name"] = first_name;
-        const std::string response = http_post(link_url, auth_data.dump());
+        auto keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
+        auto button = std::make_shared<TgBot::InlineKeyboardButton>();
+        button->text = "Подтвердить вход";
+        button->callbackData = callback_data;
+        keyboard->inlineKeyboard.push_back({button});
 
-        if (response.empty()) {
-            bot.getApi().sendMessage(
-                message->chat->id, "Server did not return a response."
-            );
-            return;
-        }
-        nlohmann::json login_response = nlohmann::json::parse(response);
-        std::string answer;
-        if (login_response.value("success", false)) {
-            answer = username + ", вход подтвержден. Вернитесь в приложение.";
-        } else {
-            answer = "Ошибка входа: " +
-                     login_response.value("error", "unknown error");
-        }
-        bot.getApi().sendMessage(message->chat->id, answer);
+        bot.getApi().sendMessage(
+            message->chat->id,
+            "Вы хотите войти в приложение?",
+            nullptr,
+            nullptr,
+            keyboard
+        );
     });
+
+    bot.getEvents().onCallbackQuery(
+        [&bot, &pending_logins](TgBot::CallbackQuery::Ptr query) {
+            auto it = pending_logins.find(query->data);
+            if (it == pending_logins.end()) {
+                bot.getApi().answerCallbackQuery(
+                    query->id, "Запрос на вход не найден или уже использован."
+                );
+                return;
+            }
+
+            bot.getApi().answerCallbackQuery(query->id);
+            const std::string login_token = it->second;
+            pending_logins.erase(it);
+            confirm_login(
+                bot, query->message->chat->id, query->from, login_token
+            );
+        }
+    );
     /*
         bot.getEvents().onCommand("help", [&bot](TgBot::Message::Ptr message) {
             bot.getApi().sendMessage(
