@@ -71,10 +71,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     auto *profile_menu = new QMenu(profile_button);
     profile_menu->setObjectName("profileMenu");
 
-    auto *get_session_id_button_ = profile_menu->addAction("Get session ID");
-
-    profile_menu->addSeparator();
-
     auto *get_created_surveys_button_ = profile_menu->addAction("Your surveys");
     auto *get_passed_surveys_button_ =
         profile_menu->addAction("Passed surveys");
@@ -212,15 +208,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         get_passed_surveys_button_, &QAction::triggered, this,
         &MainWindow::get_passed_surveys
     );
-    connect(get_session_id_button_, &QAction::triggered, this, [this]() {
-        show_message_box(
-            this, QMessageBox::Information, "Info",
-            session().is_authenticated()
-                ? "Your session ID is: " +
-                      QString::fromStdString(session().get_id())
-                : "You are not logged in."
-        );
-    });
     connect(auth_action_, &QAction::triggered, this, [this]() {
         if (session().is_authenticated()) {
             session().clear_auth();
