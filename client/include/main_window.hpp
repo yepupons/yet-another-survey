@@ -1,6 +1,7 @@
 #ifndef MAIN_WINDOW_HPP_
 #define MAIN_WINDOW_HPP_
 
+#include <QAction>
 #include <QMainWindow>
 #include "survey_taking.hpp"
 

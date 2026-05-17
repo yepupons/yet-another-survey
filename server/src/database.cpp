@@ -173,32 +173,22 @@ std::string Database::read_statistics(int survey_id) {
     mongocxx::pipeline p{};
     p.match(document{} << "data.survey_id" << survey_id << finalize);
     p.unwind(
-        document{} << "path"
-                   << "$sections"
-                   << "includeArrayIndex"
-                   << "section" << finalize
+        document{} << "path" << "$sections" << "includeArrayIndex" << "section"
+                   << finalize
     );
     p.unwind(
-        document{} << "path"
-                   << "$sections"
-                   << "includeArrayIndex"
-                   << "question" << finalize
+        document{} << "path" << "$sections" << "includeArrayIndex" << "question"
+                   << finalize
     );
-    p.unwind(
-        document{} << "path"
-                   << "$sections.answer" << finalize
-    );
+    p.unwind(document{} << "path" << "$sections.answer" << finalize);
     p.match(
-        document{} << "sections.answer" << open_document << "$ne"
-                   << "" << close_document << finalize
+        document{} << "sections.answer" << open_document << "$ne" << ""
+                   << close_document << finalize
     );
     p.group(
         document{} << "_id"
-                   << (document{} << "section"
-                                  << "$section"
-                                  << "question"
-                                  << "$question"
-                                  << "answer"
+                   << (document{} << "section" << "$section" << "question"
+                                  << "$question" << "answer"
                                   << "$sections.answer" << finalize)
                    << "count" << (document{} << "$sum" << 1 << finalize)
                    << finalize

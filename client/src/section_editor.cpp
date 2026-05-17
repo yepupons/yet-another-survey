@@ -50,40 +50,52 @@ SectionEditor::SectionEditor(
 
 void SectionEditor::add_block() {
     auto *menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
     menu->setMinimumWidth(add_block_button_->width());
     menu->setStyleSheet(styleSheet());
+
     auto *single = menu->addAction("Single Choice");
     auto *multiple = menu->addAction("Multiple Choice");
     auto *text = menu->addAction("Text");
 
-    QAction *chosen = menu->exec(
+    connect(
+        menu, &QMenu::triggered, this,
+        [this, single, multiple, text](QAction *chosen) {
+            if (!chosen) {
+                return;
+            }
+
+            BlockEditor *block = nullptr;
+            if (chosen == single) {
+                block =
+                    new SingleChoiceBlockEditor(is_test_, sections_list_, this);
+            } else if (chosen == multiple) {
+                block = new MultipleChoiceBlockEditor(is_test_, this);
+            } else if (chosen == text) {
+                block = new TextBlockEditor(is_test_, this);
+            }
+
+            questions_.push_back(block);
+            questions_layout_->addWidget(questions_.back());
+
+            connect(
+                block, &BlockEditor::remove_requested, this,
+                [this, block]() {
+                    questions_.erase(
+                        std::remove(
+                            questions_.begin(), questions_.end(), block
+                        ),
+                        questions_.end()
+                    );
+                    questions_layout_->removeWidget(block);
+                    block->deleteLater();
+                }
+            );
+        }
+    );
+    menu->popup(
         add_block_button_->mapToGlobal(QPoint(0, add_block_button_->height()))
     );
-
-    if (!chosen) {
-        return;
-    }
-
-    BlockEditor *block = nullptr;
-    if (chosen == single) {
-        block = new SingleChoiceBlockEditor(is_test_, sections_list_, this);
-    } else if (chosen == multiple) {
-        block = new MultipleChoiceBlockEditor(is_test_, this);
-    } else if (chosen == text) {
-        block = new TextBlockEditor(is_test_, this);
-    }
-
-    questions_.push_back(block);
-    questions_layout_->addWidget(questions_.back());
-
-    connect(block, &BlockEditor::remove_requested, this, [this, block]() {
-        questions_.erase(
-            std::remove(questions_.begin(), questions_.end(), block),
-            questions_.end()
-        );
-        questions_layout_->removeWidget(block);
-        block->deleteLater();
-    });
 }
 
 nlohmann::json SectionEditor::to_json(bool preview_mode) const {

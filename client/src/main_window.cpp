@@ -1,5 +1,4 @@
 #include "main_window.hpp"
-#include <curl/curl.h>
 #include <QAction>
 #include <QDesktopServices>
 #include <QGridLayout>
@@ -18,7 +17,6 @@
 #include "created_surveys_window.hpp"
 #include "login_window.hpp"
 #include "pretty_view.hpp"
-#include "server_interaction.hpp"
 #include "session.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_taking.hpp"
@@ -258,6 +256,7 @@ void MainWindow::open_survey() {
 
 void MainWindow::create_survey() {
     auto *menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
     menu->setMinimumWidth(create_survey_button_->width());
     menu->setStyleSheet(styleSheet());
 
@@ -265,18 +264,22 @@ void MainWindow::create_survey() {
     menu->addSeparator();
     auto *test = menu->addAction("Test");
 
-    QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
+    connect(
+        menu, &QMenu::triggered, this,
+        [this, survey, test](QAction *chosen) {
+            if (!chosen) {
+                return;
+            }
+            auto *builder = new SurveyBuilderWindow(chosen == test);
+            builder->setAttribute(Qt::WA_DeleteOnClose);
+            builder->showMaximized();
+            builder->raise();
+            builder->activateWindow();
+        }
+    );
+    menu->popup(create_survey_button_->mapToGlobal(
         QPoint(0, create_survey_button_->height())
     ));
-
-    if (!chosen) {
-        return;
-    }
-    auto *builder = new SurveyBuilderWindow(chosen == test);
-    builder->setAttribute(Qt::WA_DeleteOnClose);
-    builder->showMaximized();
-    builder->raise();
-    builder->activateWindow();
 }
 
 void MainWindow::get_created_surveys() {

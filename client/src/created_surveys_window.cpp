@@ -202,6 +202,7 @@ void CreatedSurveysWindow::export_statistics_txt(int survey_id) {
 }
 
 void CreatedSurveysWindow::export_statistics_jpg(int survey_id) {
+    /*
     using namespace matplot;
 
     nlohmann::json survey = ServerInteraction::get_survey(survey_id);

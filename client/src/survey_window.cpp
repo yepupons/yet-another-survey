@@ -1,6 +1,6 @@
 #include "survey_window.hpp"
-#include <curl/curl.h>
 #include <qlabel.h>
+#include <qmessagebox.h>
 #include <qobject.h>
 #include <QList>
 #include <QMessageBox>
@@ -22,7 +22,8 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}};
+    {"single", BlockType::Single}
+};
 
 SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,
@@ -175,29 +176,26 @@ void SurveyWindow::save_answer() {
         all_answered
             ? "Are you sure you want to continue?"
             : "Some answers are missing. Are you sure you want to continue?";
-        auto want_to_save = show_question_box(
-            this, QMessageBox::Question, "Save?", message, QMessageBox::Yes,
-            QMessageBox::No, QMessageBox::No
-        );
+    auto box = show_question_box(this, QMessageBox::Question, "Save?", message);
 
+    connect(box, &QMessageBox::finished, this, [this](int want_to_save) {
         if (want_to_save == QMessageBox::No) {
             return;
         }
-    }
-
-    for (auto question : questions_) {
-        question->save_answer(answer_data_);
-    }
-
-    int next_section_id = section_data_.at("next_section_id");
-    for (auto question : questions_) {
-        if (question->next_section()) {
-            next_section_id = *(question->next_section());
+        for (auto question : questions_) {
+            question->save_answer(answer_data_);
         }
-    }
 
-    answer_saved = true;
-    emit closed_with_answer(next_section_id);
-    deleteLater();
+        int next_section_id = section_data_.at("next_section_id");
+        for (auto question : questions_) {
+            if (question->next_section()) {
+                next_section_id = *(question->next_section());
+            }
+        }
+
+        answer_saved = true;
+        emit closed_with_answer(next_section_id);
+        deleteLater();
+    });
 }
 }  // namespace survey

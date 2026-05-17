@@ -49,6 +49,7 @@ CMakeCache.txt
 cmake_install.cmake
 app
 build/
+build-wasm/
 compile_commands.json
 *.cmake.user
 CPackConfig.cmake

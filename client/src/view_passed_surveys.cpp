@@ -1,4 +1,5 @@
 #include "view_passed_surveys.hpp"
+#include <qnamespace.h>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -124,8 +125,9 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
             int survey_id = id;
             std::string session_id = session().get_id();
             auto *dialog = new ViewSurveyResults(survey_id, session_id, this);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
             dialog->showMaximized();
-            dialog->exec();
+            dialog->show();
         });
     }
 
@@ -175,7 +177,9 @@ ViewSurveyResults::ViewSurveyResults(
             auto *title = new QWidget(this);
             title->setObjectName("questionCard");
             title->setFixedWidth(720);
-            title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            title->setSizePolicy(
+                QSizePolicy::Expanding, QSizePolicy::Preferred
+            );
 
             auto *title_layout = new QVBoxLayout(title);
             title_layout->setAlignment(Qt::AlignTop);
@@ -183,8 +187,7 @@ ViewSurveyResults::ViewSurveyResults(
             title_layout->setSpacing(16);
 
             auto *section_number_label = new QLabel(
-                "Section " + QString::number(section_index + 1),
-                content
+                "Section " + QString::number(section_index + 1), content
             );
 
             section_number_label->setObjectName("titleLabel");
