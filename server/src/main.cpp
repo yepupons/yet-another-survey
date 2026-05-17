@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
-
     app().registerHandler(
         "/passed-surveys",
         [&db](
@@ -286,7 +285,6 @@ int main(int argc, char *argv[]) {
         {Get}
     );
 
-
     app().registerHandler(
         "/api/auth/telegram/challenge",
         [&db](
@@ -300,11 +298,11 @@ int main(int argc, char *argv[]) {
             Json::Value result;
             db.write_telegram_challenge(challenge_uuid, hashed_token);
             result["challenge_id"] = challenge_uuid;
-            result["telegram_url"] = "https://t.me/yet_another_survey_bot?start=" + token;
+            result["telegram_url"] =
+                "https://t.me/yet_another_survey_bot?start=" + token;
             result["expires_in"] = 300;
             auto resp = HttpResponse::newHttpJsonResponse(result);
             cb(resp);
-
         },
         {Post}
     );
@@ -314,11 +312,22 @@ int main(int argc, char *argv[]) {
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb,
-            const std::string &challengeId
+            const std::string &challenge_id
         ) {
-            auto resp = HttpResponse::newHttpResponse();
-            cb(resp);
-
+            try {
+                std::string status = db.get_challenge_status(challenge_id);
+                Json::Value result;
+                result["status"] = status;
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["status"] = "error";
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k404NotFound);
+                cb(resp);
+            }
         },
         {Get}
     );
@@ -329,17 +338,26 @@ int main(int argc, char *argv[]) {
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
-            auto resp = HttpResponse::newHttpResponse();
-            auto login_data = request->getJsonObject()->toStyledString();
-            auto login_status = db.bot_check_login_data(login_data);
-            if (login_status == 1){
-                resp->setBody("{\"success\" : true}");
-            } else{
-                 resp->setBody("{\"success\" : false}");
-            }
-            resp->setContentTypeCode(CT_APPLICATION_JSON);
-            cb(resp);
+            try {
+                auto resp = HttpResponse::newHttpResponse();
+                auto login_data = request->getJsonObject()->toStyledString();
+                auto login_status = db.bot_check_login_data(login_data);
+                if (login_status == 1) {
+                    resp->setBody("{\"success\" : true}");
+                } else {
+                    resp->setBody("{\"success\" : false}");
+                }
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["success"] = false;
+                result["error"] = e.what();
 
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k404NotFound);
+                cb(resp);
+            }
         },
         {Post}
     );
@@ -352,7 +370,6 @@ int main(int argc, char *argv[]) {
         ) {
             auto resp = HttpResponse::newHttpResponse();
             cb(resp);
-
         },
         {Post}
     );
@@ -360,4 +377,3 @@ int main(int argc, char *argv[]) {
     app().run();
     return 0;
 }
-

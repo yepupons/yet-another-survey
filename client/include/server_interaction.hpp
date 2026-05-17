@@ -28,7 +28,8 @@ public:
     static nlohmann::json get_passed_surveys(const std::string &user_id);
     static nlohmann::json get_created_surveys(const std::string &user_id);
     static nlohmann::json get_survey_statistics(int survey_id);
-    static nlohmann::json get_survey_results(const std::string &session_id, int survey_id);
+    static nlohmann::json
+    get_survey_results(const std::string &session_id, int survey_id);
     static std::string post_image(const std::string &image_path);
     static std::string get_image(const std::string &image_oid);
     static nlohmann::json request_challenge();

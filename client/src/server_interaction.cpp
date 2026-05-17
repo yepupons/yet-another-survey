@@ -216,7 +216,7 @@ nlohmann::json ServerInteraction::request_challenge() {
 nlohmann::json ServerInteraction::get_challenge_status(const std::string &challenge_id){
     CURL *curl = curl_easy_init();
     std::string readBuffer;
-    std::string url = "http://127.0.0.1:8080/api/auth/telegram/challenge" + challenge_id;
+    std::string url = "http://127.0.0.1:8080/api/auth/telegram/challenge/" + challenge_id;
     curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
 

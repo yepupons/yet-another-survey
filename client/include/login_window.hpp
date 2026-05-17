@@ -21,7 +21,7 @@ public slots:
 private:
     QPushButton *login_button_;
     QLabel *status_label_;
-    
+
     QString telegram_url_;
     int expires_in_ = 0;
     QString challenge_id_;

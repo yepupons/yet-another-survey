@@ -38,15 +38,27 @@ public:
     std::string read_created_surveys(const std::string &session_id);
 
     std::string read_statistics(int survey_id);
-    std::string read_survey_results(const std::string &session_id, int survey_id);
+    std::string
+    read_survey_results(const std::string &session_id, int survey_id);
     std::string get_result(const std::string &user_result_data);
 
     std::string write_image(const drogon::HttpFile &file);
     std::string read_image(const std::string &image_oid);
-    void write_telegram_challenge(const std::string &challenge_uuid, const std::string &token_hash);
+    void write_telegram_challenge(
+        const std::string &challenge_uuid,
+        const std::string &token_hash
+    );
+
     static std::string generate_token();
     static std::string generate_uuid();
-    static std::string sha256(const std::string& input);
+    static std::string sha256(const std::string &input);
+
+    bool bot_check_login_data(const std::string &user_login_data);
+    void confirm_telegram_challenge(
+        const std::string &token_hashed,
+        int telegram_id
+    );
+    std::string get_challenge_status(const std::string &challenge_id);
 };
 }  // namespace survey
 

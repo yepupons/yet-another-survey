@@ -1,14 +1,14 @@
 #include "login_window.hpp"
-#include "server_interaction.hpp"
-#include <nlohmann/json.hpp>
+#include <QApplication>
+#include <QClipboard>
 #include <QDesktopServices>
 #include <QLabel>
 #include <QPushButton>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
-#include <QApplication>
-#include <QClipboard>
-#include <QTimer>
+#include <nlohmann/json.hpp>
+#include "server_interaction.hpp"
 
 namespace survey {
 LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
@@ -26,7 +26,8 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
     title->setObjectName("titleLabel");
     layout->addWidget(title);
 
-    status_label_ = new QLabel("Authorize with Telegram to link your account.", central);
+    status_label_ =
+        new QLabel("Authorize with Telegram to link your account.", central);
     status_label_->setObjectName("subtitleLabel");
     status_label_->setWordWrap(true);
     layout->addWidget(status_label_);
@@ -68,28 +69,31 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
 
     poll_timer_ = new QTimer(this);
     connect(poll_timer_, &QTimer::timeout, this, [this]() {
-        auto status_json = ServerInteraction::get_challenge_status(challenge_id_.toStdString());
-        std::string status = status_json.at("status");
-        if (status == "pending") {
-            return;
-        }
-        if (status == "confirmed") {
+        try {
+            auto status_json = ServerInteraction::get_challenge_status(
+                challenge_id_.toStdString()
+            );
+            std::string status = status_json.at("status").get<std::string>();
+            if (status == "pending") {
+                return;
+            }
             poll_timer_->stop();
-            completeTelegramLogin();
-            return;
-        }
-        if (status == "expired") {
+            countdown_timer_->stop();
+            if (status == "confirmed") {
+                status_label_->setText("Telegram login confirmed.");
+            } else if (status == "expired") {
+                status_label_->setText("Link expired. Please, login again.");
+            } else if (status == "used") {
+                status_label_->setText("This link was already used.");
+            }
+        } catch (const std::exception &e) {
             poll_timer_->stop();
-            status_label_->setText("Link expired. Please, login again.");
-            return;
-        }
-        if (status == "used") {
-            poll_timer_->stop();
-            status_label_->setText("This link was already used");
-            return;
+            status_label_->setText(
+                "Unable to check login status: " +
+                QString::fromStdString(e.what())
+            );
         }
     });
-
 }
 
 void LoginWindow::start_telegram_login() {
@@ -97,9 +101,15 @@ void LoginWindow::start_telegram_login() {
     status_label_->setText("Stand by, requesting auth...");
 
     try {
-        const nlohmann::json challenge_info = ServerInteraction::request_challenge();
-        telegram_url_ = QString::fromStdString(challenge_info.at("telegram_url").get<std::string>());
+        const nlohmann::json challenge_info =
+            ServerInteraction::request_challenge();
+        telegram_url_ = QString::fromStdString(
+            challenge_info.at("telegram_url").get<std::string>()
+        );
         expires_in_ = challenge_info.at("expires_in").get<int>();
+        challenge_id_ = QString::fromStdString(
+            challenge_info.at("challenge_id").get<std::string>()
+        );
 
         countdown_timer_->start(1000);
         poll_timer_->start(2000);
@@ -107,16 +117,19 @@ void LoginWindow::start_telegram_login() {
 
         login_button_->setText("Copy link");
         login_button_->setEnabled(true);
-        disconnect(login_button_, &QPushButton::clicked, this, &LoginWindow::start_telegram_login);
+        disconnect(
+            login_button_, &QPushButton::clicked, this,
+            &LoginWindow::start_telegram_login
+        );
         connect(login_button_, &QPushButton::clicked, this, [this]() {
             QApplication::clipboard()->setText(telegram_url_);
             login_button_->setText("Telegram link copied to clipboard.");
         });
 
-
     } catch (const std::exception &e) {
         status_label_->setText(
-            "Unable to start Telegram login: " + QString::fromStdString(e.what())
+            "Unable to start Telegram login: " +
+            QString::fromStdString(e.what())
         );
         login_button_->setEnabled(true);
     }

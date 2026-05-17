@@ -1,17 +1,17 @@
 #include "database.hpp"
+#include <openssl/sha.h>
 #include <algorithm>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
+#include <iomanip>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <random>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <random>
-#include <openssl/sha.h>
-#include <sstream>
-#include <iomanip>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -81,7 +81,8 @@ void Database::write_answer(const std::string &answer_data) {
 
     nlohmann::json json = nlohmann::json::parse(answer_data);
     int answer_id = json["data"]["id"].get<int>();
-    std::string respondent_id = json["data"]["respondent_id"].get<std::string>();
+    std::string respondent_id =
+        json["data"]["respondent_id"].get<std::string>();
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << respondent_id << finalize);
@@ -112,11 +113,14 @@ std::string Database::read_passed_surveys(const std::string &session_id) {
     std::set<int> passed_surveys;
     for (auto &&doc : cursor) {
         auto elem = doc["data"]["survey_id"];
-        if (!elem) continue;
-        if (elem.type() == bsoncxx::type::k_int32)
+        if (!elem) {
+            continue;
+        }
+        if (elem.type() == bsoncxx::type::k_int32) {
             passed_surveys.insert(elem.get_int32().value);
-        else if (elem.type() == bsoncxx::type::k_int64)
+        } else if (elem.type() == bsoncxx::type::k_int64) {
             passed_surveys.insert(static_cast<int>(elem.get_int64().value));
+        }
     }
     nlohmann::json result = nlohmann::json::array();
     for (int id : passed_surveys) {
@@ -224,9 +228,8 @@ std::string Database::read_statistics(int survey_id) {
     return result.dump();
 }
 
-std::string Database::read_survey_results(
-    const std::string &session_id, int survey_id
-) {
+std::string
+Database::read_survey_results(const std::string &session_id, int survey_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
@@ -344,19 +347,15 @@ std::string Database::read_image(const std::string &image_oid) {
     return data;
 }
 
-std::string Database::generate_token(){
+std::string Database::generate_token() {
     std::random_device rd;
     std::ostringstream oss;
     for (size_t i = 0; i < 16; ++i) {
         unsigned int randomByte = rd() & 0xFF;
-        oss << std::hex
-            << std::setw(2)
-            << std::setfill('0')
-            << randomByte;
+        oss << std::hex << std::setw(2) << std::setfill('0') << randomByte;
     }
     return oss.str();
 }
-
 
 std::string Database::generate_uuid() {
     std::random_device rd;
@@ -371,45 +370,99 @@ std::string Database::generate_uuid() {
         if (i == 4 || i == 6 || i == 8 || i == 10) {
             oss << "-";
         }
-        oss << std::hex
-            << std::setw(2)
-            << std::setfill('0')
+        oss << std::hex << std::setw(2) << std::setfill('0')
             << static_cast<int>(bytes[i]);
     }
     return oss.str();
 }
 
-std::string Database::sha256(const std::string& input) {
+std::string Database::sha256(const std::string &input) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256(
-        reinterpret_cast<const unsigned char*>(input.c_str()),
-        input.size(),
+        reinterpret_cast<const unsigned char *>(input.c_str()), input.size(),
         hash
     );
     std::ostringstream oss;
     for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
-        oss << std::hex
-            << std::setw(2)
-            << std::setfill('0')
+        oss << std::hex << std::setw(2) << std::setfill('0')
             << static_cast<int>(hash[i]);
     }
     return oss.str();
 }
 
-void Database::write_telegram_challenge(const std::string &challenge_uuid, const std::string &token_hash){
+void Database::write_telegram_challenge(
+    const std::string &challenge_uuid,
+    const std::string &token_hash
+) {
     auto now = std::chrono::system_clock::now();
     auto result = db()["telegram_challenges"].insert_one(
-        document{}
-            << "_id" << challenge_uuid
-            << "token_hash" << token_hash
-            << "status" << "pending"
-            << "telegram_user" << bsoncxx::types::b_null{}
-            << "created_at" << bsoncxx::types::b_date{now}
-            << "expires_at" << bsoncxx::types::b_date{now + std::chrono::minutes(3)}
-            << "confirmed_at" << bsoncxx::types::b_null{}
-            << "used_at" << bsoncxx::types::b_null{}
-            << finalize
+        document{} << "_id" << challenge_uuid << "token_hash" << token_hash
+                   << "status"
+                   << "pending"
+                   << "telegram_user" << bsoncxx::types::b_null{}
+                   << "created_at" << bsoncxx::types::b_date{now}
+                   << "expires_at"
+                   << bsoncxx::types::b_date{now + std::chrono::minutes(3)}
+                   << "confirmed_at" << bsoncxx::types::b_null{} << "used_at"
+                   << bsoncxx::types::b_null{} << finalize
+    );
+}
+
+void Database::confirm_telegram_challenge(
+    const std::string &token_hashed,
+    int telegram_id
+) {
+    auto now = std::chrono::system_clock::now();
+    auto result = db()["telegram_challenges"].update_one(
+        document{} << "token_hash" << token_hashed << "status"
+                   << "pending" << finalize,
+        document{} << "$set" << open_document << "status"
+                   << "confirmed"
+                   << "telegram_user" << telegram_id << "confirmed_at"
+                   << bsoncxx::types::b_date{now} << close_document << finalize
     );
 
+    if (!result) {
+        throw std::runtime_error("Challenge was not updated");
+    }
 }
+
+bool Database::bot_check_login_data(const std::string &user_login_data) {
+    nlohmann::json login_data = nlohmann::json::parse(user_login_data);
+    std::string token_sha256 =
+        sha256(login_data.at("token").get<std::string>());
+    auto result = db()["telegram_challenges"].find_one(
+        document{} << "token_hash" << token_sha256 << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Challenge not found");
+    }
+    auto view = result->view();
+    std::string status(view["status"].get_string().value);
+    if (status != "pending") {
+        throw std::invalid_argument("Challenge was already closed");
+    }
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    );
+    auto expires_at = view["expires_at"].get_date().value;
+
+    if (now_ms > expires_at) {
+        throw std::invalid_argument("Challenge expired");
+    }
+    confirm_telegram_challenge(
+        token_sha256, login_data.at("telegram_user").at("id").get<int>()
+    );
+    return true;
+}
+
+std::string Database::get_challenge_status(const std::string &challenge_id) {
+    mongocxx::options::find opts;
+    opts.projection(document{} << "status" << 1 << finalize);
+    auto result = db()["telegram_challenges"].find_one(
+        document{} << "data._id" << challenge_id << finalize, opts
+    );
+    return bsoncxx::to_json(result->view());
+}
+
 }  // namespace survey

@@ -1,11 +1,12 @@
-#include <tgbot/tgbot.h>
 #include <curl/curl.h>
+#include <tgbot/tgbot.h>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
 
@@ -14,10 +15,11 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, std::string *out) {
     return size * nmemb;
 }
 
-std::string http_get(const std::string &url) {
-    std::string body;
+std::string http_get(const std::string &url, const std::string &body) {
     CURL *curl = curl_easy_init();
-    if (!curl) return "";
+    if (!curl) {
+        return "";
+    }
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
@@ -26,22 +28,30 @@ std::string http_get(const std::string &url) {
     return body;
 }
 
-void http_post(const std::string &url, const std::string &body) {
+std::string http_post(const std::string &url, const std::string &body) {
+    std::string response;
     CURL *curl = curl_easy_init();
-    if (!curl) return;
+    if (!curl) {
+        return "";
+    }
     curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_perform(curl);
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
+    return response;
 }
 
 void http_delete(const std::string &url) {
     CURL *curl = curl_easy_init();
-    if (!curl) return;
+    if (!curl) {
+        return;
+    }
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
     curl_easy_perform(curl);
@@ -57,9 +67,8 @@ int main() {
     }
 
     TgBot::Bot bot(token_env);
-    std::map<std::int64_t, std::string> sessions; // telegram_id → login_token
 
-    bot.getEvents().onCommand("start", [&bot, &sessions](TgBot::Message::Ptr message) {
+    bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
         const std::string text = message->text;
         std::string login_token;
         const std::string prefix = "/start ";
@@ -70,8 +79,10 @@ int main() {
         if (login_token.empty()) {
             bot.getApi().sendMessage(
                 message->chat->id,
-                "Hello! To authorize, open the login through the application.\n"
-                "For more info use /help."
+                "Привет! Я — бот сервиса ЯЗЬ (yet-another-survey). Чтобы войти "
+                "в сервис под своим аккаунтом, откройте приложение и выберите "
+                "Login with telegram.\n"
+                "Чтобы узнать о всех командах, пропишите /help."
             );
             return;
         }
@@ -81,70 +92,78 @@ int main() {
         const std::string username = name.empty() ? "(не задан)" : "@" + name;
         const std::string first_name = message->from->firstName;
 
-        sessions[telegram_id] = login_token;
-
         const std::string link_url =
-            "http://localhost:8080/account/telegram?session-id=" + login_token;
-        http_post(link_url, "{\"telegram_id\": " + std::to_string(telegram_id) + "}");
+            "http://127.0.0.1:8080/api/auth/telegram/confirm";
+        nlohmann::json auth_data = {};
+        auth_data["token"] = login_token;
+        auth_data["telegram_user"]["id"] = telegram_id;
+        auth_data["telegram_user"]["username"] = username;
+        auth_data["telegram_user"]["first_name"] = first_name;
+        const std::string response = http_post(link_url, auth_data.dump());
 
-        std::string answer =
-            "Authorization granted.\n\n"
-            "Login token: " + login_token + "\n"
-            "Telegram ID: " + std::to_string(telegram_id) + "\n"
-            "Username: " + username + "\n"
-            "First name: " + first_name + "\n";
+        nlohmann::json login_response;
+        login_response = nlohmann::json::parse(response);
+        std::string answer;
+        if (login_response.value("success", false)) {
+            answer = username + ", вход подтвержден. Вернитесь в приложение.";
+        } else {
+            answer = "Ошибка входа: " +
+                     login_response.value("error", "unknown error");
+        }
         bot.getApi().sendMessage(message->chat->id, answer);
     });
+    /*
+        bot.getEvents().onCommand("help", [&bot](TgBot::Message::Ptr message) {
+            bot.getApi().sendMessage(
+                message->chat->id,
+                "commands:\n"
+                "/start - start bot\n"
+                "/account - account you logged in with\n"
+                "/unlink - unlink Telegram from your account\n"
+            );
+        });
 
-    bot.getEvents().onCommand("help", [&bot](TgBot::Message::Ptr message) {
-        bot.getApi().sendMessage(
-            message->chat->id,
-            "commands:\n"
-            "/start - start bot\n"
-            "/account - account you logged in with\n"
-            "/unlink - unlink Telegram from your account\n"
-        );
-    });
+        bot.getEvents().onCommand("account", [&bot,
+       &sessions](TgBot::Message::Ptr message) { const std::int64_t telegram_id
+       = message->from->id; auto it = sessions.find(telegram_id); if (it ==
+       sessions.end()) { bot.getApi().sendMessage(message->chat->id, "You are
+       not logged in. Use /start to authorize."); return;
+            }
 
-    bot.getEvents().onCommand("account", [&bot, &sessions](TgBot::Message::Ptr message) {
-        const std::int64_t telegram_id = message->from->id;
-        auto it = sessions.find(telegram_id);
-        if (it == sessions.end()) {
-            bot.getApi().sendMessage(message->chat->id, "You are not logged in. Use /start to authorize.");
-            return;
-        }
+            const std::string url =
+                "http://localhost:8080/account?session-id=" + it->second;
+            const std::string response = http_get(url);
 
-        const std::string url =
-            "http://localhost:8080/account?session-id=" + it->second;
-        const std::string response = http_get(url);
+            if (response.empty()) {
+                bot.getApi().sendMessage(message->chat->id, "Server error.");
+                return;
+            }
 
-        if (response.empty()) {
-            bot.getApi().sendMessage(message->chat->id, "Server error.");
-            return;
-        }
+            bot.getApi().sendMessage(message->chat->id, "Your account data:\n" +
+       response);
+        });
 
-        bot.getApi().sendMessage(message->chat->id, "Your account data:\n" + response);
-    });
+        bot.getEvents().onCommand("unlink", [&bot,
+       &sessions](TgBot::Message::Ptr message) { const std::int64_t telegram_id
+       = message->from->id; auto it = sessions.find(telegram_id); if (it ==
+       sessions.end()) { bot.getApi().sendMessage(message->chat->id, "You are
+       not logged in. Use /start to authorize."); return;
+            }
 
-    bot.getEvents().onCommand("unlink", [&bot, &sessions](TgBot::Message::Ptr message) {
-        const std::int64_t telegram_id = message->from->id;
-        auto it = sessions.find(telegram_id);
-        if (it == sessions.end()) {
-            bot.getApi().sendMessage(message->chat->id, "You are not logged in. Use /start to authorize.");
-            return;
-        }
+            std::string url =
+       "http://localhost:8080/account/telegram?session-id=" + it->second;
+            http_delete(url);
+            sessions.erase(it);
 
-        std::string url = "http://localhost:8080/account/telegram?session-id=" + it->second;
-        http_delete(url);
-        sessions.erase(it);
+            bot.getApi().sendMessage(message->chat->id, "Telegram unlinked from
+       your account.");
+        });
 
-        bot.getApi().sendMessage(message->chat->id, "Telegram unlinked from your account.");
-    });
-
-    bot.getEvents().onNonCommandMessage([&bot](TgBot::Message::Ptr msg) {
-        bot.getApi().sendMessage(msg->chat->id, "To authorize, open the login through the application.");
-    });
-
+        bot.getEvents().onNonCommandMessage([&bot](TgBot::Message::Ptr msg) {
+            bot.getApi().sendMessage(msg->chat->id, "To authorize, open the
+       login through the application.");
+        });
+    */
     TgBot::TgLongPoll long_poll(bot);
     while (true) {
         try {
