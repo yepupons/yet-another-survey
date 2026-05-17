@@ -1,48 +1,50 @@
 #include "session.hpp"
-#include <cstdlib>
-#include <fstream>
-#include <random>
+#include <QSettings>
+#include <QString>
 #include <string>
 
 namespace survey {
 
-static std::string session_file_path() {
-    const char *home = std::getenv("HOME");
-    return std::string(home ? home : ".") + "/.yas_session";
-}
-
-static std::string generate_uuid() {
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::uniform_int_distribution<int> hex(0, 15);
-    std::uniform_int_distribution<int> variant(8, 11);
-
-    const char *digits = "0123456789abcdef";
-    std::string uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
-    for (auto &c : uuid) {
-        if (c == 'x') c = digits[hex(rng)];
-        else if (c == 'y') c = digits[variant(rng)];
-    }
-    return uuid;
+static QSettings session_settings() {
+    return QSettings("yet-another-survey", "client");
 }
 
 Session::Session() {
-    std::ifstream file(session_file_path());
-    if (std::getline(file, id_) && !id_.empty()) return;
-
-    id_ = generate_uuid();
-    std::ofstream out(session_file_path());
-    out << id_;
+    QSettings settings = session_settings();
+    id_ = settings.value("auth/user_id").toString().toStdString();
+    access_token_ =
+        settings.value("auth/access_token").toString().toStdString();
 }
 
 std::string Session::get_id() const {
     return id_;
 }
 
-void Session::set_id(const std::string &id) {
+std::string Session::get_access_token() const {
+    return access_token_;
+}
+
+bool Session::is_authenticated() const {
+    return !id_.empty() && !access_token_.empty();
+}
+
+void Session::set_auth(const std::string &id, const std::string &access_token) {
     id_ = id;
-    std::ofstream out(session_file_path());
-    out << id_;
+    access_token_ = access_token;
+    QSettings settings = session_settings();
+    settings.setValue("auth/user_id", QString::fromStdString(id_));
+    settings.setValue(
+        "auth/access_token", QString::fromStdString(access_token_)
+    );
+}
+
+void Session::clear_auth() {
+    id_.clear();
+    access_token_.clear();
+
+    QSettings settings = session_settings();
+    settings.remove("auth/user_id");
+    settings.remove("auth/access_token");
 }
 
 Session &session() {

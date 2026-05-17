@@ -9,6 +9,7 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "server_interaction.hpp"
+#include "session.hpp"
 
 namespace survey {
 LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
@@ -80,7 +81,15 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
             poll_timer_->stop();
             countdown_timer_->stop();
             if (status == "confirmed") {
+                auto data =
+                    ServerInteraction::complete_auth(challenge_id_.toStdString()
+                    );
+                session().set_auth(
+                    data.at("user").at("id").get<std::string>(),
+                    data.at("access_token").get<std::string>()
+                );
                 status_label_->setText("Telegram login confirmed.");
+                emit login_completed();
             } else if (status == "expired") {
                 status_label_->setText("Link expired. Please, login again.");
             } else if (status == "used") {

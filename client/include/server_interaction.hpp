@@ -34,6 +34,7 @@ public:
     static std::string get_image(const std::string &image_oid);
     static nlohmann::json request_challenge();
     static nlohmann::json get_challenge_status(const std::string &challenge_id);
+    static nlohmann::json complete_auth(std::string challenge_id);
 };
 #endif  // SERVER_INTERACTION_HPP_
 }

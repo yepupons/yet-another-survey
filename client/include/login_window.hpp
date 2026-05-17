@@ -18,6 +18,9 @@ public:
 public slots:
     void start_telegram_login();
 
+signals:
+    void login_completed();
+
 private:
     QPushButton *login_button_;
     QLabel *status_label_;
