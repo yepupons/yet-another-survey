@@ -26,6 +26,7 @@ find_package(CURL REQUIRED)
 find_package(Boost 1.65.1 REQUIRED)
 find_package(mongocxx CONFIG REQUIRED)
 find_package(bsoncxx CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # Vendored dependencies via git submodule
 set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
@@ -90,6 +91,7 @@ add_executable(client
     client/src/text_block_editor.cpp
     client/src/single_choice_block_editor.cpp
     client/src/multiple_choice_block_editor.cpp
+    client/src/login_window.cpp
 
     client/src/session.cpp
     client/src/server_interaction.cpp
@@ -112,6 +114,7 @@ add_executable(client
     client/include/text_block_editor.hpp
     client/include/single_choice_block_editor.hpp
     client/include/multiple_choice_block_editor.hpp
+    client/include/login_window.hpp
     client/include/abstract_block_editor.hpp
 
     client/include/view_passed_surveys.hpp
@@ -148,6 +151,7 @@ target_link_libraries(server PRIVATE
     nlohmann_json::nlohmann_json
     mongo::bsoncxx_shared
     mongo::mongocxx_shared
+    OpenSSL::Crypto
 )
 
 # TG bot
@@ -158,6 +162,7 @@ add_executable(telegram_bot
 target_link_libraries(telegram_bot PRIVATE
     TgBot
     CURL::libcurl
+    nlohmann_json::nlohmann_json
 )
 
 if (TARGET Boost::headers)

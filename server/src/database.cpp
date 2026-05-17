@@ -1,11 +1,16 @@
 #include "database.hpp"
+#include <openssl/sha.h>
 #include <algorithm>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
+#include <cstdint>
+#include <iomanip>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <random>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -77,7 +82,8 @@ void Database::write_answer(const std::string &answer_data) {
 
     nlohmann::json json = nlohmann::json::parse(answer_data);
     int answer_id = json["data"]["id"].get<int>();
-    std::string respondent_id = json["data"]["respondent_id"].get<std::string>();
+    std::string respondent_id =
+        json["data"]["respondent_id"].get<std::string>();
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << respondent_id << finalize);
@@ -108,11 +114,14 @@ std::string Database::read_passed_surveys(const std::string &session_id) {
     std::set<int> passed_surveys;
     for (auto &&doc : cursor) {
         auto elem = doc["data"]["survey_id"];
-        if (!elem) continue;
-        if (elem.type() == bsoncxx::type::k_int32)
+        if (!elem) {
+            continue;
+        }
+        if (elem.type() == bsoncxx::type::k_int32) {
             passed_surveys.insert(elem.get_int32().value);
-        else if (elem.type() == bsoncxx::type::k_int64)
+        } else if (elem.type() == bsoncxx::type::k_int64) {
             passed_surveys.insert(static_cast<int>(elem.get_int64().value));
+        }
     }
     nlohmann::json result = nlohmann::json::array();
     for (int id : passed_surveys) {
@@ -220,9 +229,8 @@ std::string Database::read_statistics(int survey_id) {
     return result.dump();
 }
 
-std::string Database::read_survey_results(
-    const std::string &session_id, int survey_id
-) {
+std::string
+Database::read_survey_results(const std::string &session_id, int survey_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
@@ -340,39 +348,232 @@ std::string Database::read_image(const std::string &image_oid) {
     return data;
 }
 
-std::string Database::read_account(const std::string &session_id) {
-    auto result = db()["users"].find_one(
-        document{} << "id" << session_id << finalize
-    );
-    if (!result) throw std::runtime_error("Account not found");
-    return bsoncxx::to_json(result->view());
+std::string Database::generate_token() {
+    std::random_device rd;
+    std::ostringstream oss;
+    for (size_t i = 0; i < 16; ++i) {
+        unsigned int randomByte = rd() & 0xFF;
+        oss << std::hex << std::setw(2) << std::setfill('0') << randomByte;
+    }
+    return oss.str();
 }
 
-void Database::link_telegram(
-    const std::string &session_id, std::int64_t telegram_id
+std::string Database::generate_uuid() {
+    std::random_device rd;
+    std::array<unsigned char, 16> bytes{};
+    for (auto &byte : bytes) {
+        byte = static_cast<unsigned char>(rd() & 0xFF);
+    }
+    bytes[6] = static_cast<unsigned char>((bytes[6] & 0x0F) | 0x40);
+    bytes[8] = static_cast<unsigned char>((bytes[8] & 0x3F) | 0x80);
+    std::ostringstream oss;
+    for (size_t i = 0; i < bytes.size(); ++i) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) {
+            oss << "-";
+        }
+        oss << std::hex << std::setw(2) << std::setfill('0')
+            << static_cast<int>(bytes[i]);
+    }
+    return oss.str();
+}
+
+std::string Database::sha256(const std::string &input) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(
+        reinterpret_cast<const unsigned char *>(input.c_str()), input.size(),
+        hash
+    );
+    std::ostringstream oss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        oss << std::hex << std::setw(2) << std::setfill('0')
+            << static_cast<int>(hash[i]);
+    }
+    return oss.str();
+}
+
+void Database::write_telegram_challenge(
+    const std::string &challenge_uuid,
+    const std::string &token_hash
 ) {
-    auto find = db()["users"].find_one(
-        document{} << "id" << session_id << finalize
-    );
-    if (!find) throw std::runtime_error("User not found");
-
-    db()["users"].update_one(
-        document{} << "id" << session_id << finalize,
-        document{} << "$set" << open_document << "telegram_id" << telegram_id
-                   << close_document << finalize
-    );
-}
-
-void Database::unlink_telegram(const std::string &session_id) {
-    auto find = db()["users"].find_one(
-        document{} << "id" << session_id << finalize
-    );
-    if (!find) throw std::runtime_error("User not found");
-
-    db()["users"].update_one(
-        document{} << "id" << session_id << finalize,
-        document{} << "$unset" << open_document << "telegram_id" << ""
-                   << close_document << finalize
+    auto now = std::chrono::system_clock::now();
+    auto result = db()["telegram_challenges"].insert_one(
+        document{} << "_id" << challenge_uuid << "token_hash" << token_hash
+                   << "status"
+                   << "pending"
+                   << "telegram_user" << bsoncxx::types::b_null{}
+                   << "created_at" << bsoncxx::types::b_date{now}
+                   << "expires_at"
+                   << bsoncxx::types::b_date{now + std::chrono::minutes(3)}
+                   << "confirmed_at" << bsoncxx::types::b_null{} << "used_at"
+                   << bsoncxx::types::b_null{} << finalize
     );
 }
+
+void Database::confirm_telegram_challenge(
+    const std::string &token_hashed,
+    const std::string &telegram_user_data
+) {
+    nlohmann::json telegram_user = nlohmann::json::parse(telegram_user_data);
+    auto now = std::chrono::system_clock::now();
+    auto result = db()["telegram_challenges"].update_one(
+        document{} << "token_hash" << token_hashed << "status"
+                   << "pending" << finalize,
+        document{} << "$set" << open_document << "status"
+                   << "confirmed"
+                   << "telegram_user" << open_document << "id"
+                   << telegram_user.at("id").get<std::int64_t>() << "username"
+                   << telegram_user.value("username", "") << "first_name"
+                   << telegram_user.value("first_name", "") << close_document
+                   << "confirmed_at" << bsoncxx::types::b_date{now}
+                   << close_document << finalize
+    );
+
+    if (!result || result->modified_count() != 1) {
+        throw std::runtime_error("Challenge was not updated");
+    }
+}
+
+bool Database::bot_check_login_data(const std::string &user_login_data) {
+    nlohmann::json login_data = nlohmann::json::parse(user_login_data);
+    std::string token_sha256 =
+        sha256(login_data.at("token").get<std::string>());
+    auto result = db()["telegram_challenges"].find_one(
+        document{} << "token_hash" << token_sha256 << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Challenge not found");
+    }
+    auto view = result->view();
+    std::string status(view["status"].get_string().value);
+    if (status != "pending") {
+        throw std::invalid_argument("Challenge was already closed");
+    }
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    );
+    auto expires_at = view["expires_at"].get_date().value;
+
+    if (now_ms > expires_at) {
+        throw std::invalid_argument("Challenge expired");
+    }
+    confirm_telegram_challenge(
+        token_sha256, login_data.at("telegram_user").dump()
+    );
+    return true;
+}
+
+std::string Database::get_challenge_status(const std::string &challenge_id) {
+    auto result = db()["telegram_challenges"].find_one(
+        document{} << "_id" << challenge_id << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Challenge not found");
+    }
+    auto view = result->view();
+    return std::string(view["status"].get_string().value);
+}
+
+std::string Database::complete_login(const std::string &user_challenge_data) {
+    const nlohmann::json challenge_data =
+        nlohmann::json::parse(user_challenge_data);
+    const std::string challenge_id =
+        challenge_data.at("challenge_id").get<std::string>();
+
+    auto result = db()["telegram_challenges"].find_one(
+        document{} << "_id" << challenge_id << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Challenge not found");
+    }
+
+    auto view = result->view();
+    const std::string status(view["status"].get_string().value);
+    if (status != "confirmed") {
+        throw std::invalid_argument("Challenge is not confirmed");
+    }
+
+    auto used_at = view["used_at"];
+    if (!used_at || used_at.type() != bsoncxx::type::k_null) {
+        throw std::invalid_argument("Challenge was already used");
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()
+    );
+    auto expires_at = view["expires_at"].get_date().value;
+    if (expires_at <= now_ms) {
+        throw std::invalid_argument("Challenge expired");
+    }
+
+    auto telegram_user = view["telegram_user"].get_document().view();
+    const std::int64_t telegram_user_id = telegram_user["id"].get_int64().value;
+    const std::string telegram_username =
+        std::string(telegram_user["username"].get_string().value);
+    const std::string telegram_first_name =
+        std::string(telegram_user["first_name"].get_string().value);
+    const std::string access_token = "access_" + generate_token();
+    auto user_result = db()["users"].find_one(
+        document{} << "telegram_user_id" << telegram_user_id << finalize
+    );
+
+    std::string user_id;
+    if (user_result) {
+        user_id = std::string(user_result->view()["id"].get_string().value);
+        auto update_user_result = db()["users"].update_one(
+            document{} << "telegram_user_id" << telegram_user_id << finalize,
+            document{} << "$set" << open_document << "telegram_username"
+                       << telegram_username << "telegram_first_name"
+                       << telegram_first_name << "updated_at"
+                       << bsoncxx::types::b_date{now} << "access_token"
+                       << access_token << close_document << finalize
+        );
+    } else {
+        user_id = generate_uuid();
+        auto insert_user_result = db()["users"].insert_one(
+            document{} << "id" << user_id << "telegram_user_id"
+                       << telegram_user_id << "telegram_username"
+                       << telegram_username << "telegram_first_name"
+                       << telegram_first_name << "created_at"
+                       << bsoncxx::types::b_date{now} << "updated_at"
+                       << bsoncxx::types::b_date{now} << "access_token"
+                       << access_token << "created_surveys" << open_array
+                       << close_array << "given_answers" << open_array
+                       << close_array << finalize
+        );
+    }
+
+    auto update_challenge_result = db()["telegram_challenges"].update_one(
+        document{} << "_id" << challenge_id << "status"
+                   << "confirmed"
+                   << "used_at" << bsoncxx::types::b_null{} << finalize,
+        document{} << "$set" << open_document << "status"
+                   << "used"
+                   << "used_at" << bsoncxx::types::b_date{now} << close_document
+                   << finalize
+    );
+    if (!update_challenge_result ||
+        update_challenge_result->modified_count() != 1) {
+        throw std::runtime_error("Challenge was not completed");
+    }
+
+    nlohmann::json user_data;
+    user_data["access_token"] = access_token;
+    user_data["user"]["id"] = user_id;
+    user_data["user"]["telegram_user_id"] = telegram_user_id;
+    user_data["user"]["telegram_username"] = telegram_username;
+    user_data["user"]["telegram_first_name"] = telegram_first_name;
+    return user_data.dump();
+}
+
+std::string Database::user_id_by_access_token(const std::string &access_token) {
+    auto result = db()["users"].find_one(
+        document{} << "access_token" << access_token << finalize
+    );
+    if (!result) {
+        throw std::invalid_argument("Invalid access token");
+    }
+    return std::string(result->view()["id"].get_string().value);
+}
+
 }  // namespace survey

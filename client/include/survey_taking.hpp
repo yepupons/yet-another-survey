@@ -10,8 +10,11 @@ class SurveyTaking : public QWidget {
 
 public:
     explicit SurveyTaking(int survey_id, QWidget *parent = nullptr);
-    explicit SurveyTaking(const nlohmann::json& survey_data, bool preview_mode, QWidget* parent = nullptr
-);
+    explicit SurveyTaking(
+        const nlohmann::json &survey_data,
+        bool preview_mode,
+        QWidget *parent = nullptr
+    );
 
 public slots:
     void open_next_section(int next_section_id);

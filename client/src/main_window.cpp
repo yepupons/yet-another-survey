@@ -1,10 +1,9 @@
 #include "main_window.hpp"
 #include <curl/curl.h>
-#include <QUrl>
 #include <QAction>
+#include <QDesktopServices>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -12,11 +11,12 @@
 #include <QObject>
 #include <QPushButton>
 #include <QSizePolicy>
-#include <QVBoxLayout>
 #include <QToolButton>
-#include <QDesktopServices>
+#include <QUrl>
+#include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "created_surveys_window.hpp"
+#include "login_window.hpp"
 #include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
@@ -70,18 +70,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     auto *profile_menu = new QMenu(profile_button);
     profile_menu->setObjectName("profileMenu");
-    
-    auto *get_session_id_button_ = profile_menu->addAction("Get session ID");
-    auto *set_session_id_button_ = profile_menu->addAction("Set Session ID");
-
-    profile_menu->addSeparator();
 
     auto *get_created_surveys_button_ = profile_menu->addAction("Your surveys");
-    auto *get_passed_surveys_button_ = profile_menu->addAction("Passed surveys");
+    auto *get_passed_surveys_button_ =
+        profile_menu->addAction("Passed surveys");
 
     profile_menu->addSeparator();
 
-    auto *auth_button = profile_menu->addAction("Log in with Telegram");
+    auth_action_ = profile_menu->addAction("");
+    update_auth_action();
 
     profile_button->setMenu(profile_menu);
     header_layout->addWidget(profile_button);
@@ -204,10 +201,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         &MainWindow::create_survey
     );
     connect(
-        set_session_id_button_, &QAction::triggered, this,
-        &MainWindow::change_session_id
-    );
-    connect(
         get_created_surveys_button_, &QAction::triggered, this,
         &MainWindow::get_created_surveys
     );
@@ -215,15 +208,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         get_passed_surveys_button_, &QAction::triggered, this,
         &MainWindow::get_passed_surveys
     );
-    connect(get_session_id_button_, &QAction::triggered, this, [this]() {
-        show_message_box(
-            this, QMessageBox::Information, "Info",
-            "Your session ID is: " + QString::fromStdString(session().get_id())
+    connect(auth_action_, &QAction::triggered, this, [this]() {
+        if (session().is_authenticated()) {
+            session().clear_auth();
+            update_auth_action();
+            show_message_box(
+                this, QMessageBox::Information, "Info", "You are logged out."
+            );
+            return;
+        }
+
+        auto *login_window = new LoginWindow(this);
+        login_window->setAttribute(Qt::WA_DeleteOnClose);
+        connect(
+            login_window, &LoginWindow::login_completed, this,
+            &MainWindow::update_auth_action
         );
+        login_window->show();
     });
-    connect(auth_button, &QAction::triggered, this, []() {
-        QDesktopServices::openUrl(QUrl("https://t.me/yet_another_survey_auth_bot?start=test_login_token"));
-    });
+}
+
+void MainWindow::update_auth_action() {
+    auth_action_->setText(session().is_authenticated() ? "Log out" : "Log in");
 }
 
 void MainWindow::open_survey() {
@@ -271,33 +277,6 @@ void MainWindow::create_survey() {
     builder->showMaximized();
     builder->raise();
     builder->activateWindow();
-}
-
-void MainWindow::change_session_id() {
-        bool ok;
-        QString text = QInputDialog::getText(
-            this, "Set Session ID", "Enter new session ID:", QLineEdit::Normal,
-            QString::fromStdString(session().get_id()), &ok
-        );
-
-        if (!ok) {
-            return;
-        }
-
-        std::string new_id = text.trimmed().toStdString();
-        if (new_id.empty()) {
-            show_message_box(
-                this, QMessageBox::Warning, "Error",
-                "Please enter a valid session id."
-            );
-            return;
-        }
-
-        session().set_id(new_id);
-        show_message_box(
-            this, QMessageBox::Information, "Info",
-            "Session ID changed to " + QString::fromStdString(session().get_id())
-        );
 }
 
 void MainWindow::get_created_surveys() {
