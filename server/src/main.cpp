@@ -1,6 +1,6 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon.h>
-#include <database.hpp>
+#include "database.hpp"
 
 using namespace drogon;
 
@@ -99,97 +99,6 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
-    app().registerHandler(
-        "/account",
-        [&db](const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb) {
-            try {
-                std::string session_id = request->getParameter("session-id");
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
-                resp->setBody(db.read_account(session_id));
-                cb(resp);
-#ifdef YAZ_DEBUG
-                std::cerr << "Account read for session "
-                          << request->getParameter("session-id") << std::endl;
-#endif
-            } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error reading account for "
-                          << request->getParameter("session-id") << ": " << e.what()
-                          << std::endl;
-#endif
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
-                resp->setBody(e.what());
-                cb(resp);
-            }
-        },
-        {Get}
-    );
-
-    app().registerHandler(
-        "/account/telegram",
-        [&db](const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb) {
-            auto resp = HttpResponse::newHttpResponse();
-            try {
-                std::string session_id = request->getParameter("session-id");
-                auto json = request->getJsonObject();
-                std::int64_t telegram_id = json->get("telegram_id", 0).asInt64();
-                db.link_telegram(session_id, telegram_id);
-                resp->setBody("Linked");
-            } catch (const std::exception &e) {
-                resp->setStatusCode(k500InternalServerError);
-                resp->setBody(e.what());
-            }
-            cb(resp);
-        },
-        {Post}
-    );
-
-    app().registerHandler(
-        "/account/telegram",
-        [&db](const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb) {
-            auto resp = HttpResponse::newHttpResponse();
-            try {
-                std::string session_id = request->getParameter("session-id");
-                db.unlink_telegram(session_id);
-                resp->setBody("Unlinked");
-            } catch (const std::exception &e) {
-                resp->setStatusCode(k500InternalServerError);
-                resp->setBody(e.what());
-            }
-            cb(resp);
-        },
-        {Delete}
-    );
-
-
-
-    /*
-    app().registerHandler(
-        "/answer",
-        [&db](const HttpRequestPtr &request,
-           std::function<void(const HttpResponsePtr &)> &&cb) {
-            try {
-                int answer_id = std::stoi(request->getParameter("id"));
-                const auto answer_data = db.read_answer(answer_id);
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
-                resp->setBody(answer_data);
-                cb(resp);
-            } catch (const std::exception &e) {
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
-                resp->setBody(e.what());
-                cb(resp);
-            }
-        },
-        {Get}
-    );
-    */
 
     app().registerHandler(
         "/passed-surveys",
@@ -377,6 +286,70 @@ int main(int argc, char *argv[]) {
         {Get}
     );
 
+
+    app().registerHandler(
+        "/api/auth/telegram/challenge",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            std::string challenge_uuid = survey::Database::generate_uuid();
+            std::string token = "login_" + survey::Database::generate_token();
+            std::string hashed_token = survey::Database::sha256(token);
+
+            Json::Value result;
+            db.write_telegram_challenge(challenge_uuid, hashed_token);
+            result["challenge_id"] = challenge_uuid;
+            result["telegram_url"] = "https://t.me/yet_another_survey_bot?start=" + token;
+            result["expires_in"] = 300;
+            auto resp = HttpResponse::newHttpJsonResponse(result);
+            cb(resp);
+
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/challenge/{1}",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &challengeId
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
+            cb(resp);
+
+        },
+        {Get}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/confirm",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
+            cb(resp);
+
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/complete",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            auto resp = HttpResponse::newHttpResponse();
+            cb(resp);
+
+        },
+        {Post}
+    );
+
     app().run();
     return 0;
 }
+

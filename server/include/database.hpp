@@ -43,6 +43,10 @@ public:
 
     std::string write_image(const drogon::HttpFile &file);
     std::string read_image(const std::string &image_oid);
+    void write_telegram_challenge(const std::string &challenge_uuid, const std::string &token_hash);
+    static std::string generate_token();
+    static std::string generate_uuid();
+    static std::string sha256(const std::string& input);
 };
 }  // namespace survey
 

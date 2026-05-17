@@ -8,6 +8,10 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <random>
+#include <openssl/sha.h>
+#include <sstream>
+#include <iomanip>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -340,39 +344,72 @@ std::string Database::read_image(const std::string &image_oid) {
     return data;
 }
 
-std::string Database::read_account(const std::string &session_id) {
-    auto result = db()["users"].find_one(
-        document{} << "id" << session_id << finalize
-    );
-    if (!result) throw std::runtime_error("Account not found");
-    return bsoncxx::to_json(result->view());
+std::string Database::generate_token(){
+    std::random_device rd;
+    std::ostringstream oss;
+    for (size_t i = 0; i < 16; ++i) {
+        unsigned int randomByte = rd() & 0xFF;
+        oss << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << randomByte;
+    }
+    return oss.str();
 }
 
-void Database::link_telegram(
-    const std::string &session_id, std::int64_t telegram_id
-) {
-    auto find = db()["users"].find_one(
-        document{} << "id" << session_id << finalize
-    );
-    if (!find) throw std::runtime_error("User not found");
 
-    db()["users"].update_one(
-        document{} << "id" << session_id << finalize,
-        document{} << "$set" << open_document << "telegram_id" << telegram_id
-                   << close_document << finalize
-    );
+std::string Database::generate_uuid() {
+    std::random_device rd;
+    std::array<unsigned char, 16> bytes{};
+    for (auto &byte : bytes) {
+        byte = static_cast<unsigned char>(rd() & 0xFF);
+    }
+    bytes[6] = static_cast<unsigned char>((bytes[6] & 0x0F) | 0x40);
+    bytes[8] = static_cast<unsigned char>((bytes[8] & 0x3F) | 0x80);
+    std::ostringstream oss;
+    for (size_t i = 0; i < bytes.size(); ++i) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) {
+            oss << "-";
+        }
+        oss << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << static_cast<int>(bytes[i]);
+    }
+    return oss.str();
 }
 
-void Database::unlink_telegram(const std::string &session_id) {
-    auto find = db()["users"].find_one(
-        document{} << "id" << session_id << finalize
+std::string Database::sha256(const std::string& input) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256(
+        reinterpret_cast<const unsigned char*>(input.c_str()),
+        input.size(),
+        hash
     );
-    if (!find) throw std::runtime_error("User not found");
+    std::ostringstream oss;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        oss << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << static_cast<int>(hash[i]);
+    }
+    return oss.str();
+}
 
-    db()["users"].update_one(
-        document{} << "id" << session_id << finalize,
-        document{} << "$unset" << open_document << "telegram_id" << ""
-                   << close_document << finalize
+void Database::write_telegram_challenge(const std::string &challenge_uuid, const std::string &token_hash){
+    auto now = std::chrono::system_clock::now();
+    auto result = db()["telegram_challenges"].insert_one(
+        document{}
+            << "_id" << challenge_uuid
+            << "token_hash" << token_hash
+            << "status" << "pending"
+            << "telegram_user" << bsoncxx::types::b_null{}
+            << "created_at" << bsoncxx::types::b_date{now}
+            << "expires_at" << bsoncxx::types::b_date{now + std::chrono::minutes(3)}
+            << "confirmed_at" << bsoncxx::types::b_null{}
+            << "used_at" << bsoncxx::types::b_null{}
+            << finalize
     );
+
 }
 }  // namespace survey

@@ -17,6 +17,7 @@
 #include <QDesktopServices>
 #include <nlohmann/json.hpp>
 #include "created_surveys_window.hpp"
+#include "login_window.hpp"
 #include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
@@ -81,7 +82,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     profile_menu->addSeparator();
 
-    auto *auth_button = profile_menu->addAction("Log in with Telegram");
+    auto *auth_button = profile_menu->addAction("Log in");
 
     profile_button->setMenu(profile_menu);
     header_layout->addWidget(profile_button);
@@ -221,8 +222,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
             "Your session ID is: " + QString::fromStdString(session().get_id())
         );
     });
-    connect(auth_button, &QAction::triggered, this, []() {
-        QDesktopServices::openUrl(QUrl("https://t.me/yet_another_survey_auth_bot?start=test_login_token"));
+    connect(auth_button, &QAction::triggered, this, [this]() {
+        auto *login_window = new LoginWindow(this);
+        login_window->setAttribute(Qt::WA_DeleteOnClose);
+        login_window->show();
     });
 }
 
