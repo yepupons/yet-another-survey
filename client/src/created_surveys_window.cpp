@@ -1,6 +1,7 @@
 #include "created_surveys_window.hpp"
 #include <QrCodeGenerator.h>
-#include <matplot/matplot.h>
+#include <qobject.h>
+// #include <matplot/matplot.h>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
@@ -12,6 +13,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <string>
+#include "nlohmann/json_fwd.hpp"
 #include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
@@ -57,16 +59,6 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
     content_layout->addWidget(title_card, 0, Qt::AlignHCenter);
 
-    nlohmann::json surveys_ids;
-    try {
-        surveys_ids =
-            ServerInteraction::get_created_surveys(session().get_id());
-    } catch (const std::exception &e) {
-        show_message_box(this, QMessageBox::Warning, "Error", e.what());
-        deleteLater();
-        return;
-    }
-
     auto *surveys_card = new QWidget(content);
     surveys_card->setObjectName("questionCard");
     surveys_card->setFixedWidth(720);
@@ -76,81 +68,119 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     surveys_layout->setContentsMargins(24, 24, 24, 24);
     surveys_layout->setSpacing(12);
 
-    if (surveys_ids.empty()) {
-        auto *empty_label = new QLabel("No created surveys yet.", surveys_card);
-        empty_label->setObjectName("titleLabel");
-        surveys_layout->addWidget(empty_label);
-        content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
-        content_layout->addStretch();
-        scroll_area->setWidget(content);
-        layout->addWidget(scroll_area);
-        setLayout(layout);
-        return;
-    }
+    server().get_created_surveys(
+        session().get_id(),
+        [=, this](const nlohmann::json &surveys_ids) {
+            if (surveys_ids.empty()) {
+                auto *empty_label =
+                    new QLabel("No created surveys yet.", surveys_card);
+                empty_label->setObjectName("titleLabel");
+                surveys_layout->addWidget(empty_label);
+                content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
+                content_layout->addStretch();
+                scroll_area->setWidget(content);
+                layout->addWidget(scroll_area);
+                setLayout(layout);
+                return;
+            }
 
-    for (int id : surveys_ids) {
-        auto *row_widget = new QWidget(surveys_card);
-        auto *row_layout = new QVBoxLayout(row_widget);
-        row_layout->setContentsMargins(0, 0, 0, 0);
-        row_layout->setSpacing(10);
+            for (int id : surveys_ids) {
+                auto *row_widget = new QWidget(surveys_card);
+                auto *row_layout = new QVBoxLayout(row_widget);
+                row_layout->setContentsMargins(0, 0, 0, 0);
+                row_layout->setSpacing(10);
 
-        auto *survey_title = new QLabel(row_widget);
-        survey_title->setObjectName("titleLabel");
-        survey_title->setSizePolicy(
-            QSizePolicy::Expanding, QSizePolicy::Preferred
-        );
-        survey_title->setWordWrap(true);
-        try {
-            auto title =
-                ServerInteraction::get_survey(id).at("title").get<std::string>(
+                auto *survey_title = new QLabel(row_widget);
+                survey_title->setObjectName("titleLabel");
+                survey_title->setSizePolicy(
+                    QSizePolicy::Expanding, QSizePolicy::Preferred
                 );
-            survey_title->setText(
-                QString::fromStdString(title) + " (id: " + QString::number(id) +
-                ")"
+                survey_title->setWordWrap(true);
+                server().get_survey(
+                    id,
+                    [=, this](const nlohmann::json &survey_data) {
+                        auto title = survey_data.at("title").get<std::string>();
+                        survey_title->setText(
+                            QString::fromStdString(title) +
+                            " (id: " + QString::number(id) + ")"
+                        );
+                    },
+                    [=, this](const std::string &error) {
+                        show_message_box(
+                            parentWidget(), QMessageBox::Warning, "Error",
+                            QString::fromStdString(error)
+                        );
+                        deleteLater();
+                    }
+                );
+                row_layout->addWidget(survey_title);
+
+                auto *actions_layout = new QHBoxLayout();
+                actions_layout->setContentsMargins(0, 0, 0, 0);
+                actions_layout->setSpacing(10);
+
+                auto *show_qr_button = new QPushButton("Show QR", row_widget);
+                show_qr_button->setObjectName("primaryButton");
+                actions_layout->addWidget(show_qr_button, 1);
+                connect(
+                    show_qr_button, &QPushButton::clicked, this,
+                    [this, id]() { show_qr_code(id); }
+                );
+
+                auto *view_survey_button =
+                    new QPushButton("Preview", row_widget);
+                view_survey_button->setObjectName("primaryButton");
+                actions_layout->addWidget(view_survey_button, 1);
+                connect(
+                    view_survey_button, &QPushButton::clicked, this,
+                    [this, id]() {
+                        server().get_survey(
+                            id,
+                            [=, this](const nlohmann::json &survey_data) {
+                                show_survey_preview(this, survey_data);
+                            },
+                            [=, this](const std::string &error) {
+                                show_message_box(
+                                    parentWidget(), QMessageBox::Warning, "Error",
+                                    QString::fromStdString(error)
+                                );
+                                deleteLater();
+                            }
+                        );
+                    }
+                );
+
+                auto *txt_export_button =
+                    new QPushButton("Export TXT", row_widget);
+                txt_export_button->setObjectName("primaryButton");
+                actions_layout->addWidget(txt_export_button, 1);
+                connect(
+                    txt_export_button, &QPushButton::clicked, this,
+                    [this, id]() { export_statistics_txt(id); }
+                );
+
+                auto *jpg_export_button =
+                    new QPushButton("Export JPG", row_widget);
+                jpg_export_button->setObjectName("primaryButton");
+                actions_layout->addWidget(jpg_export_button, 1);
+                connect(
+                    jpg_export_button, &QPushButton::clicked, this,
+                    [this, id]() { export_statistics_jpg(id); }
+                );
+
+                row_layout->addLayout(actions_layout);
+                surveys_layout->addWidget(row_widget);
+            }
+        },
+        [this](const std::string &error) {
+            show_message_box(
+                parentWidget(), QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
             );
-        } catch (const std::exception &e) {
-            show_message_box(this, QMessageBox::Warning, "Error", e.what());
             deleteLater();
             return;
         }
-        row_layout->addWidget(survey_title);
-
-        auto *actions_layout = new QHBoxLayout();
-        actions_layout->setContentsMargins(0, 0, 0, 0);
-        actions_layout->setSpacing(10);
-
-        auto *show_qr_button = new QPushButton("Show QR", row_widget);
-        show_qr_button->setObjectName("primaryButton");
-        actions_layout->addWidget(show_qr_button, 1);
-        connect(show_qr_button, &QPushButton::clicked, this, [this, id]() {
-            show_qr_code(id);
-        });
-
-        auto *view_survey_button = new QPushButton("Preview", row_widget);
-        view_survey_button->setObjectName("primaryButton");
-        actions_layout->addWidget(view_survey_button, 1);
-        connect(view_survey_button, &QPushButton::clicked, this, [this, id]() {
-            auto survey_data = ServerInteraction::get_survey(id);
-            show_survey_preview(this, survey_data);
-        });
-
-        auto *txt_export_button = new QPushButton("Export TXT", row_widget);
-        txt_export_button->setObjectName("primaryButton");
-        actions_layout->addWidget(txt_export_button, 1);
-        connect(txt_export_button, &QPushButton::clicked, this, [this, id]() {
-            export_statistics_txt(id);
-        });
-
-        auto *jpg_export_button = new QPushButton("Export JPG", row_widget);
-        jpg_export_button->setObjectName("primaryButton");
-        actions_layout->addWidget(jpg_export_button, 1);
-        connect(jpg_export_button, &QPushButton::clicked, this, [this, id]() {
-            export_statistics_jpg(id);
-        });
-
-        row_layout->addLayout(actions_layout);
-        surveys_layout->addWidget(row_widget);
-    }
+    );
 
     content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
     content_layout->addStretch();
@@ -160,6 +190,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 }
 
 void CreatedSurveysWindow::export_statistics_txt(int survey_id) {
+    /*
     std::ofstream file(std::to_string(survey_id) + ".txt");
     if (!file.is_open()) {
         show_message_box(
@@ -167,38 +198,53 @@ void CreatedSurveysWindow::export_statistics_txt(int survey_id) {
         );
         return;
     }
-    nlohmann::json survey = ServerInteraction::get_survey(survey_id);
-    nlohmann::json stats = ServerInteraction::get_survey_statistics(survey_id);
-    file << "Survey: \"" << survey["title"] << "\"\n\n";
-    file << "Total number of answers: " << stats["total_answers"] << "\n\n";
-    file << "Statistic by sections:\n\n";
-    for (int i = 0; i < survey["sections"].size(); ++i) {
-        file << "Section " << survey["sections"][i]["title"] << ":\n\n";
-        for (int j = 0; j < survey["sections"][i]["questions"].size(); ++j) {
-            const auto &question = survey["sections"][i]["questions"][j];
-            file << "Question " << question["text"] << ":\n";
-            if (question["type"] == "single" ||
-                question["type"] == "multiple") {
-                for (int k = 1; k <= question["options"].size(); ++k) {
-                    file << question["options"][k - 1] << ": ";
-                    if (stats["sections"][i][j].contains(std::to_string(k))) {
-                        file << stats["sections"][i][j][std::to_string(k)];
-                    } else {
-                        file << 0;
+    server().get_survey(
+        survey_id,
+        [=, this](const nlohmann::json &survey) {
+            server().get_survey_statistics(
+                survey_id,
+                [=, this](const nlohmann::json &stats) {
+                    file << "Survey: \"" << survey["title"] << "\"\n\n";
+                    file << "Total number of answers: " <<
+    stats["total_answers"] << "\n\n"; file << "Statistic by sections:\n\n"; for
+    (int i = 0; i < survey["sections"].size(); ++i) { file << "Section " <<
+    survey["sections"][i]["title"] << ":\n\n"; for (int j = 0; j <
+    survey["sections"][i]["questions"].size(); ++j) { const auto &question =
+    survey["sections"][i]["questions"][j]; file << "Question " <<
+    question["text"] << ":\n"; if (question["type"] == "single" ||
+                                question["type"] == "multiple") {
+                                for (int k = 1; k <= question["options"].size();
+    ++k) { file << question["options"][k - 1] << ": "; if
+    (stats["sections"][i][j].contains(std::to_string(k))) { file <<
+    stats["sections"][i][j][std::to_string(k)]; } else { file << 0;
+                                    }
+                                    file << " answer(s)\n";
+                                }
+                            } else if (question["type"] == "text") {
+                                for (const auto &answer_count :
+                                    stats["sections"][i][j].items()) {
+                                    file << '\"' << answer_count.key()
+                                        << "\": " << answer_count.value() << "
+    answer(s)\n";
+                                }
+                            }
+                            file << '\n';
+                        }
                     }
-                    file << " answer(s)\n";
+                    file.close();
+                },
+                [=, this](const std::string &error) {
+                    show_message_box(this, QMessageBox::Warning, "Error",
+    QString::fromStdString(error));
                 }
-            } else if (question["type"] == "text") {
-                for (const auto &answer_count :
-                     stats["sections"][i][j].items()) {
-                    file << '\"' << answer_count.key()
-                         << "\": " << answer_count.value() << " answer(s)\n";
-                }
-            }
-            file << '\n';
+            )
+        },
+        [=, this](const std::string &error) {
+            show_message_box(this, QMessageBox::Warning, "Error",
+    QString::fromStdString(error));
         }
-    }
-    file.close();
+    );
+    */
 }
 
 void CreatedSurveysWindow::export_statistics_jpg(int survey_id) {
@@ -286,6 +332,7 @@ void CreatedSurveysWindow::export_statistics_jpg(int survey_id) {
         );
     };
     close();
+    */
 }
 
 void CreatedSurveysWindow::show_survey_preview(

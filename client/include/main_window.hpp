@@ -29,8 +29,6 @@ private:
     QPushButton *create_survey_button_;
     QAction *auth_action_;
     SurveyTaking *opened_survey_ = nullptr;
-    QPushButton *get_created_surveys_button_;
-    QPushButton *get_passed_surveys_button_;
 };
 }  // namespace survey
 #endif  // MAIN_WINDOW_HPP_

@@ -97,6 +97,8 @@ if(EMSCRIPTEN)
         client/include/login_window.hpp
         client/include/abstract_block_editor.hpp
 
+        client/include/server_interaction.hpp
+
         client/include/view_passed_surveys.hpp
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
@@ -124,7 +126,13 @@ else()
     find_package(mongocxx CONFIG REQUIRED)
     find_package(bsoncxx CONFIG REQUIRED)
     find_package(Boost 1.65.1 REQUIRED)
+    find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
+
+    # Drogon Options
+    option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
+    option(USE_SQLITE3    "Enable SQLite3"    OFF)
+    option(USE_MYSQL      "Enable MySQL"      OFF)
 
     set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
     if (EXISTS "${NLOHMANN_JSON_LOCAL_DIR}/CMakeLists.txt")

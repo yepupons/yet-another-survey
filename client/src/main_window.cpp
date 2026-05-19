@@ -64,21 +64,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     profile_button->setIconSize(QSize(24, 24));
     profile_button->setToolButtonStyle(Qt::ToolButtonIconOnly);
     profile_button->setFixedSize(44, 44);
-    profile_button->setPopupMode(QToolButton::InstantPopup);
 
-    auto *profile_menu = new QMenu(profile_button);
+    auto *profile_menu = new QMenu(this);
     profile_menu->setObjectName("profileMenu");
 
-    auto *get_created_surveys_button_ = profile_menu->addAction("Your surveys");
-    auto *get_passed_surveys_button_ =
-        profile_menu->addAction("Passed surveys");
+    auto *get_created_surveys_button = profile_menu->addAction("Your surveys");
+    auto *get_passed_surveys_button = profile_menu->addAction("Passed surveys");
 
     profile_menu->addSeparator();
 
     auth_action_ = profile_menu->addAction("");
     update_auth_action();
 
-    profile_button->setMenu(profile_menu);
     header_layout->addWidget(profile_button);
 
     auto *content = new QWidget(central);
@@ -199,11 +196,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         &MainWindow::create_survey
     );
     connect(
-        get_created_surveys_button_, &QAction::triggered, this,
+        profile_button, &QToolButton::clicked, this,
+        [profile_button, profile_menu]() {
+            profile_menu->popup(
+                profile_button->mapToGlobal(QPoint(0, profile_button->height()))
+            );
+        }
+    );
+    connect(
+        get_created_surveys_button, &QAction::triggered, this,
         &MainWindow::get_created_surveys
     );
     connect(
-        get_passed_surveys_button_, &QAction::triggered, this,
+        get_passed_surveys_button, &QAction::triggered, this,
         &MainWindow::get_passed_surveys
     );
     connect(auth_action_, &QAction::triggered, this, [this]() {

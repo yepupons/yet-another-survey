@@ -1,8 +1,8 @@
 #include "survey_builder_window.hpp"
-#include "survey_taking.hpp"
 #include <QrCodeGenerator.h>
 #include <qglobal.h>
 #include <qlineedit.h>
+#include <qobject.h>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
@@ -14,6 +14,7 @@
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
+#include "survey_taking.hpp"
 
 namespace survey {
 SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
@@ -117,7 +118,8 @@ void SurveyBuilderWindow::add_section() {
     sections_layout_->addWidget(sections_.back());
 }
 
-nlohmann::json SurveyBuilderWindow::build_survey_json(int id, bool preview_mode) const {
+nlohmann::json SurveyBuilderWindow::build_survey_json(int id, bool preview_mode)
+    const {
     nlohmann::json survey;
     survey["data"]["id"] = id;
     survey["data"]["creator_id"] = session().get_id();
@@ -144,21 +146,24 @@ int SurveyBuilderWindow::generate_survey_id() {
 
 void SurveyBuilderWindow::save_survey() {
     const int id = generate_survey_id();
-    nlohmann::json survey = build_survey_json(id, false);
-
-    try {
-        ServerInteraction::post_survey(survey);
-    } catch (const std::exception &e) {
-        show_message_box(this, QMessageBox::Warning, "Error", e.what());
-        return;
-    }
-
-    QrCodeGenerator generator(this);
-    const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
-    show_message_box(
-        this, QPixmap::fromImage(qr_image), "Saved",
-        "Survey has been saved.\nYour ID:\n" + QString::number(id)
+    server().post_survey(
+        build_survey_json(id, false),
+        [&, id]() {
+            QrCodeGenerator generator(this);
+            const QImage qr_image =
+                generator.generateQr(QString::number(id), 260, 4);
+            show_message_box(
+                parentWidget(), QPixmap::fromImage(qr_image), "Saved",
+                "Survey has been saved.\nYour ID:\n" + QString::number(id)
+            );
+            deleteLater();
+        },
+        [=, this](const std::string &error) {
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
+        }
     );
-    deleteLater();
 }
 }  // namespace survey

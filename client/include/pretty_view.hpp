@@ -1,13 +1,12 @@
 #ifndef PRETTY_VIEW_HPP_
 #define PRETTY_VIEW_HPP_
 
-#include <qnamespace.h>
+#include <QLabel>
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
 #include <QString>
 #include <QVBoxLayout>
-#include <QLabel>
 
 namespace survey {
 inline void show_message_box(

@@ -25,6 +25,28 @@ int main(int argc, char *argv[]) {
     survey::Database db;
     app().addListener("127.0.0.1", 8080);
 
+    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req, 
+                                            drogon::AdviceCallback &&acb, 
+                                            drogon::AdviceChainCallback &&accb) {
+        if (req->method() == drogon::Options) {
+            auto resp = drogon::HttpResponse::newHttpResponse();
+            resp->addHeader("Access-Control-Allow-Origin", "http://localhost:8054");
+            resp->addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            resp->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            resp->addHeader("Access-Control-Allow-Credentials", "true");
+            
+            acb(resp); 
+            return;
+        }
+        accb();
+    });
+
+    app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &req, 
+                                                const drogon::HttpResponsePtr &resp) {
+        resp->addHeader("Access-Control-Allow-Origin", "http://localhost:8054");
+        resp->addHeader("Access-Control-Allow-Credentials", "true");
+    });
+
     app().registerHandler(
         "/survey",
         [&db](

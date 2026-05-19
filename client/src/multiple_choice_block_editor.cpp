@@ -142,8 +142,8 @@ nlohmann::json MultipleChoiceBlockEditor::to_json(bool preview_mode) const {
     }
 
     if (!preview_mode && !image_path_.isEmpty()) {
-        block["image"] =
-            ServerInteraction::post_image(image_path_.toStdString());
+        // block["image"] =
+        //     ServerInteraction::post_image(image_path_.toStdString());
     }
     block["options"] = nlohmann::json::array();
 
