@@ -1,6 +1,7 @@
 #ifndef SERVER_INTERACTION_HPP_
 #define SERVER_INTERACTION_HPP_
 
+#include <qstringview.h>
 #include <QEventLoop>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -59,7 +60,8 @@ public:
         std::function<void(const std::string &)> failure
     );
     void post_image(
-        const std::string &image_path,
+        const std::string &image_name,
+        const QByteArray &image_data,
         std::function<void(const std::string &)> success,
         std::function<void(const std::string &)> failure
     );

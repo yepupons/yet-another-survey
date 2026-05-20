@@ -8,6 +8,7 @@
 #include <QStringListModel>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <functional>
 #include <nlohmann/json.hpp>
 #include "abstract_block_editor.hpp"
 
@@ -21,7 +22,16 @@ public:
         QWidget *parent = nullptr
     );
 
-    nlohmann::json to_json(bool preview_mode) const;
+    void build_questions_json(
+        bool preview_mode,
+        std::shared_ptr<nlohmann::json> section,
+        int current_question,
+        std::function<void(const nlohmann::json &)> callback
+    ) const;
+    void to_json(
+        bool preview_mode,
+        std::function<void(const nlohmann::json &)> callback
+    ) const;
 
 private slots:
     void add_block();

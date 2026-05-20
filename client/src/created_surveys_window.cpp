@@ -141,8 +141,8 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                             },
                             [=, this](const std::string &error) {
                                 show_message_box(
-                                    parentWidget(), QMessageBox::Warning, "Error",
-                                    QString::fromStdString(error)
+                                    parentWidget(), QMessageBox::Warning,
+                                    "Error", QString::fromStdString(error)
                                 );
                                 deleteLater();
                             }

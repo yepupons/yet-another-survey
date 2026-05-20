@@ -56,7 +56,8 @@ void SurveyTaking::open_next_section(int next_section_id) {
     if (next_section_id == -1) {
         if (preview_mode_) {
             show_message_box(
-                parentWidget(), QMessageBox::Information, "Exit", "Preview finished."
+                parentWidget(), QMessageBox::Information, "Exit",
+                "Preview finished."
             );
             deleteLater();
             return;
@@ -82,9 +83,10 @@ void SurveyTaking::open_next_section(int next_section_id) {
                 answer_data_,
                 [=, this]() {
                     show_message_box(
-                        this, QMessageBox::Information, "Saved",
+                        parentWidget(), QMessageBox::Information, "Saved",
                         "Your answers have been successfully saved."
                     );
+                    deleteLater();
                 },
                 [=, this](const std::string &error) {
                     show_message_box(
@@ -111,7 +113,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
             current_section_, &SurveyWindow::closed_without_answer, this,
             [this]() {
                 show_message_box(
-                    this, QMessageBox::Warning, "Error",
+                    parentWidget(), QMessageBox::Warning, "Error",
                     "Your answers haven't been saved"
                 );
                 deleteLater();

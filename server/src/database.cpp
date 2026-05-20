@@ -388,11 +388,9 @@ void Database::write_telegram_challenge(
     auto now = std::chrono::system_clock::now();
     auto result = db()["telegram_challenges"].insert_one(
         document{} << "_id" << challenge_uuid << "token_hash" << token_hash
-                   << "status"
-                   << "pending"
-                   << "telegram_user" << bsoncxx::types::b_null{}
-                   << "created_at" << bsoncxx::types::b_date{now}
-                   << "expires_at"
+                   << "status" << "pending" << "telegram_user"
+                   << bsoncxx::types::b_null{} << "created_at"
+                   << bsoncxx::types::b_date{now} << "expires_at"
                    << bsoncxx::types::b_date{now + std::chrono::minutes(3)}
                    << "confirmed_at" << bsoncxx::types::b_null{} << "used_at"
                    << bsoncxx::types::b_null{} << finalize
@@ -406,10 +404,9 @@ void Database::confirm_telegram_challenge(
     nlohmann::json telegram_user = nlohmann::json::parse(telegram_user_data);
     auto now = std::chrono::system_clock::now();
     auto result = db()["telegram_challenges"].update_one(
-        document{} << "token_hash" << token_hashed << "status"
-                   << "pending" << finalize,
-        document{} << "$set" << open_document << "status"
-                   << "confirmed"
+        document{} << "token_hash" << token_hashed << "status" << "pending"
+                   << finalize,
+        document{} << "$set" << open_document << "status" << "confirmed"
                    << "telegram_user" << open_document << "id"
                    << telegram_user.at("id").get<std::int64_t>() << "username"
                    << telegram_user.value("username", "") << "first_name"
@@ -534,13 +531,10 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
     }
 
     auto update_challenge_result = db()["telegram_challenges"].update_one(
-        document{} << "_id" << challenge_id << "status"
-                   << "confirmed"
+        document{} << "_id" << challenge_id << "status" << "confirmed"
                    << "used_at" << bsoncxx::types::b_null{} << finalize,
-        document{} << "$set" << open_document << "status"
-                   << "used"
-                   << "used_at" << bsoncxx::types::b_date{now} << close_document
-                   << finalize
+        document{} << "$set" << open_document << "status" << "used" << "used_at"
+                   << bsoncxx::types::b_date{now} << close_document << finalize
     );
     if (!update_challenge_result ||
         update_challenge_result->modified_count() != 1) {

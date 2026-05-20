@@ -1,4 +1,5 @@
 #include "server_interaction.hpp"
+#include <qstringview.h>
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
@@ -173,7 +174,8 @@ void ServerInteraction::check_answer(
 }
 
 void ServerInteraction::post_image(
-    const std::string &image_path,
+    const std::string &image_name,
+    const QByteArray &image_data,
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
@@ -185,21 +187,11 @@ void ServerInteraction::post_image(
 
     imagePart.setHeader(
         QNetworkRequest::ContentDispositionHeader,
-        QVariant(
-            QString("form-data; name=\"image\"; filename=\"%1\"")
-                .arg(QFileInfo(QString::fromStdString(image_path)).fileName())
-        )
+        QVariant(QString("form-data; name=\"image\"; filename=\"%1\"")
+                     .arg(QString::fromStdString(image_name)))
     );
 
-    QFile *file = new QFile(QString::fromStdString(image_path));
-    if (!file->open(QIODevice::ReadOnly)) {
-        delete multiPart;
-        delete file;
-        throw std::runtime_error("Cannot open image file for reading");
-    }
-
-    imagePart.setBodyDevice(file);
-    file->setParent(multiPart);
+    imagePart.setBody(image_data);
     multiPart->append(imagePart);
 
     QNetworkReply *reply = manager_.post(QNetworkRequest(url), multiPart);

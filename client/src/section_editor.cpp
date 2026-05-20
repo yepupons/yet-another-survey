@@ -2,6 +2,8 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <functional>
+#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include "abstract_block_editor.hpp"
 #include "multiple_choice_block_editor.hpp"
@@ -98,17 +100,36 @@ void SectionEditor::add_block() {
     );
 }
 
-nlohmann::json SectionEditor::to_json(bool preview_mode) const {
-    nlohmann::json section;
-    section["title"] = title_->text().trimmed().toStdString();
+void SectionEditor::build_questions_json(
+    bool preview_mode,
+    std::shared_ptr<nlohmann::json> section,
+    int current_question,
+    std::function<void(const nlohmann::json &)> callback
+) const {
+    questions_[current_question]->to_json(
+        preview_mode,
+        [=, this](const nlohmann::json &question) {
+            (*section)["questions"].push_back(question);
+            if (current_question == questions_.size() - 1) {
+                callback(*section);
+                return;
+            }
+            build_questions_json(
+                preview_mode, section, current_question + 1, callback
+            );
+        }
+    );
+}
 
-    section["questions"] = nlohmann::json::array();
-    for (auto *block : questions_) {
-        section["questions"].push_back(block->to_json(preview_mode));
-    }
+void SectionEditor::to_json(
+    bool preview_mode,
+    std::function<void(const nlohmann::json &)> callback
+) const {
+    auto section = std::make_shared<nlohmann::json>();
+    (*section)["title"] = title_->text().trimmed().toStdString();
+    (*section)["next_section_id"] = next_section_->currentIndex() - 1;
 
-    section["next_section_id"] = next_section_->currentIndex() - 1;
-
-    return section;
+    (*section)["questions"] = nlohmann::json::array();
+    build_questions_json(preview_mode, section, 0, callback);
 }
 }  // namespace survey

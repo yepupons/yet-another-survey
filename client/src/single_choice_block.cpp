@@ -9,7 +9,6 @@
 #include <QWidget>
 #include <nlohmann/json.hpp>
 #include <optional>
-#include <stdexcept>
 #include "server_interaction.hpp"
 
 namespace survey {
@@ -21,36 +20,6 @@ SingleChoiceBlock::SingleChoiceBlock(
     : Block(parent, block.value("required", false)) {
     setObjectName("questionBlockContainer");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-
-    QLabel *image = nullptr;
-    QPixmap pixmap;
-
-    if (block.contains("image_path") && block.at("image_path").is_string()) {
-        const QString image_path =
-            QString::fromStdString(block.at("image_path").get<std::string>());
-        pixmap.load(image_path);
-    } else if (block.contains("image") && block.at("image").is_string()) {
-        try {
-            // const std::string image_data = ServerInteraction::get_image(
-            //     block.at("image").get<std::string>()
-            // );
-
-            // const QByteArray byte_array =
-            // QByteArray::fromStdString(image_data);
-            // pixmap.loadFromData(byte_array);
-        } catch (const std::exception &) {
-            pixmap = QPixmap();
-        }
-    }
-
-    if (!pixmap.isNull()) {
-        image = new QLabel(this);
-        image->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        image->setAlignment(Qt::AlignCenter);
-        image->setPixmap(pixmap.scaled(
-            700, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation
-        ));
-    }
 
     QString question_text = QString::fromStdString(block.at("text"));
     QString html = question_text.toHtmlEscaped();
@@ -101,8 +70,42 @@ SingleChoiceBlock::SingleChoiceBlock(
     card_layout->setContentsMargins(24, 24, 24, 24);
     card_layout->setSpacing(14);
     card_layout->addWidget(question_);
-    if (image != nullptr) {
-        card_layout->addWidget(image);
+    if (block.contains("image_path") && block.at("image_path").is_string()) {
+        const QString image_path =
+            QString::fromStdString(block.at("image_path").get<std::string>());
+        QPixmap pixmap;
+        if (pixmap.load(image_path)) {  // NOT WORK
+            QLabel *image = new QLabel(this);
+            image->setSizePolicy(
+                QSizePolicy::Expanding, QSizePolicy::Preferred
+            );
+            image->setAlignment(Qt::AlignCenter);
+            image->setPixmap(pixmap.scaled(
+                500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation
+            ));
+            card_layout->addWidget(image);
+        }
+    } else if (block.contains("image") && block.at("image").is_string()) {
+        server().get_image(
+            block.at("image").get<std::string>(),
+            [=, this](const std::string &image_data) {
+                const QByteArray byte_array =
+                    QByteArray::fromStdString(image_data);
+                QPixmap pixmap;
+                if (pixmap.loadFromData(byte_array)) {
+                    QLabel *image = new QLabel(this);
+                    image->setSizePolicy(
+                        QSizePolicy::Expanding, QSizePolicy::Preferred
+                    );
+                    image->setAlignment(Qt::AlignCenter);
+                    image->setPixmap(pixmap.scaled(
+                        500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation
+                    ));
+                    card_layout->addWidget(image);
+                }
+            },
+            [=, this](const std::string &) {}
+        );
     }
 
     int id = 0;
@@ -129,11 +132,10 @@ void SingleChoiceBlock::save_answer(nlohmann::json &answer_data) const {
 }
 
 std::optional<int> SingleChoiceBlock::next_section() const {
-    try {
+    if (options_->checkedId() < links_.size()) {
         return links_.at(options_->checkedId());
-    } catch (const std::out_of_range &) {
-        return std::nullopt;
     }
+    return std::nullopt;
 }
 
 bool SingleChoiceBlock::has_answer() const {
