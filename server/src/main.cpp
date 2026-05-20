@@ -1,6 +1,7 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon.h>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
 #include "database.hpp"
 
 using namespace drogon;
@@ -244,39 +245,30 @@ int main(int argc, char *argv[]) {
         ) {
             try {
                 int survey_id = std::stoi(request->getParameter("survey-id"));
-                const auto survey_statistics_data =
-                    db.read_statistics(survey_id);
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
-                resp->setBody(survey_statistics_data);
-                cb(resp);
-            } catch (const std::exception &e) {
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
-                resp->setBody(e.what());
-                cb(resp);
-            }
-        },
-        {Get}
-    );
+                std::string format = request->getParameter("format");
+                std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
+                    return std::tolower(c);
+                });
 
-    app().registerHandler(
-        "/statistics",
-        [&db](
-            const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
-        ) {
-            try {
-                int survey_id = std::stoi(request->getParameter("survey-id"));
-                const auto survey_statistics_data =
-                    db.read_statistics(survey_id);
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                std::string survey_statistics_data;
+                if (format == "json") {
+                    survey_statistics_data = db.read_statistics_json(survey_id);
+                    resp->setContentTypeCode(CT_APPLICATION_JSON);
+                } else if (format == "txt") {
+                    survey_statistics_data = db.read_statistics_txt(survey_id);
+                    resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
+                } else if (format == "jpg" || format == "jpeg" || format == "png") {
+                    survey_statistics_data = db.read_statistics_image(survey_id, format);
+                    resp->setContentTypeString("image/" + format);
+                } else {
+                    throw std::runtime_error("Bad format");
+                }
                 resp->setBody(survey_statistics_data);
                 cb(resp);
             } catch (const std::exception &e) {
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
+                resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
             }

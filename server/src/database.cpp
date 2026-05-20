@@ -13,6 +13,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <matplot/matplot.h>
+#include <thread>
+#include <chrono>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -148,7 +151,7 @@ std::string Database::read_created_surveys(const std::string &session_id) {
     throw std::runtime_error("User not found");
 }
 
-std::string Database::read_statistics(int survey_id) {
+std::string Database::read_statistics_json(int survey_id) {
     auto survey = db()["surveys"].find_one(
         document{} << "data.id" << survey_id << finalize
     );
@@ -217,6 +220,147 @@ std::string Database::read_statistics(int survey_id) {
                 : static_cast<int>(count.get_int64().value);
     }
     return result.dump();
+}
+
+std::string Database::read_statistics_txt(int survey_id) {
+    auto survey = nlohmann::json::parse(read_survey(survey_id));
+    auto stats = nlohmann::json::parse(read_statistics_json(survey_id));
+
+    std::stringstream file;
+    file << "Survey: " << survey["title"] << "\n\n";
+    file << "Total number of answers: " << stats["total_answers"] << "\n\n"; file << "Statistic by sections:\n\n";
+    for (int i = 0; i < survey["sections"].size(); ++i) {
+        file << "Section " << survey["sections"][i]["title"] << ":\n\n";
+        for (int j = 0; j < survey["sections"][i]["questions"].size(); ++j) {
+            const auto &question = survey["sections"][i]["questions"][j];
+            file << "Question " << question["text"] << ":\n";
+            if (question["type"] == "single" || question["type"] == "multiple") {
+                for (int k = 1; k <= question["options"].size(); ++k) {
+                    file << question["options"][k - 1] << ": ";
+                    if (stats["sections"][i][j].contains(std::to_string(k))) {
+                        file << stats["sections"][i][j][std::to_string(k)];
+                    } else {
+                        file << 0;
+                    }
+                    file << " answer(s)\n";
+                }
+            } else if (question["type"] == "text") {
+                for (const auto &answer_count : stats["sections"][i][j].items()) {
+                    file << '\"' << answer_count.key() << "\": " << answer_count.value() << "answer(s)\n";
+                }
+            }
+            file << '\n';
+        }
+    }
+    return file.str();
+}
+
+std::string Database::read_statistics_image(int survey_id, const std::string &image_format) {
+    using namespace matplot;
+
+    auto survey = nlohmann::json::parse(read_survey(survey_id));
+    auto stats = nlohmann::json::parse(read_statistics_json(survey_id));
+
+    int total_rows = 0;
+    for (const auto &section : survey["sections"]) {
+        total_rows += section["questions"].size();
+    }
+
+    auto f = figure(true);
+    f->size(1200, 300 * total_rows);
+
+    int plot_index = 1;
+    for (int i = 0; i < survey["sections"].size(); ++i) {
+        const auto &section = survey["sections"][i];
+        for (int j = 0; j < survey["sections"][i]["questions"].size(); ++j) {
+            const auto &question = survey["sections"][i]["questions"][j];
+            subplot(total_rows, 1, plot_index++);
+            title(
+                "[Section: " + section["title"].get<std::string>() + "] " +
+                "Question: " + question["text"].get<std::string>()
+            );
+
+            std::vector<double> values;
+            std::vector<std::string> labels;
+            if (question["type"] == "single" ||
+                question["type"] == "multiple") {
+                for (int k = 1; k <= question["options"].size(); ++k) {
+                    std::string label = question["options"][k - 1];
+                    if (label.size() > 20) {
+                        label = label.substr(0, 17) + "...";
+                    }
+                    labels.push_back(label);
+
+                    if (stats["sections"][i][j].contains(std::to_string(k))) {
+                        values.push_back(
+                            stats["sections"][i][j][std::to_string(k)]
+                        );
+                    } else {
+                        values.push_back(0);
+                    }
+                }
+            } else if (question["type"] == "text") {
+                if (stats["sections"][i][j].empty()) {
+                    labels.push_back("No answers yet");
+                    values.push_back(0);
+                } else {
+                    std::vector<std::pair<std::string, int>> answers;
+                    for (const auto &item : stats["sections"][i][j].items()) {
+                        answers.emplace_back(item.key(), item.value());
+                    }
+                    std::sort(
+                        answers.begin(), answers.end(),
+                        [](auto &a, auto &b) { return a.second > b.second; }
+                    );
+
+                    for (int k = 0; k < std::min(10UL, answers.size()); ++k) {
+                        std::string label = answers[k].first;
+                        if (label.size() > 20) {
+                            label = label.substr(0, 17) + "...";
+                        }
+                        labels.push_back(label);
+                        values.push_back(answers[k].second);
+                    }
+                }
+            }
+            bar(values);
+
+            xticks(iota(1, labels.size()));
+            xticklabels(labels);
+
+            int max_value = *std::max_element(values.begin(), values.end());
+            if (max_value < 15) {
+                yticks(iota(0, max_value + 1));
+            }
+            ylim({0, static_cast<double>(max_value + 1)});
+        }
+    }
+    auto filename = std::to_string(survey_id) + '.' + image_format;
+    f->save(filename);
+    
+    bool file_ready = false;
+    for (int attempt = 0; attempt < 100; ++attempt) {
+        if (std::filesystem::exists(filename) && std::filesystem::file_size(filename) > 0) {
+            file_ready = true;
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+
+    if (!file_ready) {
+        throw std::runtime_error("Unable to create file");
+    }
+
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Unable to open file on server");
+    }
+    
+    std::string image_data{std::istreambuf_iterator<char>{file}, {}};
+    file.close();
+    std::filesystem::remove(filename);
+
+    return image_data;
 }
 
 std::string

@@ -44,8 +44,8 @@ public:
         std::function<void(const std::string &)> failure
     );
     void get_survey_statistics(
-        int survey_id,
-        std::function<void(const nlohmann::json &)> success,
+        int survey_id, const std::string &file_format,
+        std::function<void(const std::string &)> success,
         std::function<void(const std::string &)> failure
     );
     void get_survey_results(

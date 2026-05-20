@@ -7,6 +7,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <string>
 #include "nlohmann/json_fwd.hpp"
 #include "session.hpp"
 
@@ -125,19 +126,13 @@ void ServerInteraction::get_created_surveys(
 }
 
 void ServerInteraction::get_survey_statistics(
-    int survey_id,
-    std::function<void(const nlohmann::json &)> success,
+    int survey_id, const std::string &file_format,
+    std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url = "http://127.0.0.1:8080/statistics?survey-id=" +
-                      std::to_string(survey_id);
-    send_request(
-        url, Method::GET,
-        [success](const std::string &result) {
-            success(nlohmann::json::parse(result));
-        },
-        failure, true
-    );
+                      std::to_string(survey_id) + "&format=" + file_format;
+    send_request(url, Method::GET, success, failure, true);
 }
 
 void ServerInteraction::get_survey_results(
