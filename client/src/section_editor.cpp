@@ -2,6 +2,8 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <functional>
+#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include "abstract_block_editor.hpp"
 #include "multiple_choice_block_editor.hpp"
@@ -50,53 +52,84 @@ SectionEditor::SectionEditor(
 
 void SectionEditor::add_block() {
     auto *menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
     menu->setMinimumWidth(add_block_button_->width());
     menu->setStyleSheet(styleSheet());
+
     auto *single = menu->addAction("Single Choice");
     auto *multiple = menu->addAction("Multiple Choice");
     auto *text = menu->addAction("Text");
 
-    QAction *chosen = menu->exec(
+    connect(
+        menu, &QMenu::triggered, this,
+        [this, single, multiple, text](QAction *chosen) {
+            if (!chosen) {
+                return;
+            }
+
+            BlockEditor *block = nullptr;
+            if (chosen == single) {
+                block =
+                    new SingleChoiceBlockEditor(is_test_, sections_list_, this);
+            } else if (chosen == multiple) {
+                block = new MultipleChoiceBlockEditor(is_test_, this);
+            } else if (chosen == text) {
+                block = new TextBlockEditor(is_test_, this);
+            }
+
+            questions_.push_back(block);
+            questions_layout_->addWidget(questions_.back());
+
+            connect(
+                block, &BlockEditor::remove_requested, this,
+                [this, block]() {
+                    questions_.erase(
+                        std::remove(
+                            questions_.begin(), questions_.end(), block
+                        ),
+                        questions_.end()
+                    );
+                    questions_layout_->removeWidget(block);
+                    block->deleteLater();
+                }
+            );
+        }
+    );
+    menu->popup(
         add_block_button_->mapToGlobal(QPoint(0, add_block_button_->height()))
     );
-
-    if (!chosen) {
-        return;
-    }
-
-    BlockEditor *block = nullptr;
-    if (chosen == single) {
-        block = new SingleChoiceBlockEditor(is_test_, sections_list_, this);
-    } else if (chosen == multiple) {
-        block = new MultipleChoiceBlockEditor(is_test_, this);
-    } else if (chosen == text) {
-        block = new TextBlockEditor(is_test_, this);
-    }
-
-    questions_.push_back(block);
-    questions_layout_->addWidget(questions_.back());
-
-    connect(block, &BlockEditor::remove_requested, this, [this, block]() {
-        questions_.erase(
-            std::remove(questions_.begin(), questions_.end(), block),
-            questions_.end()
-        );
-        questions_layout_->removeWidget(block);
-        block->deleteLater();
-    });
 }
 
-nlohmann::json SectionEditor::to_json(bool preview_mode) const {
-    nlohmann::json section;
-    section["title"] = title_->text().trimmed().toStdString();
+void SectionEditor::build_questions_json(
+    bool preview_mode,
+    std::shared_ptr<nlohmann::json> section,
+    int current_question,
+    std::function<void(const nlohmann::json &)> callback
+) const {
+    questions_[current_question]->to_json(
+        preview_mode,
+        [=, this](const nlohmann::json &question) {
+            (*section)["questions"].push_back(question);
+            if (current_question == questions_.size() - 1) {
+                callback(*section);
+                return;
+            }
+            build_questions_json(
+                preview_mode, section, current_question + 1, callback
+            );
+        }
+    );
+}
 
-    section["questions"] = nlohmann::json::array();
-    for (auto *block : questions_) {
-        section["questions"].push_back(block->to_json(preview_mode));
-    }
+void SectionEditor::to_json(
+    bool preview_mode,
+    std::function<void(const nlohmann::json &)> callback
+) const {
+    auto section = std::make_shared<nlohmann::json>();
+    (*section)["title"] = title_->text().trimmed().toStdString();
+    (*section)["next_section_id"] = next_section_->currentIndex() - 1;
 
-    section["next_section_id"] = next_section_->currentIndex() - 1;
-
-    return section;
+    (*section)["questions"] = nlohmann::json::array();
+    build_questions_json(preview_mode, section, 0, callback);
 }
 }  // namespace survey

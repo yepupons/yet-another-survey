@@ -1,6 +1,6 @@
 #include "survey_window.hpp"
-#include <curl/curl.h>
 #include <qlabel.h>
+#include <qmessagebox.h>
 #include <qobject.h>
 #include <QList>
 #include <QMessageBox>
@@ -22,7 +22,8 @@ enum class BlockType { Text, Multiple, Single };
 const std::unordered_map<std::string, BlockType> COMPARATOR{
     {"text", BlockType::Text},
     {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}};
+    {"single", BlockType::Single}
+};
 
 SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,
@@ -32,7 +33,7 @@ SurveyWindow::SurveyWindow(
     QWidget *parent
 )
     : QMainWindow(parent),
-    preview_mode_(preview_mode),
+      preview_mode_(preview_mode),
       section_data_(survey_data.at("sections").at(section_id)),
       answer_data_(answer_data.at("sections").at(section_id)) {
     setWindowTitle(QString::fromStdString(
@@ -144,18 +145,16 @@ void SurveyWindow::save_answer() {
     for (auto question : questions_) {
         if (!question->is_valid()) {
             if (preview_mode_) {
-                auto want_to_continue = show_question_box(
-                    this, QMessageBox::Question, "Continue?", "Some required answers are missing. Are you sure you want to continue?", QMessageBox::Yes,
-                    QMessageBox::No, QMessageBox::No
+                auto box = show_question_box(
+                    this, QMessageBox::Question, "Continue?",
+                    "Some required answers are missing. Are you sure you want "
+                    "to continue?"
                 );
-
-                if (want_to_continue == QMessageBox::No) {
-                    return;
-                }
             } else {
                 show_message_box(
                     this, QMessageBox::Warning, "Error",
-                    "Some required answers are missing. Please complete all sections."
+                    "Some required answers are missing. Please complete all "
+                    "sections."
                 );
                 return;
             }
@@ -171,33 +170,31 @@ void SurveyWindow::save_answer() {
     }
 
     if (!preview_mode_) {
-        QString message =
-        all_answered
-            ? "Are you sure you want to continue?"
-            : "Some answers are missing. Are you sure you want to continue?";
-        auto want_to_save = show_question_box(
-            this, QMessageBox::Question, "Save?", message, QMessageBox::Yes,
-            QMessageBox::No, QMessageBox::No
-        );
+        QString message = all_answered ? "Are you sure you want to continue?"
+                                       : "Some answers are missing. Are you "
+                                         "sure you want to continue?";
+        auto box =
+            show_question_box(this, QMessageBox::Question, "Save?", message);
 
-        if (want_to_save == QMessageBox::No) {
-            return;
-        }
+        connect(box, &QMessageBox::finished, this, [this](int want_to_save) {
+            if (want_to_save == QMessageBox::No) {
+                return;
+            }
+            for (auto question : questions_) {
+                question->save_answer(answer_data_);
+            }
+
+            int next_section_id = section_data_.at("next_section_id");
+            for (auto question : questions_) {
+                if (question->next_section()) {
+                    next_section_id = *(question->next_section());
+                }
+            }
+
+            answer_saved = true;
+            emit closed_with_answer(next_section_id);
+            deleteLater();
+        });
     }
-
-    for (auto question : questions_) {
-        question->save_answer(answer_data_);
-    }
-
-    int next_section_id = section_data_.at("next_section_id");
-    for (auto question : questions_) {
-        if (question->next_section()) {
-            next_section_id = *(question->next_section());
-        }
-    }
-
-    answer_saved = true;
-    emit closed_with_answer(next_section_id);
-    deleteLater();
 }
 }  // namespace survey

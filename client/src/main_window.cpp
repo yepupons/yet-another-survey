@@ -1,5 +1,4 @@
 #include "main_window.hpp"
-#include <curl/curl.h>
 #include <QAction>
 #include <QDesktopServices>
 #include <QGridLayout>
@@ -18,7 +17,6 @@
 #include "created_surveys_window.hpp"
 #include "login_window.hpp"
 #include "pretty_view.hpp"
-#include "server_interaction.hpp"
 #include "session.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_taking.hpp"
@@ -66,21 +64,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     profile_button->setIconSize(QSize(24, 24));
     profile_button->setToolButtonStyle(Qt::ToolButtonIconOnly);
     profile_button->setFixedSize(44, 44);
-    profile_button->setPopupMode(QToolButton::InstantPopup);
 
-    auto *profile_menu = new QMenu(profile_button);
+    auto *profile_menu = new QMenu(this);
     profile_menu->setObjectName("profileMenu");
 
-    auto *get_created_surveys_button_ = profile_menu->addAction("Your surveys");
-    auto *get_passed_surveys_button_ =
-        profile_menu->addAction("Passed surveys");
+    auto *get_created_surveys_button = profile_menu->addAction("Your surveys");
+    auto *get_passed_surveys_button = profile_menu->addAction("Passed surveys");
 
     profile_menu->addSeparator();
 
     auth_action_ = profile_menu->addAction("");
     update_auth_action();
 
-    profile_button->setMenu(profile_menu);
     header_layout->addWidget(profile_button);
 
     auto *content = new QWidget(central);
@@ -201,11 +196,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         &MainWindow::create_survey
     );
     connect(
-        get_created_surveys_button_, &QAction::triggered, this,
+        profile_button, &QToolButton::clicked, this,
+        [profile_button, profile_menu]() {
+            profile_menu->popup(
+                profile_button->mapToGlobal(QPoint(0, profile_button->height()))
+            );
+        }
+    );
+    connect(
+        get_created_surveys_button, &QAction::triggered, this,
         &MainWindow::get_created_surveys
     );
     connect(
-        get_passed_surveys_button_, &QAction::triggered, this,
+        get_passed_surveys_button, &QAction::triggered, this,
         &MainWindow::get_passed_surveys
     );
     connect(auth_action_, &QAction::triggered, this, [this]() {
@@ -258,6 +261,7 @@ void MainWindow::open_survey() {
 
 void MainWindow::create_survey() {
     auto *menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
     menu->setMinimumWidth(create_survey_button_->width());
     menu->setStyleSheet(styleSheet());
 
@@ -265,18 +269,22 @@ void MainWindow::create_survey() {
     menu->addSeparator();
     auto *test = menu->addAction("Test");
 
-    QAction *chosen = menu->exec(create_survey_button_->mapToGlobal(
+    connect(
+        menu, &QMenu::triggered, this,
+        [this, survey, test](QAction *chosen) {
+            if (!chosen) {
+                return;
+            }
+            auto *builder = new SurveyBuilderWindow(chosen == test);
+            builder->setAttribute(Qt::WA_DeleteOnClose);
+            builder->showMaximized();
+            builder->raise();
+            builder->activateWindow();
+        }
+    );
+    menu->popup(create_survey_button_->mapToGlobal(
         QPoint(0, create_survey_button_->height())
     ));
-
-    if (!chosen) {
-        return;
-    }
-    auto *builder = new SurveyBuilderWindow(chosen == test);
-    builder->setAttribute(Qt::WA_DeleteOnClose);
-    builder->showMaximized();
-    builder->raise();
-    builder->activateWindow();
 }
 
 void MainWindow::get_created_surveys() {

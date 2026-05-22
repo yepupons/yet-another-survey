@@ -70,38 +70,50 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
 
     poll_timer_ = new QTimer(this);
     connect(poll_timer_, &QTimer::timeout, this, [this]() {
-        try {
-            auto status_json = ServerInteraction::get_challenge_status(
-                challenge_id_.toStdString()
-            );
-            std::string status = status_json.at("status").get<std::string>();
-            if (status == "pending") {
-                return;
-            }
-            poll_timer_->stop();
-            countdown_timer_->stop();
-            if (status == "confirmed") {
-                auto data =
-                    ServerInteraction::complete_auth(challenge_id_.toStdString()
+        server().get_challenge_status(
+            challenge_id_.toStdString(),
+            [=, this](const nlohmann::json &status_json) {
+                std::string status =
+                    status_json.at("status").get<std::string>();
+                if (status == "pending") {
+                    return;
+                }
+                poll_timer_->stop();
+                countdown_timer_->stop();
+                if (status == "confirmed") {
+                    server().complete_auth(
+                        challenge_id_.toStdString(),
+                        [=, this](const nlohmann::json &data) {
+                            session().set_auth(
+                                data.at("user").at("id").get<std::string>(),
+                                data.at("access_token").get<std::string>()
+                            );
+                            status_label_->setText("Telegram login confirmed.");
+                            emit login_completed();
+                        },
+                        [=, this](const std::string &error) {
+                            poll_timer_->stop();
+                            status_label_->setText(
+                                "Unable to complete authentication: " +
+                                QString::fromStdString(error)
+                            );
+                        }
                     );
-                session().set_auth(
-                    data.at("user").at("id").get<std::string>(),
-                    data.at("access_token").get<std::string>()
+                } else if (status == "expired") {
+                    status_label_->setText("Link expired. Please, login again."
+                    );
+                } else if (status == "used") {
+                    status_label_->setText("This link was already used.");
+                }
+            },
+            [=, this](const std::string &error) {
+                poll_timer_->stop();
+                status_label_->setText(
+                    "Unable to check login status: " +
+                    QString::fromStdString(error)
                 );
-                status_label_->setText("Telegram login confirmed.");
-                emit login_completed();
-            } else if (status == "expired") {
-                status_label_->setText("Link expired. Please, login again.");
-            } else if (status == "used") {
-                status_label_->setText("This link was already used.");
             }
-        } catch (const std::exception &e) {
-            poll_timer_->stop();
-            status_label_->setText(
-                "Unable to check login status: " +
-                QString::fromStdString(e.what())
-            );
-        }
+        );
     });
 }
 
@@ -109,38 +121,38 @@ void LoginWindow::start_telegram_login() {
     login_button_->setEnabled(false);
     status_label_->setText("Stand by, requesting auth...");
 
-    try {
-        const nlohmann::json challenge_info =
-            ServerInteraction::request_challenge();
-        telegram_url_ = QString::fromStdString(
-            challenge_info.at("telegram_url").get<std::string>()
-        );
-        expires_in_ = challenge_info.at("expires_in").get<int>();
-        challenge_id_ = QString::fromStdString(
-            challenge_info.at("challenge_id").get<std::string>()
-        );
+    server().request_challenge(
+        [=, this](const nlohmann::json &challenge_info) {
+            telegram_url_ = QString::fromStdString(
+                challenge_info.at("telegram_url").get<std::string>()
+            );
+            expires_in_ = challenge_info.at("expires_in").get<int>();
+            challenge_id_ = QString::fromStdString(
+                challenge_info.at("challenge_id").get<std::string>()
+            );
 
-        countdown_timer_->start(1000);
-        poll_timer_->start(2000);
-        QDesktopServices::openUrl(QUrl(telegram_url_));
+            countdown_timer_->start(1000);
+            poll_timer_->start(2000);
+            QDesktopServices::openUrl(QUrl(telegram_url_));
 
-        login_button_->setText("Copy link");
-        login_button_->setEnabled(true);
-        disconnect(
-            login_button_, &QPushButton::clicked, this,
-            &LoginWindow::start_telegram_login
-        );
-        connect(login_button_, &QPushButton::clicked, this, [this]() {
-            QApplication::clipboard()->setText(telegram_url_);
-            login_button_->setText("Telegram link copied to clipboard.");
-        });
-
-    } catch (const std::exception &e) {
-        status_label_->setText(
-            "Unable to start Telegram login: " +
-            QString::fromStdString(e.what())
-        );
-        login_button_->setEnabled(true);
-    }
+            login_button_->setText("Copy link");
+            login_button_->setEnabled(true);
+            disconnect(
+                login_button_, &QPushButton::clicked, this,
+                &LoginWindow::start_telegram_login
+            );
+            connect(login_button_, &QPushButton::clicked, this, [this]() {
+                QApplication::clipboard()->setText(telegram_url_);
+                login_button_->setText("Telegram link copied to clipboard.");
+            });
+        },
+        [=, this](const std::string &error) {
+            status_label_->setText(
+                "Unable to start Telegram login: " +
+                QString::fromStdString(error)
+            );
+            login_button_->setEnabled(true);
+        }
+    );
 }
 }  // namespace survey

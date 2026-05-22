@@ -87,8 +87,8 @@ void confirm_login(
     if (login_response.value("success", false)) {
         answer = username + ", вход подтвержден. Вернитесь в приложение.";
     } else {
-        answer = "Ошибка входа: " +
-                 login_response.value("error", "unknown error");
+        answer =
+            "Ошибка входа: " + login_response.value("error", "unknown error");
     }
     bot.getApi().sendMessage(chat_id, answer);
 }
@@ -104,62 +104,62 @@ int main() {
     TgBot::Bot bot(token_env);
     std::map<std::string, std::string> pending_logins;
 
-    bot.getEvents().onCommand("start", [&bot, &pending_logins](TgBot::Message::Ptr message) {
-        const std::string text = message->text;
-        std::string login_token;
-        const std::string prefix = "/start ";
-        if (text.rfind(prefix, 0) == 0) {
-            login_token = text.substr(prefix.size());
-        }
+    bot.getEvents().onCommand(
+        "start",
+        [&bot, &pending_logins](TgBot::Message::Ptr message) {
+            const std::string text = message->text;
+            std::string login_token;
+            const std::string prefix = "/start ";
+            if (text.rfind(prefix, 0) == 0) {
+                login_token = text.substr(prefix.size());
+            }
 
-        if (login_token.empty()) {
-            bot.getApi().sendMessage(
-                message->chat->id,
-                "Привет! Я — бот сервиса ЯЗЬ (yet-another-survey). Чтобы войти "
-                "в сервис под своим аккаунтом, откройте приложение и выберите "
-                "Login with telegram.\n"
-                "Чтобы узнать о всех командах, пропишите /help."
-            );
-            return;
-        }
-
-        const std::string callback_data =
-            "confirm_login:" + std::to_string(message->from->id);
-        pending_logins[callback_data] = login_token;
-
-        auto keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
-        auto button = std::make_shared<TgBot::InlineKeyboardButton>();
-        button->text = "Подтвердить вход";
-        button->callbackData = callback_data;
-        keyboard->inlineKeyboard.push_back({button});
-
-        bot.getApi().sendMessage(
-            message->chat->id,
-            "Вы хотите войти в приложение?",
-            nullptr,
-            nullptr,
-            keyboard
-        );
-    });
-
-    bot.getEvents().onCallbackQuery(
-        [&bot, &pending_logins](TgBot::CallbackQuery::Ptr query) {
-            auto it = pending_logins.find(query->data);
-            if (it == pending_logins.end()) {
-                bot.getApi().answerCallbackQuery(
-                    query->id, "Запрос на вход не найден или уже использован."
+            if (login_token.empty()) {
+                bot.getApi().sendMessage(
+                    message->chat->id,
+                    "Привет! Я — бот сервиса ЯЗЬ (yet-another-survey). Чтобы "
+                    "войти "
+                    "в сервис под своим аккаунтом, откройте приложение и "
+                    "выберите "
+                    "Login with telegram.\n"
+                    "Чтобы узнать о всех командах, пропишите /help."
                 );
                 return;
             }
 
-            bot.getApi().answerCallbackQuery(query->id);
-            const std::string login_token = it->second;
-            pending_logins.erase(it);
-            confirm_login(
-                bot, query->message->chat->id, query->from, login_token
+            const std::string callback_data =
+                "confirm_login:" + std::to_string(message->from->id);
+            pending_logins[callback_data] = login_token;
+
+            auto keyboard = std::make_shared<TgBot::InlineKeyboardMarkup>();
+            auto button = std::make_shared<TgBot::InlineKeyboardButton>();
+            button->text = "Подтвердить вход";
+            button->callbackData = callback_data;
+            keyboard->inlineKeyboard.push_back({button});
+
+            bot.getApi().sendMessage(
+                message->chat->id, "Вы хотите войти в приложение?", nullptr,
+                nullptr, keyboard
             );
         }
     );
+
+    bot.getEvents().onCallbackQuery([&bot, &pending_logins](
+                                        TgBot::CallbackQuery::Ptr query
+                                    ) {
+        auto it = pending_logins.find(query->data);
+        if (it == pending_logins.end()) {
+            bot.getApi().answerCallbackQuery(
+                query->id, "Запрос на вход не найден или уже использован."
+            );
+            return;
+        }
+
+        bot.getApi().answerCallbackQuery(query->id);
+        const std::string login_token = it->second;
+        pending_logins.erase(it);
+        confirm_login(bot, query->message->chat->id, query->from, login_token);
+    });
     /*
         bot.getEvents().onCommand("help", [&bot](TgBot::Message::Ptr message) {
             bot.getApi().sendMessage(

@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 
 namespace survey {
-ViewTestResults::ViewTestResults(nlohmann::json &results, QWidget *parent)
+ViewTestResults::ViewTestResults(const nlohmann::json &results, QWidget *parent)
     : QDialog(parent) {
     setWindowTitle("Test results");
     auto *layout = new QVBoxLayout(this);
@@ -21,7 +21,7 @@ ViewTestResults::ViewTestResults(nlohmann::json &results, QWidget *parent)
     content_layout->setAlignment(Qt::AlignTop);
     content_layout->setContentsMargins(24, 24, 24, 24);
     content_layout->setSpacing(16);
-    nlohmann::json &results_json = results;
+    const nlohmann::json &results_json = results;
 
     for (size_t section_indx = 0;
          section_indx < results_json.at("sections").size(); section_indx++) {

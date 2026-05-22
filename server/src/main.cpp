@@ -1,6 +1,7 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon.h>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
 #include "database.hpp"
 
 using namespace drogon;
@@ -24,6 +25,35 @@ static std::string bearer_token(const HttpRequestPtr &request) {
 int main(int argc, char *argv[]) {
     survey::Database db;
     app().addListener("127.0.0.1", 8080);
+
+    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                      drogon::AdviceCallback &&acb,
+                                      drogon::AdviceChainCallback &&accb) {
+        if (req->method() == drogon::Options) {
+            auto resp = drogon::HttpResponse::newHttpResponse();
+            resp->addHeader(
+                "Access-Control-Allow-Origin", "http://localhost:8054"
+            );
+            resp->addHeader(
+                "Access-Control-Allow-Methods", "GET, POST, OPTIONS"
+            );
+            resp->addHeader(
+                "Access-Control-Allow-Headers",
+                "mime-version, Content-Type, Authorization"
+            );
+            resp->addHeader("Access-Control-Allow-Credentials", "true");
+
+            acb(resp);
+            return;
+        }
+        accb();
+    });
+
+    app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &req,
+                                        const drogon::HttpResponsePtr &resp) {
+        resp->addHeader("Access-Control-Allow-Origin", "http://localhost:8054");
+        resp->addHeader("Access-Control-Allow-Credentials", "true");
+    });
 
     app().registerHandler(
         "/survey",
@@ -215,15 +245,30 @@ int main(int argc, char *argv[]) {
         ) {
             try {
                 int survey_id = std::stoi(request->getParameter("survey-id"));
-                const auto survey_statistics_data =
-                    db.read_statistics(survey_id);
+                std::string format = request->getParameter("format");
+                std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
+                    return std::tolower(c);
+                });
+
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                std::string survey_statistics_data;
+                if (format == "json") {
+                    survey_statistics_data = db.read_statistics_json(survey_id);
+                    resp->setContentTypeCode(CT_APPLICATION_JSON);
+                } else if (format == "txt") {
+                    survey_statistics_data = db.read_statistics_txt(survey_id);
+                    resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
+                } else if (format == "jpg" || format == "jpeg" || format == "png") {
+                    survey_statistics_data = db.read_statistics_image(survey_id, format);
+                    resp->setContentTypeString("image/" + format);
+                } else {
+                    throw std::runtime_error("Bad format");
+                }
                 resp->setBody(survey_statistics_data);
                 cb(resp);
             } catch (const std::exception &e) {
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
+                resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
             }
