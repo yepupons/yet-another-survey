@@ -13,12 +13,15 @@ namespace survey {
 SectionEditor::SectionEditor(
     Created_Type type,
     QStringListModel *sections_list,
-    QStringListModel *outcomes_model,
     QWidget *parent
 )
-    : QWidget(parent), type_(type), sections_list_(sections_list),
-      outcomes_model_(outcomes_model) {
+    : QWidget(parent), type_(type), sections_list_(sections_list) {
+    setObjectName("questionCard");
+    setAttribute(Qt::WA_StyledBackground, true);
+
     auto *layout = new QVBoxLayout();
+    layout->setContentsMargins(24, 24, 24, 24);
+    layout->setSpacing(12);
 
     if (type_ != QUIZ) {
         layout->addWidget(new QLabel(
@@ -31,6 +34,25 @@ SectionEditor::SectionEditor(
         layout->addWidget(title_);
 
         layout->addWidget(new QLabel("Questions", this));
+    }
+
+    if (type_ == QUIZ) {
+        outcomes_model_ = new QStringListModel(this);
+        auto *outcomes_label_ = new QLabel("Outcomes", this);
+        outcomes_label_->setObjectName("sectionLabel");
+        layout->addWidget(outcomes_label_);
+
+        outcomes_layout_ = new QVBoxLayout();
+        layout->addLayout(outcomes_layout_);
+
+        auto *add_outcome_button = new QPushButton("Add outcome", this);
+        add_outcome_button->setObjectName("secondaryButton");
+        layout->addWidget(add_outcome_button);
+
+        add_outcome();
+
+        connect(add_outcome_button, &QPushButton::clicked, this,
+            &SectionEditor::add_outcome);
     }
 
     questions_layout_ = new QVBoxLayout();
@@ -54,6 +76,52 @@ SectionEditor::SectionEditor(
     );
 
     setLayout(layout);
+}
+
+void SectionEditor::add_outcome() {
+    auto *row_widget = new QWidget(this);
+    auto *row_layout = new QHBoxLayout(row_widget);
+    row_layout->setContentsMargins(0, 0, 0, 0);
+    row_layout->setSpacing(8);
+
+    auto *outcome_edit = new QLineEdit(row_widget);
+    outcome_edit->setPlaceholderText("Write outcome here");
+    row_layout->addWidget(outcome_edit);
+    outcomes_.push_back(outcome_edit);
+
+    connect(outcome_edit, &QLineEdit::textChanged, this, [this](const QString &) {
+        QStringList list;
+        for (auto *edit : outcomes_) {
+            list.append(edit->text().trimmed());
+        }
+        outcomes_model_->setStringList(list);
+    });
+
+    auto *delete_button = new QPushButton(row_widget);
+    delete_button->setObjectName("dangerIconButton");
+    delete_button->setFixedSize(36, 36);
+    row_layout->addWidget(delete_button);
+
+    connect(delete_button, &QPushButton::clicked, this,
+        [this, row_widget, outcome_edit]() {
+            if (outcomes_.size() <= 1) {
+                return;
+            }
+            outcomes_.erase(
+                std::remove(outcomes_.begin(), outcomes_.end(), outcome_edit),
+                outcomes_.end()
+            );
+            QStringList list;
+            for (auto *edit : outcomes_) {
+                list.append(edit->text().trimmed());
+            }
+            outcomes_model_->setStringList(list);
+            outcomes_layout_->removeWidget(row_widget);
+            row_widget->deleteLater();
+        }
+    );
+
+    outcomes_layout_->addWidget(row_widget);
 }
 
 void SectionEditor::add_block() {
