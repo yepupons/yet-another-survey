@@ -192,6 +192,27 @@ void SectionEditor::add_block() {
     });
 }
 
+void SectionEditor::build_questions_json(
+    bool preview_mode,
+    std::shared_ptr<nlohmann::json> section,
+    int current_question,
+    std::function<void(const nlohmann::json &)> callback
+) const {
+    questions_[current_question]->to_json(
+        preview_mode,
+        [=, this](const nlohmann::json &question) {
+            (*section)["questions"].push_back(question);
+            if (current_question == questions_.size() - 1) {
+                callback(*section);
+                return;
+            }
+            build_questions_json(
+                preview_mode, section, current_question + 1, callback
+            );
+        }
+    );
+}
+
 void SectionEditor::to_json(
     bool preview_mode,
     std::function<void(const nlohmann::json &)> callback

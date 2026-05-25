@@ -27,7 +27,7 @@ if(EMSCRIPTEN)
     # Dependencies
     find_package(Qt6 REQUIRED COMPONENTS Widgets)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg)
 
     set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
     if (EXISTS "${NLOHMANN_JSON_LOCAL_DIR}/CMakeLists.txt")
@@ -71,6 +71,7 @@ if(EMSCRIPTEN)
         client/src/text_block_editor.cpp
         client/src/single_choice_block_editor.cpp
         client/src/multiple_choice_block_editor.cpp
+        client/src/quiz_choice_block_editor.cpp
         client/src/login_window.cpp
 
         client/src/session.cpp
@@ -94,6 +95,7 @@ if(EMSCRIPTEN)
         client/include/text_block_editor.hpp
         client/include/single_choice_block_editor.hpp
         client/include/multiple_choice_block_editor.hpp
+        client/include/quiz_choice_block_editor.hpp
         client/include/login_window.hpp
         client/include/abstract_block_editor.hpp
 
@@ -133,7 +135,7 @@ else()
     find_package(Boost 1.65.1 REQUIRED)
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg)
 
     # Drogon Options
     option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -224,6 +226,7 @@ else()
         client/include/abstract_block_editor.hpp
         client/include/quiz_choice_block_editor.hpp
         client/include/login_window.hpp
+        client/include/server_interaction.hpp
 
         client/include/view_passed_surveys.hpp
         client/include/test_results.hpp
@@ -238,6 +241,7 @@ else()
 
     target_link_libraries(client PRIVATE
         Qt6::Widgets
+        Qt6::Network
         CURL::libcurl
         nlohmann_json::nlohmann_json
         matplot
