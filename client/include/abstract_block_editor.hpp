@@ -1,10 +1,14 @@
 #ifndef ABSTRACT_BLOCK_EDITOR_HPP_
 #define ABSTRACT_BLOCK_EDITOR_HPP_
+#include <qimage.h>
+#include <qobject.h>
+#include <qpixmap.h>
 #include <QFileDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QWidget>
+#include <functional>
 #include <nlohmann/json.hpp>
 #include "pretty_view.hpp"
 
@@ -20,7 +24,10 @@ public:
     }
 
     virtual ~BlockEditor() = default;
-    virtual nlohmann::json to_json(bool preview_mode) const = 0;
+    virtual void to_json(
+        bool preview_mode,
+        std::function<void(const nlohmann::json &)> callback
+    ) const = 0;
 
 signals:
     void remove_requested(BlockEditor *editor);
@@ -30,29 +37,35 @@ protected:
     QLineEdit *question_ = nullptr;
     QPushButton *upload_image_button_ = nullptr;
     QLabel *image_preview_ = nullptr;
-    QString image_path_;
+    QString image_name_;
+    QByteArray image_data_;
 
 protected slots:
 
     void upload_image() {
-        QString file_path = QFileDialog::getOpenFileName(
-            this, "Choose Image", "", "Images (*.jpg *.jpeg)"
+        QFileDialog::getOpenFileContent(
+            "Images (*.jpg *.jpeg)",
+            [&](const QString &file_name, const QByteArray &file_content) {
+                if (file_name.isEmpty()) {
+                    return;
+                }
+                if (file_name.size() > 5 * 1024 * 1024) {
+                    show_message_box(
+                        this, QMessageBox::Warning, "Error", "File size too big"
+                    );
+                    return;
+                }
+                image_name_ = file_name;
+                image_data_ = file_content;
+
+                QImage image = QImage::fromData(file_content)
+                                   .scaled(
+                                       500, 500, Qt::KeepAspectRatio,
+                                       Qt::SmoothTransformation
+                                   );
+                image_preview_->setPixmap(QPixmap::fromImage(image));
+            }
         );
-        if (file_path.isEmpty()) {
-            return;
-        }
-        QFileInfo file_info(file_path);
-        if (file_info.size() > 5 * 1024 * 1024) {
-            show_message_box(
-                this, QMessageBox::Warning, "Error", "File size too big"
-            );
-            return;
-        }
-        image_path_ = file_path;
-        QPixmap pixmap = QPixmap(file_path).scaled(
-            700, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation
-        );
-        image_preview_->setPixmap(pixmap);
     }
 };
 }  // namespace survey

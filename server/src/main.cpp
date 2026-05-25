@@ -1,15 +1,59 @@
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon.h>
-#include <database.hpp>
+#include <nlohmann/json.hpp>
+#include <stdexcept>
+#include "database.hpp"
 
 using namespace drogon;
 
 // TODO: maybe not throw raw error to client, but just write it in debug mode +
 // log?
 
+static std::string bearer_token(const HttpRequestPtr &request) {
+    std::string auth = request->getHeader("authorization");
+    if (auth.empty()) {
+        auth = request->getHeader("Authorization");
+    }
+
+    const std::string prefix = "Bearer ";
+    if (auth.rfind(prefix, 0) != 0) {
+        throw std::invalid_argument("Missing access token");
+    }
+    return auth.substr(prefix.size());
+}
+
 int main(int argc, char *argv[]) {
     survey::Database db;
     app().addListener("127.0.0.1", 8080);
+
+    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                      drogon::AdviceCallback &&acb,
+                                      drogon::AdviceChainCallback &&accb) {
+        if (req->method() == drogon::Options) {
+            auto resp = drogon::HttpResponse::newHttpResponse();
+            resp->addHeader(
+                "Access-Control-Allow-Origin", "http://localhost:8054"
+            );
+            resp->addHeader(
+                "Access-Control-Allow-Methods", "GET, POST, OPTIONS"
+            );
+            resp->addHeader(
+                "Access-Control-Allow-Headers",
+                "mime-version, Content-Type, Authorization"
+            );
+            resp->addHeader("Access-Control-Allow-Credentials", "true");
+
+            acb(resp);
+            return;
+        }
+        accb();
+    });
+
+    app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &req,
+                                        const drogon::HttpResponsePtr &resp) {
+        resp->addHeader("Access-Control-Allow-Origin", "http://localhost:8054");
+        resp->addHeader("Access-Control-Allow-Credentials", "true");
+    });
 
     app().registerHandler(
         "/survey",
@@ -47,10 +91,13 @@ int main(int argc, char *argv[]) {
         ) {
             auto resp = HttpResponse::newHttpResponse();
             try {
-                auto json = request->getJsonObject();
-                db.write_survey(json->toStyledString());
+                auto survey_data =
+                    nlohmann::json::parse(std::string(request->getBody()));
+                survey_data["data"]["creator_id"] =
+                    db.user_id_by_access_token(bearer_token(request));
+                db.write_survey(survey_data.dump());
 #ifdef YAZ_DEBUG
-                std::cerr << "Received survey: " << json->toStyledString()
+                std::cerr << "Received survey: " << survey_data.dump(2)
                           << std::endl;
 #endif
             } catch (const std::exception &e) {
@@ -78,10 +125,13 @@ int main(int argc, char *argv[]) {
         ) {
             auto resp = HttpResponse::newHttpResponse();
             try {
-                auto json = request->getJsonObject();
-                db.write_answer(json->toStyledString());
+                auto answer_data =
+                    nlohmann::json::parse(std::string(request->getBody()));
+                answer_data["data"]["respondent_id"] =
+                    db.user_id_by_access_token(bearer_token(request));
+                db.write_answer(answer_data.dump());
 #ifdef YAZ_DEBUG
-                std::cerr << "Received answer: " << json->toStyledString()
+                std::cerr << "Received answer: " << answer_data.dump(2)
                           << std::endl;
 #endif
             } catch (const std::exception &e) {
@@ -100,105 +150,14 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/account",
-        [&db](const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb) {
-            try {
-                std::string session_id = request->getParameter("session-id");
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
-                resp->setBody(db.read_account(session_id));
-                cb(resp);
-#ifdef YAZ_DEBUG
-                std::cerr << "Account read for session "
-                          << request->getParameter("session-id") << std::endl;
-#endif
-            } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error reading account for "
-                          << request->getParameter("session-id") << ": " << e.what()
-                          << std::endl;
-#endif
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
-                resp->setBody(e.what());
-                cb(resp);
-            }
-        },
-        {Get}
-    );
-
-    app().registerHandler(
-        "/account/telegram",
-        [&db](const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb) {
-            auto resp = HttpResponse::newHttpResponse();
-            try {
-                std::string session_id = request->getParameter("session-id");
-                auto json = request->getJsonObject();
-                std::int64_t telegram_id = json->get("telegram_id", 0).asInt64();
-                db.link_telegram(session_id, telegram_id);
-                resp->setBody("Linked");
-            } catch (const std::exception &e) {
-                resp->setStatusCode(k500InternalServerError);
-                resp->setBody(e.what());
-            }
-            cb(resp);
-        },
-        {Post}
-    );
-
-    app().registerHandler(
-        "/account/telegram",
-        [&db](const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb) {
-            auto resp = HttpResponse::newHttpResponse();
-            try {
-                std::string session_id = request->getParameter("session-id");
-                db.unlink_telegram(session_id);
-                resp->setBody("Unlinked");
-            } catch (const std::exception &e) {
-                resp->setStatusCode(k500InternalServerError);
-                resp->setBody(e.what());
-            }
-            cb(resp);
-        },
-        {Delete}
-    );
-
-
-
-    /*
-    app().registerHandler(
-        "/answer",
-        [&db](const HttpRequestPtr &request,
-           std::function<void(const HttpResponsePtr &)> &&cb) {
-            try {
-                int answer_id = std::stoi(request->getParameter("id"));
-                const auto answer_data = db.read_answer(answer_id);
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
-                resp->setBody(answer_data);
-                cb(resp);
-            } catch (const std::exception &e) {
-                auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
-                resp->setBody(e.what());
-                cb(resp);
-            }
-        },
-        {Get}
-    );
-    */
-
-    app().registerHandler(
         "/passed-surveys",
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                std::string session_id = request->getParameter("session-id");
+                std::string session_id =
+                    db.user_id_by_access_token(bearer_token(request));
                 const auto passed_surveys_data =
                     db.read_passed_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -227,8 +186,8 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                // ?session-id=...&survey-id=...
-                std::string session_id = request->getParameter("session-id");
+                std::string session_id =
+                    db.user_id_by_access_token(bearer_token(request));
                 int survey_id = std::stoi(request->getParameter("survey-id"));
                 const auto survey_results_data =
                     db.read_survey_results(session_id, survey_id);
@@ -260,7 +219,8 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                std::string session_id = request->getParameter("session-id");
+                std::string session_id =
+                    db.user_id_by_access_token(bearer_token(request));
                 const auto created_surveys_data =
                     db.read_created_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -285,15 +245,30 @@ int main(int argc, char *argv[]) {
         ) {
             try {
                 int survey_id = std::stoi(request->getParameter("survey-id"));
-                const auto survey_statistics_data =
-                    db.read_statistics(survey_id);
+                std::string format = request->getParameter("format");
+                std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
+                    return std::tolower(c);
+                });
+
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                std::string survey_statistics_data;
+                if (format == "json") {
+                    survey_statistics_data = db.read_statistics_json(survey_id);
+                    resp->setContentTypeCode(CT_APPLICATION_JSON);
+                } else if (format == "txt") {
+                    survey_statistics_data = db.read_statistics_txt(survey_id);
+                    resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
+                } else if (format == "jpg" || format == "jpeg" || format == "png") {
+                    survey_statistics_data = db.read_statistics_image(survey_id, format);
+                    resp->setContentTypeString("image/" + format);
+                } else {
+                    throw std::runtime_error("Bad format");
+                }
                 resp->setBody(survey_statistics_data);
                 cb(resp);
             } catch (const std::exception &e) {
                 auto resp = HttpResponse::newHttpResponse();
-                resp->setStatusCode(k404NotFound);
+                resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
             }
@@ -375,6 +350,107 @@ int main(int argc, char *argv[]) {
             }
         },
         {Get}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/challenge",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            std::string challenge_uuid = survey::Database::generate_uuid();
+            std::string token = "login_" + survey::Database::generate_token();
+            std::string hashed_token = survey::Database::sha256(token);
+
+            Json::Value result;
+            db.write_telegram_challenge(challenge_uuid, hashed_token);
+            result["challenge_id"] = challenge_uuid;
+            result["telegram_url"] =
+                "https://t.me/yet_another_survey_bot?start=" + token;
+            result["expires_in"] = 300;
+            auto resp = HttpResponse::newHttpJsonResponse(result);
+            cb(resp);
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/challenge/{1}",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &challenge_id
+        ) {
+            try {
+                std::string status = db.get_challenge_status(challenge_id);
+                Json::Value result;
+                result["status"] = status;
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["status"] = "error";
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k404NotFound);
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/confirm",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                auto resp = HttpResponse::newHttpResponse();
+                auto login_data = request->getJsonObject()->toStyledString();
+                auto login_status = db.bot_check_login_data(login_data);
+                if (login_status == 1) {
+                    resp->setBody("{\"success\" : true}");
+                } else {
+                    resp->setBody("{\"success\" : false}");
+                }
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["success"] = false;
+                result["error"] = e.what();
+
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k404NotFound);
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/api/auth/telegram/complete",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                auto login_data = request->getJsonObject()->toStyledString();
+                auto user_data = db.complete_login(login_data);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody(user_data);
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Post}
     );
 
     app().run();

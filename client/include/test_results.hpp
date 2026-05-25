@@ -9,7 +9,7 @@ class ViewTestResults : public QDialog {
     Q_OBJECT
 public:
     explicit ViewTestResults(
-        nlohmann::json &results,
+        const nlohmann::json &results,
         QWidget *parent = nullptr
     );
 };

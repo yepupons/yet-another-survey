@@ -132,19 +132,14 @@ void MultipleChoiceBlockEditor::add_option() {
     );
 }
 
-nlohmann::json MultipleChoiceBlockEditor::to_json(bool preview_mode) const {
+void MultipleChoiceBlockEditor::to_json(
+    bool preview_mode,
+    std::function<void(const nlohmann::json &)> callback
+) const {
     nlohmann::json block;
     block["type"] = "multiple";
     block["text"] = question_->text().trimmed().toStdString();
 
-    if (preview_mode && !image_path_.isEmpty()) {
-        block["image_path"] = image_path_.toStdString();
-    }
-
-    if (!preview_mode && !image_path_.isEmpty()) {
-        block["image"] =
-            ServerInteraction::post_image(image_path_.toStdString());
-    }
     block["options"] = nlohmann::json::array();
 
     for (auto *option : options_) {
@@ -172,6 +167,21 @@ nlohmann::json MultipleChoiceBlockEditor::to_json(bool preview_mode) const {
         block["answer"] = answers;
     }
 
-    return block;
+    // NOT WORK
+
+    // if (preview_mode && !image_path_.isEmpty()) {
+    //     block["image_path"] = image_path_.toStdString();
+    // }
+
+    if (!preview_mode && !image_data_.isEmpty()) {
+        server().post_image(
+            image_name_.toStdString(), image_data_,
+            [=](const std::string &image_oid) mutable {
+                block["image"] = image_oid;
+                callback(block);
+            },
+            [](const std::string &) {}
+        );
+    }
 }
 }  // namespace survey

@@ -2,6 +2,8 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <functional>
+#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include "abstract_block_editor.hpp"
 #include "multiple_choice_block_editor.hpp"
@@ -137,21 +139,44 @@ void SectionEditor::add_block() {
         auto *multiple = menu->addAction("Multiple Choice");
         auto *text = menu->addAction("Text");
 
-        QAction *chosen = menu->exec(
+        connect(
+            menu, &QMenu::triggered, this,
+            [this, single, multiple, text](QAction *chosen) {
+                if (!chosen) {
+                    return;
+                }
+
+                BlockEditor *block = nullptr;
+                if (chosen == single) {
+                    block =
+                        new SingleChoiceBlockEditor(type_, sections_list_, this);
+                } else if (chosen == multiple) {
+                    block = new MultipleChoiceBlockEditor(type_, this);
+                } else if (chosen == text) {
+                    block = new TextBlockEditor(type_, this);
+                }
+
+                if (!block) {
+                    return;
+                }
+
+                questions_.push_back(block);
+                questions_layout_->addWidget(questions_.back());
+
+                connect(block, &BlockEditor::remove_requested, this, [this, block]() {
+                    questions_.erase(
+                        std::remove(questions_.begin(), questions_.end(), block),
+                        questions_.end()
+                    );
+                    questions_layout_->removeWidget(block);
+                    block->deleteLater();
+                });
+            }
+        );
+        menu->popup(
             add_block_button_->mapToGlobal(QPoint(0, add_block_button_->height()))
         );
-
-        if (!chosen) {
-            return;
-        }
-
-        if (chosen == single) {
-            block = new SingleChoiceBlockEditor(type_, sections_list_, this);
-        } else if (chosen == multiple) {
-            block = new MultipleChoiceBlockEditor(type_, this);
-        } else if (chosen == text) {
-            block = new TextBlockEditor(type_, this);
-        }
+        return;
     }
 
     questions_.push_back(block);
@@ -167,19 +192,20 @@ void SectionEditor::add_block() {
     });
 }
 
-nlohmann::json SectionEditor::to_json(bool preview_mode) const {
-    nlohmann::json section;
-    section["title"] = title_ ? title_->text().trimmed().toStdString() : "";
+void SectionEditor::to_json(
+    bool preview_mode,
+    std::function<void(const nlohmann::json &)> callback
+) const {
+    auto section = std::make_shared<nlohmann::json>();
 
-    section["questions"] = nlohmann::json::array();
-    for (auto *block : questions_) {
-        section["questions"].push_back(block->to_json(preview_mode));
+    if (type_ != QUIZ) {
+        (*section)["title"] = title_ ? title_->text().trimmed().toStdString() : "";
+        (*section)["next_section_id"] = next_section_
+                                            ? next_section_->currentIndex() - 1
+                                            : -1;
     }
 
-    section["next_section_id"] = next_section_
-                                     ? next_section_->currentIndex() - 1
-                                     : -1;
-
-    return section;
+    (*section)["questions"] = nlohmann::json::array();
+    build_questions_json(preview_mode, section, 0, callback);
 }
 }  // namespace survey

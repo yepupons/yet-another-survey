@@ -18,7 +18,8 @@ client:
 
 bot: configure
 	cmake --build build --target telegram_bot
-	BOT_TOKEN=$(BOT_TOKEN) ./build/telegram_bot
+	BOT_TOKEN=$(BOT_TOKEN)
+	./build/telegram_bot
 	
 format:
 	clang-format -i client/*/*.*pp server/*/*.*pp

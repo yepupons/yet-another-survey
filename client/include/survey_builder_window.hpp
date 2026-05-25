@@ -8,8 +8,11 @@
 #include <QScrollArea>
 #include <QStringListModel>
 #include <QVBoxLayout>
+#include <functional>
+#include <memory>
 #include <QString>
 #include <nlohmann/json.hpp>
+#include "nlohmann/json_fwd.hpp"
 #include "section_editor.hpp"
 
 namespace survey {
@@ -35,7 +38,17 @@ private:
     QPushButton *add_section_button_ = nullptr;
     QPushButton *save_survey_button_ = nullptr;
 
-    nlohmann::json build_survey_json(int id, bool preview_mode) const;
+    void build_sections_json(
+        bool preview_mode,
+        std::shared_ptr<nlohmann::json> survey,
+        int current_section,
+        std::function<void(const nlohmann::json &)> callback
+    ) const;
+    void build_survey_json(
+        int id,
+        bool preview_mode,
+        std::function<void(const nlohmann::json &)> callback
+    ) const;
     static int generate_survey_id();
     static const QString write_type(Created_Type type);
 };

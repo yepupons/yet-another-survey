@@ -1,36 +1,104 @@
 #ifndef SERVER_INTERACTION_HPP_
 #define SERVER_INTERACTION_HPP_
 
-#include <curl/curl.h>
+#include <qstringview.h>
+#include <QEventLoop>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <nlohmann/json.hpp>
 #include <string>
 
 namespace survey {
-class ServerInteraction {
-    static size_t
-    WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-        ((std::string *)userp)->append((char *)contents, size * nmemb);
-        return size * nmemb;
-    }
-
-    static void handle_http_code(
-        CURL *curl,
-        CURLcode &res,
-        std::string &readBuffer,
-        curl_slist *headers
+class ServerInteraction : public QObject {
+    Q_OBJECT
+public:
+    void get_survey(
+        int survey_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void post_survey(
+        const nlohmann::json &survey_data,
+        std::function<void()> success,
+        std::function<void(const std::string &)> failure
+    );
+    void post_answer(
+        const nlohmann::json &answer_data,
+        std::function<void()> success,
+        std::function<void(const std::string &)> failure
+    );
+    void check_answer(
+        const nlohmann::json &answer_data,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void get_passed_surveys(
+        const std::string &user_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void get_created_surveys(
+        const std::string &user_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void get_survey_statistics(
+        int survey_id, const std::string &file_format,
+        std::function<void(const std::string &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void get_survey_results(
+        const std::string &user_id,
+        int survey_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void get_image(
+        const std::string &image_oid,
+        std::function<void(const std::string &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void post_image(
+        const std::string &image_name,
+        const QByteArray &image_data,
+        std::function<void(const std::string &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void request_challenge(
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void get_challenge_status(
+        const std::string &challenge_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void complete_auth(
+        const std::string &challenge_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     );
 
-public:
-    static nlohmann::json get_survey(int survey_id);
-    static void post_survey(const nlohmann::json &survey_data);
-    static void post_answer(const nlohmann::json &answer_data);
-    static nlohmann::json check_answer(const nlohmann::json &answer_data);
-    static nlohmann::json get_passed_surveys(const std::string &user_id);
-    static nlohmann::json get_created_surveys(const std::string &user_id);
-    static nlohmann::json get_survey_statistics(int survey_id);
-    static nlohmann::json get_survey_results(const std::string &session_id, int survey_id);
-    static std::string post_image(const std::string &image_path);
-    static std::string get_image(const std::string &image_oid);
+private:
+    enum class Method { POST, GET };
+
+    QNetworkAccessManager manager_;
+
+    void send_request(
+        const std::string &url,
+        Method method,
+        std::function<void(const std::string &)> success,
+        std::function<void(const std::string &)> failure,
+        bool auth_required = false,
+        const std::string &payload = ""
+    );
 };
-#endif  // SERVER_INTERACTION_HPP_
+
+inline ServerInteraction &server() {
+    static ServerInteraction server;
+    return server;
 }
+}  // namespace survey
+
+#endif  // SERVER_INTERACTION_HPP_
