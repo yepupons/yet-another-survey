@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                int survey_id = std::stoi(request->getParameter("id"));
+                std::string survey_id = request->getParameter("id");
                 const auto survey_data = db.read_survey(survey_id);
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setContentTypeCode(CT_APPLICATION_JSON);
@@ -90,12 +90,14 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
+            std::string out;
             try {
                 auto survey_data =
                     nlohmann::json::parse(std::string(request->getBody()));
-                survey_data["data"]["creator_id"] =
+                const std::string creator_id =
                     db.user_id_by_access_token(bearer_token(request));
-                db.write_survey(survey_data.dump());
+                const std::string survey_id = survey::Database::generate_uuid();
+                out = db.write_survey(survey_id, creator_id, survey_data.dump());
 #ifdef YAZ_DEBUG
                 std::cerr << "Received survey: " << survey_data.dump(2)
                           << std::endl;
@@ -111,7 +113,8 @@ int main(int argc, char *argv[]) {
                 cb(resp);
                 return;
             }
-            resp->setBody("Saved");
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->setBody(out);
             cb(resp);
         },
         {Post}
@@ -124,12 +127,16 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
+            std::string out;
             try {
                 auto answer_data =
                     nlohmann::json::parse(std::string(request->getBody()));
-                answer_data["data"]["respondent_id"] =
+                const std::string respondent_id =
                     db.user_id_by_access_token(bearer_token(request));
-                db.write_answer(answer_data.dump());
+                const std::string answer_id = survey::Database::generate_uuid();
+                out = db.write_answer(
+                    answer_id, respondent_id, answer_data.dump()
+                );
 #ifdef YAZ_DEBUG
                 std::cerr << "Received answer: " << answer_data.dump(2)
                           << std::endl;
@@ -143,7 +150,8 @@ int main(int argc, char *argv[]) {
                 cb(resp);
                 return;
             }
-            resp->setBody("Saved");
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->setBody(out);
             cb(resp);
         },
         {Post}
@@ -188,7 +196,7 @@ int main(int argc, char *argv[]) {
             try {
                 std::string session_id =
                     db.user_id_by_access_token(bearer_token(request));
-                int survey_id = std::stoi(request->getParameter("survey-id"));
+                std::string survey_id = request->getParameter("survey-id");
                 const auto survey_results_data =
                     db.read_survey_results(session_id, survey_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -244,7 +252,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                int survey_id = std::stoi(request->getParameter("survey-id"));
+                std::string survey_id = request->getParameter("survey-id")  ;
                 std::string format = request->getParameter("format");
                 std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
                     return std::tolower(c);
@@ -286,7 +294,12 @@ int main(int argc, char *argv[]) {
             std::string out;
             try {
                 auto user_answers = request->getJsonObject();
-                out = db.get_result(user_answers->toStyledString());
+                const std::string respondent_id =
+                    db.user_id_by_access_token(bearer_token(request));
+                const std::string answer_id = survey::Database::generate_uuid();
+                out = db.get_result(
+                    answer_id, respondent_id, user_answers->toStyledString()
+                );
             } catch (const std::exception &e) {
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
