@@ -1,2 +1,9 @@
+If:
+  PathMatch: client/.*
+CompileFlags:
+  CompilationDatabase: build-wasm
+---
+If:
+  PathMatch: server/.*
 CompileFlags:
   CompilationDatabase: build

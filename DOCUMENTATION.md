@@ -16,10 +16,12 @@
     - [Windows: установить и запустить mongodb](#windows-установить-и-запустить-mongodb)
     - [Windows: установить Boost](#windows-установить-boost)
     - [Билд](#билд)
+    - [Билд веба](#билд-веба)
     - [Если запустился из корня cmake .](#если-запустился-из-корня-cmake-)
   - [Что и где запускается?](#что-и-где-запускается)
     - [Сервер](#сервер)
     - [Клиент (Qt)](#клиент-qt)
+    - [Клиент (WebAssembly)](#клиент-webassembly)
     - [Telegram-бот](#telegram-бот)
 
 ## Как подтянуть сабмодули?
@@ -170,6 +172,38 @@ make build
 make build-debug
 ```
 
+### Билд веба
+Для веб-сборки нужен Qt for WebAssembly под single thread и emsdk той версии, которую просит сайт Qt для твоей версии Qt.
+Обычный Qt той же версии тоже нужен: он передается в `QT_HOST_PATH`.
+
+Необходимо установить с сайта[https://www.qt.io/download-qt-installer-oss] was, в Qt Online Installer / MaintenanceTool надо выбрать Manual download и скачать именно `WebAssembly -> wasm_singlethread`.
+
+Если Qt стоит через Qt Online Installer в `~/Qt`, а emsdk лежит в `~/emsdk`, `~/dev/emsdk`, `~/tools/emsdk` или `/opt/emsdk`, make попробует найти их сам.
+
+Собираем через make:
+```bash
+make build-wasm
+```
+
+Если make сам не нашел Qt или emsdk, можно указать пути руками:
+```bash
+source /папка/куда/поставил/emsdk/emsdk_env.sh
+make build-wasm QT_WASM_PATH=/папка/до/Qt_wasm_singlethread QT_HOST_PATH=/папка/до/Qt_обычного
+```
+
+ИЛИ руками через cmake:
+```bash
+/папка/до/Qt_wasm_singlethread/bin/qt-cmake -S . -B build-wasm -DQT_HOST_PATH=/папка/до/Qt_обычного -DQT_HOST_PATH_CMAKE_DIR=/папка/до/Qt_обычного/lib/cmake/Qt6
+cmake --build build-wasm --parallel
+```
+
+Чтобы открыть веб-клиент локально:
+```bash
+make serve-wasm
+```
+
+После этого открываем `http://localhost:8054/client.html`.
+
 ### Если запустился из корня cmake .
 
 Если все же так случилось, исполняем в терминале код ниже и дальше так стараемся не делать :C
@@ -204,6 +238,21 @@ make server
 ```bash
 make client
 ```
+
+### Клиент (WebAssembly)
+
+Для веб-клиента сначала запускаем сервер, потом раздаем `build-wasm` через локальный http-сервер:
+
+```bash
+make server
+```
+
+В другом терминале:
+```bash
+make web
+```
+
+Открываем `http://localhost:8054/client.html`.
 
 ### Telegram-бот
 

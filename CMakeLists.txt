@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -gsource-map")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gsource-map --source-map-base http://localhost:8080/")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -gsource-map --source-map-base http://localhost:8054/")
 endif()
 
 # ccache
@@ -120,6 +120,11 @@ if(EMSCRIPTEN)
 
     target_link_options(client PRIVATE "--bind")
     set(CMAKE_AUTORCC_OPTIONS "--no-compress")
+
+    add_custom_target(serve-wasm
+        COMMAND python3 -m http.server 8054
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
 else()
     # Dependencies
     find_package(Drogon CONFIG REQUIRED)
