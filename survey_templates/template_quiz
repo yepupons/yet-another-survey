@@ -1,0 +1,110 @@
+{
+    "data": {
+        "id": 123456,
+        "creator_id": 1488,
+        "type": "quiz"
+    },
+    "title": "Какая ты феечка Винкс?",
+    "outcomes": [{
+            "id": 1,
+            "title": "Bloom",
+            "description": "Ты решительная, эмоциональная и часто берёшь инициативу на себя.",
+            "image": "..."
+        },
+        {
+            "id": 2,
+            "title": "Stella",
+            "description": "Ты яркая, общительная и любишь быть в центре внимания.",
+            "image": "..."
+        },
+        {
+            "id": 3,
+            "title": "Flora",
+            "description": "Ты спокойная, заботливая и хорошо чувствуешь людей.",
+            "image": "..."
+        },
+        {
+            "id": 4,
+            "title": "Tecna",
+            "description": "Ты рациональная, собранная и любишь всё анализировать.",
+            "image": "..."
+        }
+    ],
+    "sections": [{
+        "title": "First section",
+        "questions": [
+
+            {
+                "type": "single",
+                "text": "Что ты выберешь на выходные?",
+                "image": "...",
+                "required": true,
+                "options": [{
+                        "id": 1,
+                        "text": "Пойти на вечеринку",
+                        "scores": [{
+                            "outcome_id": 2,
+                            "points": 1
+                        }]
+                    },
+                    {
+                        "text": "Погулять в парке",
+                        "scores": [{
+                            "outcome_id": 3,
+                            "points": 1
+                        }]
+                    },
+                    {
+                        "text": "Собрать друзей на приключение",
+                        "scores": [{
+                            "outcome_id": 1,
+                            "points": 1
+                        }]
+                    },
+                    {
+                        "text": "Остаться дома и спокойно позаниматься",
+                        "scores": [{
+                            "outcome_id": 4,
+                            "points": 1
+                        }]
+                    }
+                ]
+            },
+            {
+                "type": "single",
+                "text": "Как ты обычно решаешь проблему?",
+                "required": true,
+                "options": [{
+                        "text": "Сразу действую",
+                        "scores": [{
+                            "outcome_id": 1,
+                            "points": 1
+                        }]
+                    },
+                    {
+                        "text": "Сначала всё анализирую",
+                        "scores": [{
+                            "outcome_id": 4,
+                            "points": 1
+                        }]
+                    },
+                    {
+                        "text": "Стараюсь всех успокоить",
+                        "scores": [{
+                            "outcome_id": 3,
+                            "points": 1
+                        }]
+                    },
+                    {
+                        "text": "Делаю так, чтобы всё выглядело красиво",
+                        "scores": [{
+                            "outcome_id": 2,
+                            "points": 1
+                        }]
+                    }
+                ]
+            }
+        ],
+        "next_section_id": -1
+    }]
+}

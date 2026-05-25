@@ -17,7 +17,7 @@ class SingleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
     explicit SingleChoiceBlockEditor(
-        bool is_test,
+        Created_Type type,
         QStringListModel *sections_list,
         QWidget *parent = nullptr
     );

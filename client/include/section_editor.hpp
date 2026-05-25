@@ -2,6 +2,7 @@
 #define SECTION_EDITOR_HPP_
 #include <QCheckBox>
 #include <QComboBox>
+#include <QLabel>
 #include <QLineEdit>
 #include <QList>
 #include <QPushButton>
@@ -17,7 +18,7 @@ class SectionEditor : public QWidget {
     Q_OBJECT
 public:
     explicit SectionEditor(
-        bool is_test,
+        Created_Type type,
         QStringListModel *sections_list,
         QWidget *parent = nullptr
     );
@@ -35,6 +36,7 @@ public:
 
 private slots:
     void add_block();
+    void add_outcome();
 
 private:
     QLineEdit *title_ = nullptr;
@@ -42,9 +44,12 @@ private:
     QVBoxLayout *questions_layout_ = nullptr;
     QComboBox *next_section_ = nullptr;
     QStringListModel *sections_list_ = nullptr;
+    QStringListModel *outcomes_model_ = nullptr;
+    QList<QLineEdit *> outcomes_;
+    QVBoxLayout *outcomes_layout_ = nullptr;
     QPushButton *add_block_button_ = nullptr;
 
-    bool is_test_;
+    Created_Type type_;
 };
 }  // namespace survey
 

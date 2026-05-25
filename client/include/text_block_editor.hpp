@@ -13,7 +13,7 @@ namespace survey {
 class TextBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit TextBlockEditor(bool is_test, QWidget *parent = nullptr);
+    explicit TextBlockEditor(Created_Type type, QWidget *parent = nullptr);
 
     void to_json(
         bool preview_mode,

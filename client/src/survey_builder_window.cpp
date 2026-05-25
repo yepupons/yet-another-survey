@@ -9,9 +9,11 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include "nlohmann/json_fwd.hpp"
+#include <QString>
 #include "pretty_view.hpp"
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
@@ -19,8 +21,8 @@
 #include "survey_taking.hpp"
 
 namespace survey {
-SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
-    : QMainWindow(parent), is_test_(is_test) {
+SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
+    : QMainWindow(parent), type_(type) {
     auto *central = new QWidget(this);
     central->setObjectName("centralWidget");
 
@@ -28,10 +30,8 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
     central_layout->setAlignment(Qt::AlignTop);
     central_layout->setContentsMargins(24, 24, 24, 24);
     central_layout->setSpacing(16);
-
-    setWindowTitle(
-        is_test_ ? "Survey Builder (Test)" : "Survey Builder (Survey)"
-    );
+    
+    setWindowTitle("Survey Builder (" + write_type(type) + ")");
 
     auto *top_row = new QHBoxLayout();
 
@@ -74,28 +74,31 @@ SurveyBuilderWindow::SurveyBuilderWindow(bool is_test, QWidget *parent)
 
     central_layout->addWidget(scroll_area);
 
-    auto *bottom_row = new QHBoxLayout();
-    bottom_row->addStretch();
+    if (type_ != QUIZ) {
+        auto *bottom_row = new QHBoxLayout();
+        bottom_row->addStretch();
 
-    add_section_button_ = new QPushButton("New section", central);
-    add_section_button_->setObjectName("primaryButton");
-    add_section_button_->setFixedSize(180, 40);
-    bottom_row->addWidget(add_section_button_);
+        add_section_button_ = new QPushButton("New section", central);
+        add_section_button_->setObjectName("primaryButton");
+        add_section_button_->setFixedSize(180, 40);
+        bottom_row->addWidget(add_section_button_);
 
-    central_layout->addLayout(bottom_row);
+        central_layout->addLayout(bottom_row);
+    }
 
-    save_survey_button_ =
-        new QPushButton(is_test_ ? "Save test" : "Save survey", central);
+    save_survey_button_ = new QPushButton("Save " + write_type(type), central);
     save_survey_button_->setObjectName("primaryButton");
     central_layout->addWidget(save_survey_button_);
 
     central->setLayout(central_layout);
     setCentralWidget(central);
 
-    connect(
-        add_section_button_, &QPushButton::clicked, this,
-        &SurveyBuilderWindow::add_section
-    );
+    if (add_section_button_) {
+        connect(
+            add_section_button_, &QPushButton::clicked, this,
+            &SurveyBuilderWindow::add_section
+        );
+    }
     connect(
         save_survey_button_, &QPushButton::clicked, this,
         &SurveyBuilderWindow::save_survey
@@ -119,7 +122,7 @@ void SurveyBuilderWindow::add_section() {
     list.push_back("Go to section " + QString::number(list.size()));
     sections_list_->setStringList(list);
 
-    sections_.push_back(new SectionEditor(is_test_, sections_list_, content_));
+    sections_.push_back(new SectionEditor(type_, sections_list_, content_));
     sections_layout_->addWidget(sections_.back());
 }
 
@@ -152,7 +155,7 @@ void SurveyBuilderWindow::build_survey_json(
     auto survey = std::make_shared<nlohmann::json>();
     (*survey)["data"]["id"] = id;
     (*survey)["data"]["creator_id"] = session().get_id();
-    (*survey)["data"]["type"] = is_test_ ? "test" : "survey";
+    (*survey)["data"]["type"] = write_type(type_).toStdString();
     (*survey)["title"] = title_->text().trimmed().isEmpty()
                              ? "Unnamed"
                              : title_->text().trimmed().toStdString();
@@ -195,4 +198,16 @@ void SurveyBuilderWindow::save_survey() {
         );
     });
 }
+
+const QString SurveyBuilderWindow::write_type(Created_Type type){
+    switch (type){
+        case SURVEY:
+            return "survey";
+        case TEST:
+            return "test";
+        case QUIZ:
+            return "quiz";
+    }
+}
+
 }  // namespace survey

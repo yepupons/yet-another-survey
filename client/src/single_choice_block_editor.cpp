@@ -14,11 +14,11 @@
 
 namespace survey {
 SingleChoiceBlockEditor::SingleChoiceBlockEditor(
-    bool is_test,
+    Created_Type type,
     QStringListModel *sections_list,
     QWidget *parent
 )
-    : BlockEditor(is_test, parent), sections_list_(sections_list) {
+    : BlockEditor(type, parent), sections_list_(sections_list) {
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
@@ -58,7 +58,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
-    if (is_test_) {
+    if (type_ == TEST) {
         auto *correct_label = new QLabel("Mark the correct answer", this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
@@ -117,7 +117,7 @@ void SingleChoiceBlockEditor::add_option() {
     });
 
     QAbstractButton *correct_button = nullptr;
-    if (is_test_) {
+    if (type_ == TEST) {
         auto *correct = new QRadioButton("Correct", row_widget);
         correct->setObjectName("sectionLabel");
         row_layout->addWidget(correct);
@@ -188,7 +188,7 @@ void SingleChoiceBlockEditor::to_json(
 
     block["required"] = required_->isChecked();
 
-    if (is_test_) {
+    if (type_ == TEST) {
         int answer_index = 0;
         if (auto *checked = correct_answers_->checkedButton()) {
             const auto buttons = correct_answers_->buttons();

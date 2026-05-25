@@ -195,6 +195,25 @@ void SurveyWindow::save_answer() {
             emit closed_with_answer(next_section_id);
             deleteLater();
         });
+        return;
     }
+
+    for (auto question : questions_) {
+        question->save_answer(answer_data_);
+    }
+
+    int next_section_id = -1;
+    try {
+        next_section_id = section_data_.at("next_section_id").get<int>();
+    } catch (const nlohmann::json::exception &) {}
+    for (auto question : questions_) {
+        if (question->next_section()) {
+            next_section_id = *(question->next_section());
+        }
+    }
+
+    answer_saved = true;
+    emit closed_with_answer(next_section_id);
+    deleteLater();
 }
 }  // namespace survey

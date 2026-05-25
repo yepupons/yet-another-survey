@@ -1,5 +1,6 @@
 #include "survey_taking.hpp"
 #include <qobject.h>
+#include <map>
 #include <QMessageBox>
 #include <QWidget>
 #include "nlohmann/json_fwd.hpp"
@@ -62,7 +63,9 @@ void SurveyTaking::open_next_section(int next_section_id) {
             deleteLater();
             return;
         }
-        if (survey_data_.at("data").at("type") == "test") {
+        const std::string type =
+            survey_data_.at("data").at("type").get<std::string>();
+        if (type == "test") {
             server().check_answer(
                 answer_data_,
                 [=, this](const nlohmann::json &result) {
@@ -76,8 +79,40 @@ void SurveyTaking::open_next_section(int next_section_id) {
                         QString::fromStdString(error)
                     );
                     deleteLater();
+                });
+            return;
+        } else if (type == "quiz") {
+            std::map<std::string, int> scores;
+
+            for (size_t i = 0; i < answer_data_["sections"].size(); ++i) {
+                const auto &answers = answer_data_["sections"][i];
+                const auto &questions = survey_data_["sections"][i]["questions"];
+
+                for (size_t j = 0; j < answers.size(); ++j) {
+                    int answer_idx = answers[j]["answer"].get<int>();
+                    if (answer_idx <= 0) continue;
+
+                    const auto &scores_arr = questions[j]["scores"];
+                    if (static_cast<size_t>(answer_idx - 1) < scores_arr.size()) {
+                        scores[scores_arr[answer_idx - 1].get<std::string>()]++;
+                    }
                 }
+            }
+
+            std::string winner;
+            int max_score = -1;
+            for (const auto &[name, score] : scores) {
+                if (score > max_score) {
+                    max_score = score;
+                    winner = name;
+                }
+            }
+
+            show_message_box(
+                this, QMessageBox::Information, "Result",
+                "You are: " + QString::fromStdString(winner)
             );
+            deleteLater();
         } else {
             server().post_answer(
                 answer_data_,

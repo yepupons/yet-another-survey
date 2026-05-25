@@ -102,7 +102,7 @@ if(EMSCRIPTEN)
         client/include/view_passed_surveys.hpp
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
-        
+
         # Resources
         client/resources/resources.qrc
     )
@@ -113,7 +113,7 @@ if(EMSCRIPTEN)
 
     target_link_libraries(client PRIVATE
         Qt6::Widgets
-        Qt6::Network 
+        Qt6::Network
         nlohmann_json::nlohmann_json
         qrcodegenerator
     )
@@ -133,6 +133,7 @@ else()
     find_package(Boost 1.65.1 REQUIRED)
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
 
     # Drogon Options
     option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -153,6 +154,25 @@ else()
         message(FATAL_ERROR "matplotplusplus submodule missing. Run: git submodule update --init --recursive")
     endif()
 
+    set(QRCODEGENERATOR_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/Qt-QrCodeGenerator")
+    if (EXISTS "${QRCODEGENERATOR_LOCAL_DIR}/src/QrCodeGenerator.cpp")
+        add_library(qrcodegenerator
+            "${QRCODEGENERATOR_LOCAL_DIR}/src/QrCodeGenerator.cpp"
+            "${QRCODEGENERATOR_LOCAL_DIR}/src/qrcodegen/qrcodegen.cpp"
+        )
+
+        target_include_directories(qrcodegenerator PUBLIC
+            "${QRCODEGENERATOR_LOCAL_DIR}/src"
+        )
+
+        target_link_libraries(qrcodegenerator PUBLIC
+            Qt6::Widgets
+            Qt6::Svg
+        )
+    else()
+        message(FATAL_ERROR "Qt-QrCodeGenerator submodule missing. Run: git submodule update --init --recursive")
+    endif()
+
     set(TGBOT_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/tgbot-cpp")
     if (EXISTS "${TGBOT_LOCAL_DIR}/CMakeLists.txt")
         set(ENABLE_TESTS OFF CACHE BOOL "" FORCE)
@@ -161,6 +181,68 @@ else()
     else()
         message(FATAL_ERROR "tgbot-cpp submodule missing. Run: git submodule update --init --recursive")
     endif()
+
+    # Client
+    add_executable(client
+        client/src/main.cpp
+        client/src/main_window.cpp
+        client/src/survey_window.cpp
+        client/src/survey_taking.cpp
+        client/src/multiple_choice_block.cpp
+        client/src/single_choice_block.cpp
+        client/src/text_block.cpp
+
+        client/src/survey_builder_window.cpp
+        client/src/section_editor.cpp
+        client/src/text_block_editor.cpp
+        client/src/single_choice_block_editor.cpp
+        client/src/multiple_choice_block_editor.cpp
+        client/src/quiz_choice_block_editor.cpp
+        client/src/login_window.cpp
+
+        client/src/session.cpp
+        client/src/server_interaction.cpp
+
+        client/src/view_passed_surveys.cpp
+        client/src/test_results.cpp
+        client/src/created_surveys_window.cpp
+
+        # Because of Qt issues
+        client/include/main_window.hpp
+        client/include/survey_window.hpp
+        client/include/survey_taking.hpp
+        client/include/multiple_choice_block.hpp
+        client/include/single_choice_block.hpp
+        client/include/text_block.hpp
+        client/include/abstract_block.hpp
+
+        client/include/survey_builder_window.hpp
+        client/include/section_editor.hpp
+        client/include/text_block_editor.hpp
+        client/include/single_choice_block_editor.hpp
+        client/include/multiple_choice_block_editor.hpp
+        client/include/abstract_block_editor.hpp
+        client/include/quiz_choice_block_editor.hpp
+        client/include/login_window.hpp
+
+        client/include/view_passed_surveys.hpp
+        client/include/test_results.hpp
+        client/include/created_surveys_window.hpp
+
+        client/resources/resources.qrc
+    )
+
+    target_include_directories(client PRIVATE
+        ${PROJECT_SOURCE_DIR}/client/include/
+    )
+
+    target_link_libraries(client PRIVATE
+        Qt6::Widgets
+        CURL::libcurl
+        nlohmann_json::nlohmann_json
+        matplot
+        qrcodegenerator
+    )
 
     # Server
     add_executable(server
@@ -202,7 +284,7 @@ else()
 
     # Debug (enabling reading errors and recieved data on server)
     option(YAZ_DEBUG OFF)
-    if (YAZ_DEBUG) 
+    if (YAZ_DEBUG)
         add_compile_definitions(YAZ_DEBUG)
     endif()
 endif()

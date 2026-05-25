@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 #include <functional>
 #include <memory>
+#include <QString>
 #include <nlohmann/json.hpp>
 #include "nlohmann/json_fwd.hpp"
 #include "section_editor.hpp"
@@ -18,14 +19,14 @@ namespace survey {
 class SurveyBuilderWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit SurveyBuilderWindow(bool is_test, QWidget *parent = nullptr);
+    explicit SurveyBuilderWindow(Created_Type type, QWidget *parent = nullptr);
 
 private slots:
     void add_section();
     void save_survey();
 
 private:
-    bool is_test_;
+    Created_Type type_;
 
     QWidget *content_ = nullptr;
 
@@ -49,6 +50,7 @@ private:
         std::function<void(const nlohmann::json &)> callback
     ) const;
     static int generate_survey_id();
+    static const QString write_type(Created_Type type);
 };
 }  // namespace survey
 
