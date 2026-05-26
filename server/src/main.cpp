@@ -470,10 +470,10 @@ int main(int argc, char *argv[]) {
         "/api/surveys/{1}/ratings",
         [&db](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
         ) {
             try {
-                std::string survey_id = request->getParameter("1");
                 auto rating_data = request->getJsonObject()->toStyledString();
                 std::string user_id = db.user_id_by_access_token(bearer_token(request));
                 std::string result = db.save_rate(rating_data, survey_id, user_id);

@@ -114,7 +114,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     input_row->setHorizontalSpacing(12);
     input_row->setVerticalSpacing(12);
     input_row->setColumnStretch(0, 1);
-    input_row->setColumnStretch(1, 0);
+    input_row->setColumnStretch(1, 1);
 
     id_input_ = new QLineEdit(card);
     id_input_->setPlaceholderText("Enter survey id");
@@ -123,10 +123,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     open_survey_button_ = new QPushButton("Open Survey", card);
     open_survey_button_->setObjectName("primaryButton");
-    open_survey_button_->setSizePolicy(
-        QSizePolicy::Preferred, QSizePolicy::Fixed
-    );
-    open_survey_button_->setMinimumWidth(180);
+    open_survey_button_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     input_row->addWidget(open_survey_button_, 0, 1);
 
     card_layout->addLayout(input_row);
