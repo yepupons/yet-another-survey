@@ -7,5 +7,7 @@
         <file>icons/close.svg</file>
         <file>icons/profile.svg</file>
         <file>icons/trash.svg</file>
+        <file>icons/arrow_up.svg</file>
+        <file>icons/arrow_down.svg</file>
     </qresource>
 </RCC>

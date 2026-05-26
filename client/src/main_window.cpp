@@ -224,7 +224,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
             login_window, &LoginWindow::login_completed, this,
             &MainWindow::update_auth_action
         );
-        login_window->show();
+        login_window->showMaximized();
     });
 }
 

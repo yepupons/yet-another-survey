@@ -17,6 +17,14 @@ TextBlockEditor::TextBlockEditor(Created_Type type, QWidget *parent)
     auto *title_label = new QLabel("Text", this);
     title_label->setObjectName("sectionLabel");
 
+    auto *move_up_button = new QPushButton(this);
+    move_up_button->setObjectName("moveUpButton");
+    move_up_button->setFixedSize(36, 36);
+
+    auto *move_down_button = new QPushButton(this);
+    move_down_button->setObjectName("moveDownButton");
+    move_down_button->setFixedSize(36, 36);
+
     auto *delete_label = new QLabel("Delete", this);
     delete_label->setObjectName("sectionLabel");
 
@@ -26,11 +34,19 @@ TextBlockEditor::TextBlockEditor(Created_Type type, QWidget *parent)
 
     header_layout->addWidget(title_label);
     header_layout->addStretch();
+    header_layout->addWidget(move_up_button);
+    header_layout->addWidget(move_down_button);
     header_layout->addWidget(delete_label);
     header_layout->addWidget(delete_block_button);
 
     layout->addLayout(header_layout);
 
+    connect(move_up_button, &QPushButton::clicked, this, [this]() {
+        emit move_up_requested(this);
+    });
+    connect(move_down_button, &QPushButton::clicked, this, [this]() {
+        emit move_down_requested(this);
+    });
     connect(delete_block_button, &QPushButton::clicked, this, [this]() {
         emit remove_requested(this);
     });

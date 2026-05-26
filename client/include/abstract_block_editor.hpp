@@ -31,6 +31,8 @@ public:
 
 signals:
     void remove_requested(BlockEditor *editor);
+    void move_up_requested(BlockEditor *editor);
+    void move_down_requested(BlockEditor *editor);
 
 protected:
     Created_Type type_;
