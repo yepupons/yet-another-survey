@@ -171,6 +171,20 @@ void SectionEditor::add_block() {
                     questions_layout_->removeWidget(block);
                     block->deleteLater();
                 });
+                connect(block, &BlockEditor::move_up_requested, this, [this, block]() {
+                    int idx = questions_.indexOf(block);
+                    if (idx <= 0) return;
+                    std::swap(questions_[idx], questions_[idx - 1]);
+                    questions_layout_->removeWidget(block);
+                    questions_layout_->insertWidget(idx - 1, block);
+                });
+                connect(block, &BlockEditor::move_down_requested, this, [this, block]() {
+                    int idx = questions_.indexOf(block);
+                    if (idx < 0 || idx >= questions_.size() - 1) return;
+                    std::swap(questions_[idx], questions_[idx + 1]);
+                    questions_layout_->removeWidget(block);
+                    questions_layout_->insertWidget(idx + 1, block);
+                });
             }
         );
         menu->popup(
@@ -189,6 +203,20 @@ void SectionEditor::add_block() {
         );
         questions_layout_->removeWidget(block);
         block->deleteLater();
+    });
+    connect(block, &BlockEditor::move_up_requested, this, [this, block]() {
+        int idx = questions_.indexOf(block);
+        if (idx <= 0) return;
+        std::swap(questions_[idx], questions_[idx - 1]);
+        questions_layout_->removeWidget(block);
+        questions_layout_->insertWidget(idx - 1, block);
+    });
+    connect(block, &BlockEditor::move_down_requested, this, [this, block]() {
+        int idx = questions_.indexOf(block);
+        if (idx >= questions_.size() - 1) return;
+        std::swap(questions_[idx], questions_[idx + 1]);
+        questions_layout_->removeWidget(block);
+        questions_layout_->insertWidget(idx + 1, block);
     });
 }
 

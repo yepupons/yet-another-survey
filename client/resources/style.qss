@@ -508,6 +508,30 @@ QPushButton#dangerIconButton {
     image: url(:/icons/trash.svg);
 }
 
+QPushButton#moveUpButton {
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0;
+    background-color: #ffffff;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    image: url(:/icons/arrow_up.svg);
+}
+
+QPushButton#moveDownButton {
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0;
+    background-color: #ffffff;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    image: url(:/icons/arrow_down.svg);
+}
+
 QCheckBox#choiceOption::indicator:checked {
     image: url(:/icons/check_white.svg);
 }
