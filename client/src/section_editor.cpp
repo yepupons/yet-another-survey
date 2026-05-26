@@ -52,9 +52,15 @@ SectionEditor::SectionEditor(
         layout->addWidget(add_outcome_button);
 
         add_outcome();
-
+        
         connect(add_outcome_button, &QPushButton::clicked, this,
             &SectionEditor::add_outcome);
+
+        auto *divider = new QFrame(this);
+        divider->setFrameShape(QFrame::HLine);
+        divider->setFrameShadow(QFrame::Plain);
+        divider->setObjectName("dividerLine");
+        layout->addWidget(divider);
     }
 
     questions_layout_ = new QVBoxLayout();
