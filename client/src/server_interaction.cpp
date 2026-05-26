@@ -71,24 +71,29 @@ void ServerInteraction::get_survey(
 
 void ServerInteraction::post_survey(
     const nlohmann::json &survey_data,
-    std::function<void()> success,
+    std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url = "http://127.0.0.1:8080/survey";
     send_request(
-        url, Method::POST, [success](const std::string &) { success(); },
+        url, Method::POST,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
         failure, true, survey_data.dump()
     );
 }
 
 void ServerInteraction::post_answer(
     const nlohmann::json &answer_data,
-    std::function<void()> success,
+    std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url = "http://127.0.0.1:8080/answer";
     send_request(
-        url, Method::POST, [success](const std::string &) { success(); },
+        url, Method::POST, [success](const std::string &submission_result) { 
+            success(nlohmann::json::parse(submission_result)); 
+        },
         failure, true, answer_data.dump()
     );
 }
@@ -256,6 +261,27 @@ void ServerInteraction::complete_auth(
             success(nlohmann::json::parse(result));
         },
         failure, false, challenge.dump()
+    );
+}
+
+void ServerInteraction::post_rate(
+    const std::string &survey_id,
+    const std::string &answer_id,
+    const bool is_like,
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
+) {
+    std::string url = "http://127.0.0.1:8080/api/surveys/" + survey_id + "/ratings";
+    nlohmann::json rate_data = {
+        {"answer_id", answer_id},
+        {"rate", is_like ? "like" : "dislike"}
+    };
+    send_request(
+        url, Method::POST,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
+        failure, true, rate_data.dump()
     );
 }
 }  // namespace survey

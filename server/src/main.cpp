@@ -466,6 +466,32 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
+    app().registerHandler(
+        "/api/surveys/{1}/ratings",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                std::string survey_id = request->getParameter("1");
+                auto rating_data = request->getJsonObject()->toStyledString();
+                std::string user_id = db.user_id_by_access_token(bearer_token(request));
+                std::string result = db.save_rate(rating_data, survey_id, user_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody(result);
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
     app().run();
     return 0;
 }

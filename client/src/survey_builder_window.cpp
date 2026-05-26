@@ -104,9 +104,9 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
         &SurveyBuilderWindow::save_survey
     );
     connect(preview_button, &QPushButton::clicked, this, [this]() {
-        const int preview_id = generate_survey_id();
+        // const int preview_id = generate_survey_id();
         build_survey_json(
-            preview_id, true,
+             true,
             [=, this](const nlohmann::json &survey) {
                 auto *preview = new SurveyTaking(survey, true, this);
                 preview->setAttribute(Qt::WA_DeleteOnClose);
@@ -148,12 +148,10 @@ void SurveyBuilderWindow::build_sections_json(
 }
 
 void SurveyBuilderWindow::build_survey_json(
-    int id,
     bool preview_mode,
     std::function<void(const nlohmann::json &)> callback
 ) const {
     auto survey = std::make_shared<nlohmann::json>();
-    (*survey)["data"]["id"] = id;
     (*survey)["data"]["creator_id"] = session().get_id();
     (*survey)["data"]["type"] = write_type(type_).toStdString();
     (*survey)["title"] = title_->text().trimmed().isEmpty()
@@ -164,31 +162,25 @@ void SurveyBuilderWindow::build_survey_json(
     build_sections_json(preview_mode, survey, 0, callback);
 }
 
-int SurveyBuilderWindow::generate_survey_id() {
-    auto now = std::chrono::system_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  now.time_since_epoch()
-    )
-                  .count();
-
-    return static_cast<int>(ms % 1000000000);
-}
 
 void SurveyBuilderWindow::save_survey() {
-    const int id = generate_survey_id();
-    build_survey_json(id, false, [=, this](const nlohmann::json &survey_data) {
-        server().post_survey(
-            survey_data,
-            [&, id]() {
-                QrCodeGenerator generator(this);
-                const QImage qr_image =
-                    generator.generateQr(QString::number(id), 260, 4);
-                show_message_box(
-                    parentWidget(), QPixmap::fromImage(qr_image), "Saved",
-                    "Survey has been saved.\nYour ID:\n" + QString::number(id)
-                );
-                deleteLater();
-            },
+    build_survey_json(false, [=, this](const nlohmann::json &survey_data) {
+    server().post_survey(
+        survey_data,
+        [=, this](const nlohmann::json &response) {
+            const int id = response.at("survey_id").get<int>();
+
+            QrCodeGenerator generator(this);
+            const QImage qr_image =
+                generator.generateQr(QString::number(id), 260, 4);
+
+            show_message_box(
+                parentWidget(), QPixmap::fromImage(qr_image), "Saved",
+                "Survey has been saved.\nYour ID:\n" + QString::number(id)
+            );
+
+            deleteLater();
+        },
             [=, this](const std::string &error) {
                 show_message_box(
                     this, QMessageBox::Warning, "Error",

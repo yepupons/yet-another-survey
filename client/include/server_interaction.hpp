@@ -20,12 +20,12 @@ public:
     );
     void post_survey(
         const nlohmann::json &survey_data,
-        std::function<void()> success,
+        std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
     void post_answer(
         const nlohmann::json &answer_data,
-        std::function<void()> success,
+        std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
     void check_answer(
@@ -79,6 +79,15 @@ public:
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
+
+    void post_rate(
+        const std::string &survey_id,
+        const std::string &answer_id,
+        const bool is_like,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+
 
 private:
     enum class Method { POST, GET };

@@ -23,7 +23,8 @@ private:
     bool preview_mode_ = false;
     nlohmann::json survey_data_;
     nlohmann::json answer_data_;
-    SurveyWindow *current_section_ = nullptr;
+    nlohmann::json submission_result_;
+    SurveyWindow *current_section_ = nullptr;  
 };
 }  // namespace survey
 

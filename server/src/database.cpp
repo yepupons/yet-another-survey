@@ -45,6 +45,10 @@ std::string Database::write_survey(
     nlohmann::json json = nlohmann::json::parse(survey_data);
     json["data"]["id"] = survey_id;
     json["data"]["creator_id"] = creator_id;
+    json["data"]["likes_count"] = 0;
+    json["data"]["dislikes_count"] = 0;
+    json["data"]["ratings_count"] = 0;
+    json["data"]["rating_score"] = 0;
 
     bsoncxx::document::value doc = bsoncxx::from_json(json.dump());
     auto insert_result = db()["surveys"].insert_one(doc.view());
@@ -725,4 +729,81 @@ std::string Database::user_id_by_access_token(const std::string &access_token) {
     return std::string(result->view()["id"].get_string().value);
 }
 
+std::string Database::save_rate(
+    const std::string &rate_data,
+    const std::string &survey_id,
+    const std::string &user_id
+) {
+    nlohmann::json json = nlohmann::json::parse(rate_data);
+    const std::string answer_id = json["answer_id"].get<std::string>();
+    const std::string rate = json["rate"].get<std::string>();
+
+    int rate_value = 0;
+    if (rate == "like") {
+        rate_value = 1;
+    } else if (rate == "dislike") {
+        rate_value = -1;
+    } else {
+        throw std::invalid_argument("Invalid rate");
+    }
+
+    auto survey_existence = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id
+                   << finalize
+    );
+    if (!survey_existence){
+        throw std::invalid_argument("Survey not found");
+    }
+
+    auto answer_result = db()["answers"].find_one(
+        document{} << "data.id" << answer_id
+                   << "data.survey_id" << survey_id
+                   << "data.respondent_id" << user_id
+                   << finalize
+    );
+    if (!answer_result) {
+        throw std::invalid_argument("Answer not found");
+    }
+
+    auto existing_rate_result = db()["survey_rates"].find_one(
+        document{} << "survey_id" << survey_id
+                   << "answer_id" << answer_id
+                   << "user_id" << user_id
+                   << finalize
+    );
+    if (existing_rate_result) {
+        throw std::invalid_argument("Survey already rated");
+    }
+
+    const std::string rate_id = generate_uuid();
+    auto insert_rate_result = db()["survey_rates"].insert_one(
+        document{} << "id" << rate_id
+                   << "survey_id" << survey_id
+                   << "answer_id" << answer_id
+                   << "user_id" << user_id
+                   << "value" << rate_value
+                   << finalize
+    );
+
+    const std::string rate_counter_field =
+        rate_value == 1 ? "data.likes_count" : "data.dislikes_count";
+
+    auto update_survey_result = db()["surveys"].update_one(
+        document{} << "data.id" << survey_id << finalize,
+        document{} << "$inc" << open_document
+                    << rate_counter_field << 1
+                    << "data.ratings_count" << 1
+                    << "data.rating_score" << rate_value
+                   << close_document << finalize
+    );
+
+
+    nlohmann::json result;
+    result["status"] = "Saved";
+    result["rate_id"] = rate_id;
+    result["survey_id"] = survey_id;
+    result["answer_id"] = answer_id;
+    result["rating_score_delta"] = rate_value;
+    return result.dump();
+}
 }  // namespace survey

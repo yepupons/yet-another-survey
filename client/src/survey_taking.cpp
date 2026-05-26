@@ -114,24 +114,32 @@ void SurveyTaking::open_next_section(int next_section_id) {
             );
             deleteLater();
         } else {
-            server().post_answer(
-                answer_data_,
-                [=, this]() {
-                    show_message_box(
-                        parentWidget(), QMessageBox::Information, "Saved",
-                        "Your answers have been successfully saved."
-                    );
-                    deleteLater();
-                },
-                [=, this](const std::string &error) {
-                    show_message_box(
-                        parentWidget(), QMessageBox::Warning, "Error",
-                        QString::fromStdString(error)
-                    );
-                    deleteLater();
+            nlohmann::json submission_result;
+           server().post_answer(
+            answer_data_,
+            [=, this](const nlohmann::json &submission_result) {
+                submission_result_ = submission_result;
+                show_message_box(
+                    parentWidget(), QMessageBox::Information, "Saved",
+                    "Your answers have been successfully saved."
+                );
+
+
+                // TODO: отдельное окошко с лайком/дизлайком
+                // submisson_result: {"submission_id": "smthUUID", "status": "saved" }
+                // окошко, а потом post_rate(survey_id, submission_id, rate)
+                // здесь надо айди достать из submission_result_ поля
+                deleteLater();
+            },
+            [=, this](const std::string &error) {
+                show_message_box(
+                    parentWidget(), QMessageBox::Warning, "Error",
+                    QString::fromStdString(error)
+                );
+                deleteLater();
+            }
+        );
                 }
-            );
-        }
     } else {
         current_section_ = new SurveyWindow(
             survey_data_, answer_data_, next_section_id, preview_mode_, this
