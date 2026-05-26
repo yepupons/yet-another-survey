@@ -54,12 +54,12 @@ void ServerInteraction::send_request(
 }
 
 void ServerInteraction::get_survey(
-    int survey_id,
+    const std::string &survey_id,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/survey?id=" + std::to_string(survey_id);
+        "http://127.0.0.1:8080/survey?id=" + survey_id;
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -131,24 +131,24 @@ void ServerInteraction::get_created_surveys(
 }
 
 void ServerInteraction::get_survey_statistics(
-    int survey_id, const std::string &file_format,
+    const std::string &survey_id, const std::string &file_format,
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url = "http://127.0.0.1:8080/statistics?survey-id=" +
-                      std::to_string(survey_id) + "&format=" + file_format;
+                      survey_id + "&format=" + file_format;
     send_request(url, Method::GET, success, failure, true);
 }
 
 void ServerInteraction::get_survey_results(
     const std::string &user_id,
-    int survey_id,
+    const std::string &survey_id,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
         "http://127.0.0.1:8080/survey-results?session-id=" + user_id +
-        "&survey-id=" + std::to_string(survey_id);
+        "&survey-id=" + survey_id;
     send_request(
         url, Method::GET,
         [success](const std::string &result) {

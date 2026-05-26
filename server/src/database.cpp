@@ -134,20 +134,19 @@ std::string Database::read_passed_surveys(const std::string &session_id) {
     auto cursor = db()["answers"].find(
         document{} << "data.respondent_id" << session_id << finalize, opts
     );
-    std::set<int> passed_surveys;
+    std::set<std::string> passed_surveys;
     for (auto &&doc : cursor) {
         auto elem = doc["data"]["survey_id"];
         if (!elem) {
             continue;
         }
-        if (elem.type() == bsoncxx::type::k_int32) {
-            passed_surveys.insert(elem.get_int32().value);
-        } else if (elem.type() == bsoncxx::type::k_int64) {
-            passed_surveys.insert(static_cast<int>(elem.get_int64().value));
+        if (elem.type() != bsoncxx::type::k_string) {
+            continue;
         }
+        passed_surveys.insert(std::string(elem.get_string().value));
     }
     nlohmann::json result = nlohmann::json::array();
-    for (int id : passed_surveys) {
+    for (const auto &id : passed_surveys) {
         result.push_back(id);
     }
     return result.dump();

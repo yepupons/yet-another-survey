@@ -98,7 +98,8 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
             surveys_layout->setContentsMargins(24, 24, 24, 24);
             surveys_layout->setSpacing(12);
 
-            for (int id : surveys_ids) {
+            for (const auto &id_json : surveys_ids) {
+                const std::string id = id_json.get<std::string>();
                 auto *row_widget = new QWidget(surveys_card);
                 auto *row_layout = new QHBoxLayout(row_widget);
                 row_layout->setContentsMargins(0, 0, 0, 0);
@@ -121,10 +122,9 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                         connect(
                             button, &QPushButton::clicked, this,
                             [this, id]() {
-                                int survey_id = id;
                                 std::string session_id = session().get_id();
                                 auto *dialog = new ViewSurveyResults(
-                                    survey_id, session_id, this
+                                    id, session_id, this
                                 );
                                 dialog->setAttribute(Qt::WA_DeleteOnClose);
                                 dialog->showMaximized();
@@ -159,7 +159,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
 }
 
 ViewSurveyResults::ViewSurveyResults(
-    int survey_id,
+    const std::string &survey_id,
     const std::string &session_id,
     QWidget *parent
 )

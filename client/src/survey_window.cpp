@@ -36,9 +36,10 @@ SurveyWindow::SurveyWindow(
       preview_mode_(preview_mode),
       section_data_(survey_data.at("sections").at(section_id)),
       answer_data_(answer_data.at("sections").at(section_id)) {
+    const std::string section_title = section_data_.value("title", "Section");
     setWindowTitle(QString::fromStdString(
         "[" + survey_data.at("title").get<std::string>() + "] " +
-        section_data_.at("title").get<std::string>()
+        section_title
     ));
 
     auto *central = new QWidget(this);
@@ -67,7 +68,7 @@ SurveyWindow::SurveyWindow(
     title_layout->addWidget(survey_title_label);
 
     auto *section_title_label = new QLabel(
-        QString::fromStdString(section_data_.at("title").get<std::string>()),
+        QString::fromStdString(section_title),
         title
     );
     section_title_label->setObjectName("subtitleLabel");

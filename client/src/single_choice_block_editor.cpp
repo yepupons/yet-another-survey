@@ -219,7 +219,10 @@ void SingleChoiceBlockEditor::to_json(
             },
             [](const std::string &) {}
         );
+        return;
     }
+
+    callback(block);
 }
 
 }  // namespace survey

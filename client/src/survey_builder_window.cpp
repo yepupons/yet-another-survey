@@ -168,15 +168,14 @@ void SurveyBuilderWindow::save_survey() {
     server().post_survey(
         survey_data,
         [=, this](const nlohmann::json &response) {
-            const int id = response.at("survey_id").get<int>();
-
+            const QString id = QString::fromStdString(response.at("survey_id").get<std::string>());
             QrCodeGenerator generator(this);
             const QImage qr_image =
-                generator.generateQr(QString::number(id), 260, 4);
+                generator.generateQr(id, 260, 4);
 
             show_message_box(
                 parentWidget(), QPixmap::fromImage(qr_image), "Saved",
-                "Survey has been saved.\nYour ID:\n" + QString::number(id)
+                "Survey has been saved.\nYour ID:\n" + id
             );
 
             deleteLater();

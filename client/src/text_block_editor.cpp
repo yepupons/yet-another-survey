@@ -153,6 +153,9 @@ void TextBlockEditor::to_json(
             },
             [](const std::string &) {}
         );
+        return;
     }
+
+    callback(block);
 }
 }  // namespace survey

@@ -224,9 +224,17 @@ void SectionEditor::to_json(
         (*section)["next_section_id"] = next_section_
                                             ? next_section_->currentIndex() - 1
                                             : -1;
+    } else {
+        (*section)["title"] = "Quiz";
+        (*section)["next_section_id"] = -1;
     }
 
     (*section)["questions"] = nlohmann::json::array();
+    if (questions_.empty()) {
+        callback(*section);
+        return;
+    }
+
     build_questions_json(preview_mode, section, 0, callback);
 }
 }  // namespace survey

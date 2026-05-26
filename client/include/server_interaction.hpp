@@ -14,7 +14,7 @@ class ServerInteraction : public QObject {
     Q_OBJECT
 public:
     void get_survey(
-        int survey_id,
+        const std::string &survey_id,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
@@ -44,13 +44,13 @@ public:
         std::function<void(const std::string &)> failure
     );
     void get_survey_statistics(
-        int survey_id, const std::string &file_format,
+        const std::string &survey_id, const std::string &file_format,
         std::function<void(const std::string &)> success,
         std::function<void(const std::string &)> failure
     );
     void get_survey_results(
         const std::string &user_id,
-        int survey_id,
+        const std::string &survey_id,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );

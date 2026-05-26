@@ -2,6 +2,7 @@
 #define SURVEY_TAKING_HPP_
 
 #include <nlohmann/json.hpp>
+#include <string>
 #include "survey_window.hpp"
 
 namespace survey {
@@ -9,7 +10,10 @@ class SurveyTaking : public QWidget {
     Q_OBJECT
 
 public:
-    explicit SurveyTaking(int survey_id, QWidget *parent = nullptr);
+    explicit SurveyTaking(
+        const std::string &survey_id,
+        QWidget *parent = nullptr
+    );
     explicit SurveyTaking(
         const nlohmann::json &survey_data,
         bool preview_mode,

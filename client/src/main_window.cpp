@@ -233,9 +233,8 @@ void MainWindow::update_auth_action() {
 }
 
 void MainWindow::open_survey() {
-    bool ok;
-    int id = id_input_->text().trimmed().toInt(&ok);
-    if (!ok || id <= 0) {
+    const std::string id = id_input_->text().trimmed().toStdString();
+    if (id.empty()) {
         show_message_box(
             this, QMessageBox::Warning, "Error",
             "Please enter a valid survey id."

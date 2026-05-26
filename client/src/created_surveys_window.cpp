@@ -84,7 +84,8 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 return;
             }
 
-            for (int id : surveys_ids) {
+            for (const auto &id_json : surveys_ids) {
+                const std::string id = id_json.get<std::string>();
                 auto *row_widget = new QWidget(surveys_card);
                 auto *row_layout = new QVBoxLayout(row_widget);
                 row_layout->setContentsMargins(0, 0, 0, 0);
@@ -102,7 +103,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                         auto title = survey_data.at("title").get<std::string>();
                         survey_title->setText(
                             QString::fromStdString(title) +
-                            " (id: " + QString::number(id) + ")"
+                            " (id: " + QString::fromStdString(id) + ")"
                         );
                     },
                     [=, this](const std::string &error) {
@@ -189,12 +190,12 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     setLayout(layout);
 }
 
-void CreatedSurveysWindow::export_statistics(int survey_id, const std::string &file_format) {
+void CreatedSurveysWindow::export_statistics(const std::string &survey_id, const std::string &file_format) {
     server().get_survey_statistics(
         survey_id,
         file_format,
         [=](const std::string &file_data) {
-            QFileDialog::saveFileContent(QByteArray::fromStdString(file_data), QString::number(survey_id) + '.' + QString::fromStdString(file_format));
+            QFileDialog::saveFileContent(QByteArray::fromStdString(file_data), QString::fromStdString(survey_id) + '.' + QString::fromStdString(file_format));
         },
         [=, this](const std::string &error) {
             show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
@@ -221,12 +222,13 @@ void CreatedSurveysWindow::show_survey_preview(
     preview_window->show();
 }
 
-void CreatedSurveysWindow::show_qr_code(int id) {
+void CreatedSurveysWindow::show_qr_code(const std::string &id) {
     QrCodeGenerator generator(this);
-    const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
+    const QString survey_id = QString::fromStdString(id);
+    const QImage qr_image = generator.generateQr(survey_id, 260, 4);
     show_message_box(
         this, QPixmap::fromImage(qr_image), "QR code",
-        "Survey ID:\n" + QString::number(id)
+        "Survey ID:\n" + survey_id
     );
 }
 
