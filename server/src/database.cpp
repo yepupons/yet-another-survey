@@ -805,4 +805,35 @@ std::string Database::save_rate(
     result["rating_score_delta"] = rate_value;
     return result.dump();
 }
+
+std::string Database::get_top_surveys() {
+    mongocxx::options::find opts;
+    opts.sort(
+        document{} << "data.rating_score" << -1
+                   << "data.ratings_count" << -1
+                   << finalize
+    );
+    opts.limit(10);
+
+    auto cursor = db()["surveys"].find(
+        document{} << finalize,
+        opts
+    );
+
+    nlohmann::json result = nlohmann::json::array();
+    for (auto &&survey : cursor) {
+        nlohmann::json survey_json;
+        const auto data = survey["data"].get_document().value;
+        survey_json["id"] = data["id"].get_string().value;
+        survey_json["title"] = survey["title"].get_string().value;
+        // TODO!!!
+        // survey_json["description"] = data["description"].get_string().value;
+        survey_json["likes_count"] = data["likes_count"].get_int32().value;
+        survey_json["dislikes_count"] = data["dislikes_count"].get_int32().value;
+        survey_json["ratings_count"] = data["ratings_count"].get_int32().value;
+        survey_json["rating_score"] = data["rating_score"].get_int32().value;
+        result.push_back(survey_json);
+    }
+    return result.dump();
+}
 }  // namespace survey

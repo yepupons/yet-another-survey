@@ -88,6 +88,10 @@ public:
         std::function<void(const std::string &)> failure
     );
 
+    void get_surveys_top(
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
 
 private:
     enum class Method { POST, GET };

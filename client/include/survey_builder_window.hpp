@@ -31,6 +31,7 @@ private:
     QWidget *content_ = nullptr;
 
     QLineEdit *title_ = nullptr;
+    QLineEdit *description_ = nullptr;
     QList<SectionEditor *> sections_;
     QVBoxLayout *sections_layout_ = nullptr;
     QStringListModel *sections_list_ = nullptr;

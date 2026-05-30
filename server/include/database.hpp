@@ -73,6 +73,7 @@ public:
     std::string complete_login(const std::string &user_challenge_data);
     std::string user_id_by_access_token(const std::string &access_token);
     std::string save_rate(const std::string &rate_data, const std::string &survey_id, const std::string &user_id);
+    std::string get_top_surveys();
 };
 }  // namespace survey
 

@@ -492,6 +492,29 @@ int main(int argc, char *argv[]) {
         {Post}
     );
 
+    app().registerHandler(
+        "/api/surveys/top",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                std::string result = db.get_top_surveys();
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody(result);
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
     app().run();
     return 0;
 }
