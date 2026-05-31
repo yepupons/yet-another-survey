@@ -86,10 +86,11 @@ void ServerInteraction::post_survey(
 
 void ServerInteraction::post_answer(
     const nlohmann::json &answer_data,
+    const std::string &survey_id,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/answer";
+    std::string url = "http://127.0.0.1:8080/api/surveys/" + survey_id + "/answers";
     send_request(
         url, Method::POST, [success](const std::string &submission_result) { 
             success(nlohmann::json::parse(submission_result)); 

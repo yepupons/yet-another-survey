@@ -25,6 +25,7 @@ public:
     );
     void post_answer(
         const nlohmann::json &answer_data,
+        const std::string &survey_id,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );

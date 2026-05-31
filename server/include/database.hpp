@@ -5,6 +5,7 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 
 namespace survey {
@@ -29,7 +30,7 @@ public:
 
     std::string read_account(const std::string &session_id);
     std::string read_survey(const std::string &survey_id);
-    std::string write_survey(const std::string &survey_id, const std::string &creator_id, const std::string &survey_data);
+    std::string write_survey(const std::string &survey_id, const std::string &creator_id, const nlohmann::json &survey_data);
 
     // std::string read_answer(int answer_id);
     std::string write_answer(
