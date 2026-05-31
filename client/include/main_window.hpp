@@ -21,6 +21,7 @@ public slots:
     void create_survey();
     void get_created_surveys();
     void get_passed_surveys();
+    void show_trending();
     void update_auth_action();
 
 private:

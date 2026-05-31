@@ -694,7 +694,7 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
                        << telegram_username << "telegram_first_name"
                        << telegram_first_name << "updated_at"
                        << bsoncxx::types::b_date{now} << "access_token_hash"
-                       << access_token << "access_token_expires_at" 
+                       << access_token_hash << "access_token_expires_at"
                        << bsoncxx::types::b_date{access_token_expires_at}
                        << close_document << finalize
         );
@@ -706,8 +706,10 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
                        << telegram_username << "telegram_first_name"
                        << telegram_first_name << "created_at"
                        << bsoncxx::types::b_date{now} << "updated_at"
-                       << bsoncxx::types::b_date{now} << "access_token"
-                       << access_token << "created_surveys" << open_array
+                       << bsoncxx::types::b_date{now} << "access_token_hash"
+                       << access_token_hash << "access_token_expires_at"
+                       << bsoncxx::types::b_date{access_token_expires_at}
+                       << "created_surveys" << open_array
                        << close_array << "given_answers" << open_array
                        << close_array << finalize
         );
@@ -844,18 +846,28 @@ std::string Database::get_top_surveys() {
         opts
     );
 
+    auto str_or = [](bsoncxx::document::view doc, const char *key, const char *def = "") -> std::string {
+        auto el = doc[key];
+        return (el && el.type() == bsoncxx::type::k_string)
+            ? std::string(el.get_string().value) : def;
+    };
+    auto int_or = [](bsoncxx::document::view doc, const char *key, int def = 0) -> int {
+        auto el = doc[key];
+        return (el && el.type() == bsoncxx::type::k_int32)
+            ? el.get_int32().value : def;
+    };
+
     nlohmann::json result = nlohmann::json::array();
     for (auto &&survey : cursor) {
-        nlohmann::json survey_json;
         const auto data = survey["data"].get_document().value;
-        survey_json["id"] = data["id"].get_string().value;
-        survey_json["title"] = survey["title"].get_string().value;
-        // TODO!!!
-        // survey_json["description"] = data["description"].get_string().value;
-        survey_json["likes_count"] = data["likes_count"].get_int32().value;
-        survey_json["dislikes_count"] = data["dislikes_count"].get_int32().value;
-        survey_json["ratings_count"] = data["ratings_count"].get_int32().value;
-        survey_json["rating_score"] = data["rating_score"].get_int32().value;
+        nlohmann::json survey_json;
+        survey_json["id"] = str_or(data, "id");
+        survey_json["title"] = str_or(survey, "title");
+        survey_json["description"] = str_or(survey, "description");
+        survey_json["likes_count"] = int_or(data, "likes_count");
+        survey_json["dislikes_count"] = int_or(data, "dislikes_count");
+        survey_json["ratings_count"] = int_or(data, "ratings_count");
+        survey_json["rating_score"] = int_or(data, "rating_score");
         result.push_back(survey_json);
     }
     return result.dump();

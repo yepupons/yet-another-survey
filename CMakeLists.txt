@@ -80,6 +80,7 @@ if(EMSCRIPTEN)
         client/src/view_passed_surveys.cpp
         client/src/test_results.cpp
         client/src/created_surveys_window.cpp
+        client/src/top_surveys_window.cpp
 
         # Headers
         client/include/main_window.hpp
@@ -104,6 +105,7 @@ if(EMSCRIPTEN)
         client/include/view_passed_surveys.hpp
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
+        client/include/top_surveys_window.hpp
 
         # Resources
         client/resources/resources.qrc
@@ -208,6 +210,7 @@ else()
         client/src/view_passed_surveys.cpp
         client/src/test_results.cpp
         client/src/created_surveys_window.cpp
+        client/src/top_surveys_window.cpp
 
         # Because of Qt issues
         client/include/main_window.hpp
@@ -231,6 +234,7 @@ else()
         client/include/view_passed_surveys.hpp
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
+        client/include/top_surveys_window.hpp
 
         client/resources/resources.qrc
     )

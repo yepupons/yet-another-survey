@@ -289,7 +289,7 @@ void ServerInteraction::get_surveys_top(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/api/surveys/top/";
+    std::string url = "http://127.0.0.1:8080/api/surveys/top";
     send_request(
         url, Method::GET,
         [success](const std::string &result) {

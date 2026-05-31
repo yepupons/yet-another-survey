@@ -17,6 +17,8 @@
 #include "created_surveys_window.hpp"
 #include "login_window.hpp"
 #include "pretty_view.hpp"
+#include "server_interaction.hpp"
+#include "top_surveys_window.hpp"
 #include "session.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_taking.hpp"
@@ -57,6 +59,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         QSizePolicy::Expanding, QSizePolicy::Preferred
     );
     header_layout->addWidget(header_spacer);
+
+    auto *trending_button = new QPushButton("Trending", header);
+    trending_button->setObjectName("headerNavButton");
+    header_layout->addWidget(trending_button);
 
     auto *profile_button = new QToolButton(header);
     profile_button->setObjectName("profileButton");
@@ -182,6 +188,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     outer_layout->addWidget(content_wrapper);
 
     connect(
+        trending_button, &QPushButton::clicked, this,
+        &MainWindow::show_trending
+    );
+    connect(
         open_survey_button_, &QPushButton::clicked, this,
         &MainWindow::open_survey
     );
@@ -293,6 +303,22 @@ void MainWindow::get_created_surveys() {
     auto *created_surveys = new CreatedSurveysWindow(this);
     created_surveys->setAttribute(Qt::WA_DeleteOnClose);
     created_surveys->showMaximized();
+}
+
+void MainWindow::show_trending() {
+    server().get_surveys_top(
+        [this](const nlohmann::json &surveys) {
+            auto *window = new TopSurveysWindow(surveys, this);
+            window->setAttribute(Qt::WA_DeleteOnClose);
+            window->showMaximized();
+        },
+        [this](const std::string &error) {
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
+        }
+    );
 }
 
 void MainWindow::get_passed_surveys() {
