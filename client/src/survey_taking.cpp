@@ -142,7 +142,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
         current_section_->activateWindow();
         connect(
             current_section_, &SurveyWindow::closed_with_answer, this,
-            &SurveyTaking::open_next_section
+            &SurveyTaking::open_next_section, Qt::DirectConnection
         );
         connect(
             current_section_, &SurveyWindow::closed_without_answer, this,
@@ -152,7 +152,8 @@ void SurveyTaking::open_next_section(int next_section_id) {
                     "Your answers haven't been saved"
                 );
                 deleteLater();
-            }
+            },
+            Qt::DirectConnection
         );
     }
 }
