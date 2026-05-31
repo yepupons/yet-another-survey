@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QFile>
 #include <nlohmann/json.hpp>
+#include "russian_hotkeys_handler.hpp"
 #include "main_window.hpp"
 
 int main(int argc, char *argv[]) {
@@ -11,10 +12,10 @@ int main(int argc, char *argv[]) {
         app.setStyleSheet(stream.readAll());
         styleFile.close();
     }
-
     QFont font = app.font();
-    font.setPointSize(16);
+    font.setPointSize(14);
     app.setFont(font);
+    app.installEventFilter(new RussianHotkeysHandler(&app));
     survey::MainWindow window;
     window.showMaximized();
     return app.exec();

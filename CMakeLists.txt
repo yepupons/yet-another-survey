@@ -105,6 +105,8 @@ if(EMSCRIPTEN)
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
 
+        client/include/russian_hotkeys_handler.hpp
+
         # Resources
         client/resources/resources.qrc
     )
