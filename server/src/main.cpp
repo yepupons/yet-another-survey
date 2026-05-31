@@ -2,6 +2,7 @@
 #include <drogon/drogon.h>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <cstdlib>
 #include "database.hpp"
 
 using namespace drogon;
@@ -20,6 +21,18 @@ static std::string bearer_token(const HttpRequestPtr &request) {
         throw std::invalid_argument("Missing access token");
     }
     return auth.substr(prefix.size());
+}
+
+static void require_bot_secret(const HttpRequestPtr &request) {
+    const char *expected = std::getenv("BOT_CONFIRM_SECRET");
+    if (!expected || std::string(expected).empty()) {
+        throw std::runtime_error("Bot secret is not configured");
+    }
+
+    const std::string provided = request->getHeader("X-Bot-Secret");
+    if (provided != expected) {
+        throw std::invalid_argument("Forbidden");
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -419,6 +432,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
+                require_bot_secret(request);
                 auto resp = HttpResponse::newHttpResponse();
                 auto login_data = request->getJsonObject()->toStyledString();
                 auto login_status = db.bot_check_login_data(login_data);
@@ -435,7 +449,7 @@ int main(int argc, char *argv[]) {
                 result["error"] = e.what();
 
                 auto resp = HttpResponse::newHttpJsonResponse(result);
-                resp->setStatusCode(k404NotFound);
+                resp->setStatusCode(k403Forbidden);
                 cb(resp);
             }
         },
@@ -513,6 +527,26 @@ int main(int argc, char *argv[]) {
             }
         },
         {Get}
+    );
+
+    app().registerHandler(
+        "/api/auth/logout",
+        [&db](
+            const HttpRequestPtr &request, 
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                db.revoke_access_token(bearer_token(request));
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k204NoContent);
+                cb(resp);
+            } catch (...) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k401Unauthorized);
+                cb(resp);
+            }
+        },
+        {Post}
     );
 
     app().run();

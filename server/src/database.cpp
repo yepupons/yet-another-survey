@@ -668,6 +668,8 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
     const std::string telegram_first_name =
         std::string(telegram_user["first_name"].get_string().value);
     const std::string access_token = "access_" + generate_token();
+    const std::string access_token_hash = sha256(access_token);
+    const auto access_token_expires_at = now + std::chrono::hours(12);
     auto user_result = db()["users"].find_one(
         document{} << "telegram_user_id" << telegram_user_id << finalize
     );
@@ -680,8 +682,10 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
             document{} << "$set" << open_document << "telegram_username"
                        << telegram_username << "telegram_first_name"
                        << telegram_first_name << "updated_at"
-                       << bsoncxx::types::b_date{now} << "access_token"
-                       << access_token << close_document << finalize
+                       << bsoncxx::types::b_date{now} << "access_token_hash"
+                       << access_token << "access_token_expires_at" 
+                       << bsoncxx::types::b_date{access_token_expires_at}
+                       << close_document << finalize
         );
     } else {
         user_id = generate_uuid();
@@ -719,13 +723,22 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
 }
 
 std::string Database::user_id_by_access_token(const std::string &access_token) {
+    const std::string token_hash = sha256(access_token);
     auto result = db()["users"].find_one(
-        document{} << "access_token" << access_token << finalize
+        document{} << "access_token_hash" << token_hash << finalize
     );
     if (!result) {
         throw std::invalid_argument("Invalid access token");
     }
-    return std::string(result->view()["id"].get_string().value);
+    auto view = result->view();
+
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    );
+    if (view["access_token_expires_at"].get_date().value <= now_ms) {
+        throw std::invalid_argument("Access token expired");
+    }
+    return std::string(view["id"].get_string().value);
 }
 
 std::string Database::save_rate(
@@ -835,5 +848,16 @@ std::string Database::get_top_surveys() {
         result.push_back(survey_json);
     }
     return result.dump();
+}
+
+void Database::revoke_access_token(const std::string &access_token) {
+    const std::string token_hash = sha256(access_token);
+    db()["users"].update_one(
+        document{} << "access_token_hash" << token_hash << finalize,
+        document{} << "$unset" << open_document
+                   << "access_token_hash" << ""
+                   << "access_token_expires_at" << ""
+                   << close_document << finalize
+    );
 }
 }  // namespace survey
