@@ -37,6 +37,16 @@ std::string Database::read_survey(const std::string &survey_id) {
     throw std::runtime_error("Survey not found");
 }
 
+std::string Database::read_survey_with_answers(const std::string &survey_id) {
+    auto result = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << finalize
+    );
+    if (result) {
+        return bsoncxx::to_json(result->view());
+    }
+    throw std::runtime_error("Survey not found");
+}
+
 std::string Database::write_survey(
     const std::string &survey_id,
     const std::string &creator_id,
@@ -407,82 +417,6 @@ Database::read_survey_results(const std::string &session_id, const std::string &
         }
     }
     return results.dump();
-}
-
-std::string Database::get_result(
-    const std::string &answer_id,
-    const std::string &respondent_id,
-    const std::string &user_result_data
-) {
-    write_answer(answer_id, respondent_id, user_result_data);
-    nlohmann::json user_json = nlohmann::json::parse(user_result_data);
-    const std::string survey_id = user_json.at("data").at("survey_id").get<std::string>();
-    mongocxx::options::find opts;
-    opts.projection(
-        document{} << "sections.questions.answer" << 1
-                   << "sections.questions.type" << 1 << "_id" << 0 << finalize
-    );
-    auto result = db()["surveys"].find_one(
-        document{} << "data.id" << survey_id << finalize, opts
-    );
-
-    nlohmann::json survey_json =
-        nlohmann::json::parse(bsoncxx::to_json(result->view()));
-    nlohmann::json out;
-    out["data"] = {
-        {"answer_id", answer_id},
-        {"survey_id", survey_id},
-    };
-    out["sections"] = nlohmann::json::array();
-    int question_amount = 0;
-    int correct_answers = 0;
-    for (int section_indx = 0; section_indx < survey_json["sections"].size();
-         ++section_indx) {
-        if (user_json["sections"].at(section_indx).empty()) {
-            out["sections"].push_back(nlohmann::json::array());
-            continue;
-        }
-        nlohmann::json section_result = nlohmann::json::array();
-        for (int question_indx = 0;
-             question_indx <
-             survey_json["sections"].at(section_indx)["questions"].size();
-             ++question_indx) {
-            ++question_amount;
-            const auto &question =
-                survey_json["sections"].at(section_indx)["questions"].at(
-                    question_indx
-                );
-            std::string type = question.at("type");
-            const auto &correct_answer = question.at("answer");
-            const auto &user_answer = user_json["sections"]
-                                          .at(section_indx)
-                                          .at(question_indx)
-                                          .at("answer");
-
-            if (type == "single" || type == "multiple") {
-                if (correct_answer == user_answer) {
-                    ++correct_answers;
-                    section_result.emplace_back(1);
-                    continue;
-                }
-                section_result.emplace_back(0);
-            } else if (type == "text") {
-                if (std::find(
-                        correct_answer.begin(), correct_answer.end(),
-                        user_answer
-                    ) != correct_answer.end()) {
-                    ++correct_answers;
-                    section_result.emplace_back(1);
-                    continue;
-                }
-                section_result.emplace_back(0);
-            }
-        }
-        out["sections"].push_back(section_result);
-    }
-    out["data"]["question_amount"] = question_amount;
-    out["data"]["correct_answers"] = correct_answers;
-    return out.dump();
 }
 
 std::string Database::write_image(const drogon::HttpFile &file) {

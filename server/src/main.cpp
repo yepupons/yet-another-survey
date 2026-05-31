@@ -296,20 +296,16 @@ int main(int argc, char *argv[]) {
 
     app().registerHandler(
         "/check",
-        [&db](
+        [&service](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
             std::string out;
             try {
-                auto user_answers = request->getJsonObject();
-                const std::string respondent_id =
-                    db.user_id_by_access_token(bearer_token(request));
-                const std::string answer_id = survey::Database::generate_uuid();
-                out = db.get_result(
-                    answer_id, respondent_id, user_answers->toStyledString()
-                );
+                auto user_answers =
+                    nlohmann::json::parse(std::string(request->getBody()));
+                out = service.check_answer(bearer_token(request), user_answers);
             } catch (const std::exception &e) {
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
