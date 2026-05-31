@@ -3,12 +3,14 @@
 #include <qglobal.h>
 #include <qlineedit.h>
 #include <qobject.h>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QTextEdit>
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -48,9 +50,39 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
 
     central_layout->addLayout(top_row);
 
-    title_ = new QLineEdit(this);
-    title_->setPlaceholderText("Write survey title here");
-    central_layout->addWidget(title_);
+    auto *meta_card = new QWidget(this);
+    meta_card->setObjectName("card");
+
+    auto *meta_layout = new QVBoxLayout(meta_card);
+    meta_layout->setContentsMargins(16, 10, 16, 12);
+    meta_layout->setSpacing(4);
+
+    auto *title_field_label = new QLabel("Title", meta_card);
+    title_field_label->setObjectName("surveyMetaLabel");
+    meta_layout->addWidget(title_field_label);
+
+    title_ = new QLineEdit(meta_card);
+    title_->setObjectName("surveyTitleInput");
+    title_->setPlaceholderText("Untitled survey");
+    meta_layout->addWidget(title_);
+
+    auto *divider = new QFrame(meta_card);
+    divider->setObjectName("dividerLine");
+    divider->setFrameShape(QFrame::HLine);
+    meta_layout->addSpacing(3);
+    meta_layout->addWidget(divider);
+    meta_layout->addSpacing(3);
+
+    auto *desc_field_label = new QLabel("Description", meta_card);
+    desc_field_label->setObjectName("surveyMetaLabel");
+    meta_layout->addWidget(desc_field_label);
+
+    description_ = new QTextEdit(meta_card);
+    description_->setObjectName("surveyDescriptionInput");
+    description_->setPlaceholderText("Add a description (optional)");
+    description_->setFixedHeight(56);
+    description_->setFrameShape(QFrame::NoFrame);
+    meta_layout->addWidget(description_);
 
     auto *scroll_area = new QScrollArea(central);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -65,6 +97,8 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
     sections_layout_->setContentsMargins(0, 0, 0, 0);
     sections_layout_->setSpacing(16);
     content_->setLayout(sections_layout_);
+
+    sections_layout_->addWidget(meta_card);
 
     sections_list_ = new QStringListModel(this);
     QStringList list = sections_list_->stringList();
@@ -157,6 +191,7 @@ void SurveyBuilderWindow::build_survey_json(
     (*survey)["title"] = title_->text().trimmed().isEmpty()
                              ? "Unnamed"
                              : title_->text().trimmed().toStdString();
+    (*survey)["description"] = description_->toPlainText().trimmed().toStdString();
 
     (*survey)["sections"] = nlohmann::json::array();
     build_sections_json(preview_mode, survey, 0, callback);

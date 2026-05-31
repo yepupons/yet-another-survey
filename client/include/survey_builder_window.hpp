@@ -8,6 +8,7 @@
 #include <QScrollArea>
 #include <QStringListModel>
 #include <QVBoxLayout>
+#include <QTextEdit>
 #include <functional>
 #include <memory>
 #include <QString>
@@ -31,7 +32,7 @@ private:
     QWidget *content_ = nullptr;
 
     QLineEdit *title_ = nullptr;
-    QLineEdit *description_ = nullptr;
+    QTextEdit *description_ = nullptr;
     QList<SectionEditor *> sections_;
     QVBoxLayout *sections_layout_ = nullptr;
     QStringListModel *sections_list_ = nullptr;

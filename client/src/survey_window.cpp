@@ -67,6 +67,16 @@ SurveyWindow::SurveyWindow(
     survey_title_label->setObjectName("titleLabel");
     title_layout->addWidget(survey_title_label);
 
+    if (section_id == 0) {
+        const std::string desc = survey_data.value("description", "");
+        if (!desc.empty()) {
+            auto *desc_label = new QLabel(QString::fromStdString(desc), title);
+            desc_label->setObjectName("descriptionLabel");
+            desc_label->setWordWrap(true);
+            title_layout->addWidget(desc_label);
+        }
+    }
+
     auto *section_title_label = new QLabel(
         QString::fromStdString(section_title),
         title
