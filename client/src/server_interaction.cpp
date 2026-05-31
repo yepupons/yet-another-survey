@@ -268,36 +268,8 @@ void ServerInteraction::generate_question(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://localhost:11434/api/chat";
+    std::string url = "http://127.0.0.1:8080/generate-question";
 
-    nlohmann::json request_body;
-    request_body["model"] = "qwen2.5:1.5b",
-    request_body["messages"] = nlohmann::json::array();
-    static const std::string system_message =
-        "Ты — помощник для создания опросов.\nНа основе созданного "
-        "пользователем тематического раздела с названием и вопросами, "
-        "представленного в формате JSON, cгенерируй для данного раздела "
-        "дополнительно еще один релевантный вопрос одного из 3 доступных "
-        "типов: текстовый, с множественным выбором ответа, с единичным выбором "
-        "ответа.\nОтветь строго в формате JSON.\nФормат для текстового "
-        "вопроса: {\"type\": \"text\", \"text\": \"Текст вопроса\", "
-        "\"answer\": [\"Правильный ответ 1\", \"Правильный ответ 2\", ...], "
-        "\"required\": true/false - обязательно ли отвечать на "
-        "вопрос}.\nФормат для вопроса c единичным выбором ответа: {\"type\": "
-        "\"single\", \"text\": \"Текст вопроса\", \"options\": [\"Вариант "
-        "ответа 1\", \"Вариант ответа 2\", ...], \"answer\": число - номер "
-        "правильного варианта ответа (нумерация с 1), \"required\": true/false "
-        "- обязательно ли отвечать на вопрос}.\nФормат для вопроса c "
-        "множественным выбором ответа: {\"type\": \"multiple\", \"text\": "
-        "\"Текст вопроса\", \"options\": [\"Вариант ответа 1\", \"Вариант "
-        "ответа 2\", ...], \"answer\": [число, число, ...] - номера правильных "
-        "вариантов ответа (нумерация с 1), \"required\": true/false - "
-        "обязательно ли отвечать на вопрос}.\nВАЖНО: поле \"answer\" требуется "
-        "добавить только в том случае, если пользователь явно указал, что "
-        "создает тест.";
-    request_body["messages"].push_back(
-        {{"role", "system"}, {"content", system_message}}
-    );
     std::string user_message =
         "Текущее состояние раздела:\n" + section_data.dump() + '\n';
     switch (survey_type) {
@@ -322,18 +294,13 @@ void ServerInteraction::generate_question(
             user_message += "Сгенерируй вопрос с множественным выбором ответа.";
             break;
     }
-    request_body["messages"].push_back(
-        {{"role", "user"}, {"content", user_message}}
-    );
-    request_body["format"] = "json";
-    request_body["stream"] = false;
 
     send_request(
         url, Method::POST,
         [success](const std::string &result) {
             success(nlohmann::json::parse(result));
         },
-        failure, true, section_data.dump()
+        failure, false, user_message
     );
 }
 }  // namespace survey
