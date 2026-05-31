@@ -22,7 +22,7 @@ public:
         const std::string &survey_id
     );
 
-    nlohmann::json check_answer(
+    std::string check_answer(
         const std::string &access_token,
         const nlohmann::json &payload
     );

@@ -30,6 +30,7 @@ public:
 
     std::string read_account(const std::string &session_id);
     std::string read_survey(const std::string &survey_id);
+    std::string read_survey_with_answers(const std::string &survey_id);
     std::string write_survey(const std::string &survey_id, const std::string &creator_id, const nlohmann::json &survey_data);
 
     // std::string read_answer(int answer_id);
@@ -49,11 +50,6 @@ public:
 
     std::string
     read_survey_results(const std::string &session_id, const std::string &survey_id);
-    std::string get_result(
-        const std::string &answer_id,
-        const std::string &respondent_id,
-        const std::string &user_result_data
-    );
 
     std::string write_image(const drogon::HttpFile &file);
     std::string read_image(const std::string &image_oid);
