@@ -256,6 +256,7 @@ else()
     add_executable(server
         server/src/main.cpp
         server/src/database.cpp
+        server/src/survey_service.cpp
     )
 
     target_include_directories(server PRIVATE

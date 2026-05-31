@@ -11,7 +11,7 @@
 
 namespace survey {
 SurveyTaking::SurveyTaking(const std::string &survey_id, QWidget *parent)
-    : QWidget(parent), preview_mode_(false) {
+    : QWidget(parent), preview_mode_(false), survey_id_(survey_id) {
     server().get_survey(
         survey_id,
         [=, this](const nlohmann::json &survey_data) {
@@ -39,8 +39,9 @@ SurveyTaking::SurveyTaking(
     QWidget *parent
 )
     : QWidget(parent), preview_mode_(preview_mode), survey_data_(survey_data) {
-    answer_data_["data"]["survey_id"] =
-        survey_data_.at("data").value("id", "preview");
+    std::string survey_id = survey_data_.at("data").value("id", "preview");
+    survey_id_ = survey_id;
+    answer_data_["data"]["survey_id"] = survey_id;
     answer_data_["sections"] = nlohmann::json::array();
 
     for (std::size_t i = 0; i < survey_data_.at("sections").size(); ++i) {
@@ -131,7 +132,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
                 "You are: " + QString::fromStdString(winner)
             );
             server().post_answer(
-                answer_data_,
+                answer_data_, survey_id_,
                 [=, this](const nlohmann::json &submission_result) {
                     const std::string answer_id =
                         submission_result.at("answer_id").get<std::string>();
@@ -147,7 +148,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
             );
         } else {
             server().post_answer(
-                answer_data_,
+                answer_data_, survey_id_,
                 [=, this](const nlohmann::json &submission_result) {
                     submission_result_ = submission_result;
                     const std::string answer_id =

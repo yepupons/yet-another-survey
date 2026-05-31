@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <cstdlib>
+#include "survey_service.hpp"
 #include "database.hpp"
 
 using namespace drogon;
@@ -37,6 +38,7 @@ static void require_bot_secret(const HttpRequestPtr &request) {
 
 int main(int argc, char *argv[]) {
     survey::Database db;
+    survey::SurveyService service(db);
     app().addListener("127.0.0.1", 8080);
 
     app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
@@ -98,19 +100,15 @@ int main(int argc, char *argv[]) {
 
     app().registerHandler(
         "/survey",
-        [&db](
+        [&service](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
             std::string out;
             try {
-                auto survey_data =
-                    nlohmann::json::parse(std::string(request->getBody()));
-                const std::string creator_id =
-                    db.user_id_by_access_token(bearer_token(request));
-                const std::string survey_id = survey::Database::generate_uuid();
-                out = db.write_survey(survey_id, creator_id, survey_data.dump());
+                auto survey_data = nlohmann::json::parse(std::string(request->getBody()));
+                out = service.create_survey(bearer_token(request), survey_data);
 #ifdef YAZ_DEBUG
                 std::cerr << "Received survey: " << survey_data.dump(2)
                           << std::endl;
@@ -134,22 +132,17 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/answer",
-        [&db](
+        "/api/surveys/{1}/answers",
+        [&service](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
         ) {
             auto resp = HttpResponse::newHttpResponse();
             std::string out;
             try {
-                auto answer_data =
-                    nlohmann::json::parse(std::string(request->getBody()));
-                const std::string respondent_id =
-                    db.user_id_by_access_token(bearer_token(request));
-                const std::string answer_id = survey::Database::generate_uuid();
-                out = db.write_answer(
-                    answer_id, respondent_id, answer_data.dump()
-                );
+                auto answer_data = nlohmann::json::parse(std::string(request->getBody()));
+                out = service.submit_answer(bearer_token(request), answer_data, survey_id);
 #ifdef YAZ_DEBUG
                 std::cerr << "Received answer: " << answer_data.dump(2)
                           << std::endl;

@@ -40,17 +40,9 @@ std::string Database::read_survey(const std::string &survey_id) {
 std::string Database::write_survey(
     const std::string &survey_id,
     const std::string &creator_id,
-    const std::string &survey_data
+    const nlohmann::json &survey_data
 ) {
-    nlohmann::json json = nlohmann::json::parse(survey_data);
-    json["data"]["id"] = survey_id;
-    json["data"]["creator_id"] = creator_id;
-    json["data"]["likes_count"] = 0;
-    json["data"]["dislikes_count"] = 0;
-    json["data"]["ratings_count"] = 0;
-    json["data"]["rating_score"] = 0;
-
-    bsoncxx::document::value doc = bsoncxx::from_json(json.dump());
+    bsoncxx::document::value doc = bsoncxx::from_json(survey_data.dump());
     auto insert_result = db()["surveys"].insert_one(doc.view());
     if (!insert_result) {
         throw std::runtime_error("Writing survey into database failed");

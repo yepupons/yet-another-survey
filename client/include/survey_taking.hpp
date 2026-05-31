@@ -25,6 +25,7 @@ public slots:
 
 private:
     bool preview_mode_ = false;
+    std::string survey_id_;
     nlohmann::json survey_data_;
     nlohmann::json answer_data_;
     nlohmann::json submission_result_;
