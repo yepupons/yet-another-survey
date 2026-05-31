@@ -20,6 +20,6 @@ const std::unordered_map<std::string, SurveyType> SURVEY_TYPE{
     {"test", SurveyType::Test},
     {"quiz", SurveyType::Quiz}
 };
-}
+}  // namespace survey
 
-#endif // ENUMS_HPP_
+#endif  // ENUMS_HPP_

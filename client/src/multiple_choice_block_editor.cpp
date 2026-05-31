@@ -103,6 +103,31 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     setLayout(layout);
 }
 
+MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
+    SurveyType type,
+    const nlohmann::json &question_data,
+    QWidget *parent
+)
+    : MultipleChoiceBlockEditor(type, parent) {
+    question_->setText(
+        QString::fromStdString(question_data.at("text").get<std::string>())
+    );
+
+    const auto &options_data = question_data.at("options");
+    for (int i = 0; i < options_data.size() - 1; ++i) {
+        options_.back()->setText(QString::fromStdString(options_data[i]));
+        add_option();
+    }
+    options_.back()->setText(QString::fromStdString(options_data.back()));
+
+    required_->setChecked(question_data.at("required").get<bool>());
+    if (type_ == SurveyType::Test) {
+        for (int index : question_data.at("answer")) {
+            correct_answers_->buttons().at(index - 1)->setChecked(true);
+        }
+    }
+}
+
 void MultipleChoiceBlockEditor::add_option() {
     auto *row_widget = new QWidget(this);
     auto *row_layout = new QHBoxLayout(row_widget);

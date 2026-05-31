@@ -1,4 +1,5 @@
 #include "text_block_editor.hpp"
+#include <qobject.h>
 #include <QFileDialog>
 #include <QLabel>
 #include <QLineEdit>
@@ -6,6 +7,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <string>
+#include "enums.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "server_interaction.hpp"
 
 namespace survey {
@@ -91,6 +94,30 @@ TextBlockEditor::TextBlockEditor(SurveyType type, QWidget *parent)
     layout->addWidget(required_);
 
     setLayout(layout);
+}
+
+TextBlockEditor::TextBlockEditor(
+    SurveyType type,
+    const nlohmann::json &question_data,
+    QWidget *parent
+)
+    : TextBlockEditor(type, parent) {
+    question_->setText(
+        QString::fromStdString(question_data.at("text").get<std::string>())
+    );
+    required_->setChecked(question_data.at("required").get<bool>());
+    if (type_ == SurveyType::Test) {
+        const auto &answers_data = question_data.at("answer");
+        for (int i = 0; i < answers_data.size() - 1; ++i) {
+            correct_answers_.back()->setText(
+                QString::fromStdString(answers_data[i])
+            );
+            add_correct_answer();
+        }
+        correct_answers_.back()->setText(
+            QString::fromStdString(answers_data.back())
+        );
+    }
 }
 
 void TextBlockEditor::add_correct_answer() {

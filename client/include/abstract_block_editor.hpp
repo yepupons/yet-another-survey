@@ -10,8 +10,8 @@
 #include <QWidget>
 #include <functional>
 #include <nlohmann/json.hpp>
-#include "pretty_view.hpp"
 #include "enums.hpp"
+#include "pretty_view.hpp"
 
 namespace survey {
 class BlockEditor : public QWidget {

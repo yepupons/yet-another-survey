@@ -103,6 +103,32 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     setLayout(layout);
 }
 
+SingleChoiceBlockEditor::SingleChoiceBlockEditor(
+    SurveyType type,
+    const nlohmann::json &question_data,
+    QStringListModel *sections_list,
+    QWidget *parent
+)
+    : SingleChoiceBlockEditor(type, sections_list, parent) {
+    question_->setText(
+        QString::fromStdString(question_data.at("text").get<std::string>())
+    );
+
+    const auto &options_data = question_data.at("options");
+    for (int i = 0; i < options_data.size() - 1; ++i) {
+        options_.back()->setText(QString::fromStdString(options_data[i]));
+        add_option();
+    }
+    options_.back()->setText(QString::fromStdString(options_data.back()));
+
+    required_->setChecked(question_data.at("required").get<bool>());
+    if (type_ == SurveyType::Test) {
+        correct_answers_->buttons()
+            .at(question_data.at("answer").get<int>() - 1)
+            ->setChecked(true);
+    }
+}
+
 void SingleChoiceBlockEditor::add_option() {
     auto *row_widget = new QWidget(this);
     auto *row_layout = new QHBoxLayout(row_widget);

@@ -18,6 +18,11 @@ public:
         SurveyType type,
         QWidget *parent = nullptr
     );
+    explicit MultipleChoiceBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
+        QWidget *parent = nullptr
+    );
 
     void to_json(
         bool preview_mode,

@@ -5,4 +5,4 @@
 
 nlohmann::json send_generate_request(const std::string &user_message);
 
-#endif // OLLAMA_INTERATION_HPP_
+#endif  // OLLAMA_INTERATION_HPP_

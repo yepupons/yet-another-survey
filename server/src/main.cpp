@@ -458,11 +458,9 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/generate-question", 
-        [](
-            const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
-        ) {
+        "/generate-question",
+        [](const HttpRequestPtr &request,
+           std::function<void(const HttpResponsePtr &)> &&cb) {
             auto resp = HttpResponse::newHttpResponse();
             const auto user_message = std::string(request->getBody());
             try {

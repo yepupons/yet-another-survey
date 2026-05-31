@@ -280,8 +280,7 @@ void MainWindow::create_survey() {
             if (!chosen) {
                 return;
             }
-            auto chosen_type =
-                static_cast<SurveyType>(chosen->data().toInt());
+            auto chosen_type = static_cast<SurveyType>(chosen->data().toInt());
             auto *builder = new SurveyBuilderWindow(chosen_type);
             builder->setAttribute(Qt::WA_DeleteOnClose);
             builder->showMaximized();

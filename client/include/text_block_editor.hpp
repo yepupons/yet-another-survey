@@ -8,12 +8,18 @@
 #include <QWidget>
 #include <nlohmann/json.hpp>
 #include "abstract_block_editor.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 namespace survey {
 class TextBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
     explicit TextBlockEditor(SurveyType type, QWidget *parent = nullptr);
+    explicit TextBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
+        QWidget *parent = nullptr
+    );
 
     void to_json(
         bool preview_mode,

@@ -21,6 +21,12 @@ public:
         QStringListModel *sections_list,
         QWidget *parent = nullptr
     );
+    explicit SingleChoiceBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
+        QStringListModel *sections_list,
+        QWidget *parent = nullptr
+    );
 
     void to_json(
         bool preview_mode,

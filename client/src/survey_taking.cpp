@@ -64,7 +64,9 @@ void SurveyTaking::open_next_section(int next_section_id) {
             deleteLater();
             return;
         }
-        auto type = SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>());
+        auto type =
+            SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>()
+            );
         switch (type) {
             case SurveyType::Survey: {
                 server().post_answer(
@@ -121,7 +123,8 @@ void SurveyTaking::open_next_section(int next_section_id) {
                         const auto &scores_arr = questions[j]["scores"];
                         if (static_cast<size_t>(answer_idx - 1) <
                             scores_arr.size()) {
-                            scores[scores_arr[answer_idx - 1].get<std::string>()]++;
+                            scores[scores_arr[answer_idx - 1].get<std::string>(
+                            )]++;
                         }
                     }
                 }

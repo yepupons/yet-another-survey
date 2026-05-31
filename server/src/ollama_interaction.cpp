@@ -11,7 +11,7 @@ static size_t write_cb(char *ptr, size_t size, size_t nmemb, std::string *out) {
 
 nlohmann::json send_generate_request(const std::string &user_message) {
     nlohmann::json request_body;
-    request_body["model"] = "qwen2.5:1.5b",
+    request_body["model"] = "qwen2.5:1.5b";
     request_body["format"] = "json";
     request_body["stream"] = false;
     request_body["messages"] = nlohmann::json::array();
@@ -22,35 +22,33 @@ nlohmann::json send_generate_request(const std::string &user_message) {
         "дополнительно еще один релевантный вопрос одного из 3 доступных "
         "типов: текстовый, с множественным выбором ответа, с единичным выбором "
         "ответа.\nОтветь строго в формате JSON.\nФормат для текстового "
-        "вопроса: {\"type\": \"text\", \"text\": \"Текст вопроса\", "
-        "\"answer\": [\"Правильный ответ 1\", \"Правильный ответ 2\", ...], "
-        "\"required\": true/false - обязательно ли отвечать на "
-        "вопрос}.\nФормат для вопроса c единичным выбором ответа: {\"type\": "
-        "\"single\", \"text\": \"Текст вопроса\", \"options\": [\"Вариант "
+        "вопроса: {\"text\": \"Текст вопроса\", \"answer\": [\"Правильный "
+        "ответ 1\", \"Правильный ответ 2\", ...], \"required\": true/false - "
+        "обязательно ли отвечать на вопрос}.\nФормат для вопроса c единичным "
+        "выбором ответа: {\"text\": \"Текст вопроса\", \"options\": [\"Вариант "
         "ответа 1\", \"Вариант ответа 2\", ...], \"answer\": число - номер "
         "правильного варианта ответа (нумерация с 1), \"required\": true/false "
         "- обязательно ли отвечать на вопрос}.\nФормат для вопроса c "
-        "множественным выбором ответа: {\"type\": \"multiple\", \"text\": "
-        "\"Текст вопроса\", \"options\": [\"Вариант ответа 1\", \"Вариант "
-        "ответа 2\", ...], \"answer\": [число, число, ...] - номера правильных "
-        "вариантов ответа (нумерация с 1), \"required\": true/false - "
-        "обязательно ли отвечать на вопрос}.\nВАЖНО: поле \"answer\" требуется "
-        "добавить только в том случае, если пользователь явно указал, что "
-        "создает тест.";
+        "множественным выбором ответа: {\"text\": \"Текст вопроса\", "
+        "\"options\": [\"Вариант ответа 1\", \"Вариант ответа 2\", ...], "
+        "\"answer\": [число, число, ...] - номера правильных вариантов ответа "
+        "(нумерация с 1), \"required\": true/false - обязательно ли отвечать "
+        "на вопрос}.\nВАЖНО: поле \"answer\" требуется добавить только в том "
+        "случае, если пользователь явно указал, что создает тест.";
     request_body["messages"].push_back(
         {{"role", "system"}, {"content", system_message}}
     );
     request_body["messages"].push_back(
-    {{"role", "user"}, {"content", user_message}}
+        {{"role", "user"}, {"content", user_message}}
     );
     std::string request = request_body.dump();
 
-    CURL* curl = curl_easy_init();
+    CURL *curl = curl_easy_init();
     if (!curl) {
         throw std::runtime_error("CURL is not initialized");
     }
 
-    struct curl_slist* headers = nullptr;
+    struct curl_slist *headers = nullptr;
     std::string response;
 
     headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -71,8 +69,9 @@ nlohmann::json send_generate_request(const std::string &user_message) {
     curl_easy_cleanup(curl);
 
     nlohmann::json response_json = nlohmann::json::parse(response);
-    if (response_json.contains("message") && response_json["message"].contains("content")) {
-        return nlohmann::json::parse(response_json["message"]["content"].get<std::string>());
+    if (response_json.contains("message") &&
+        response_json["message"].contains("content")) {
+        return response_json["message"]["content"];
     }
     return nlohmann::json();
 }
