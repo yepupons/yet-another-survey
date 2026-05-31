@@ -124,7 +124,14 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 actions_layout->addWidget(show_qr_button, 1);
                 connect(
                     show_qr_button, &QPushButton::clicked, this,
-                    [this, id]() { show_qr_code(id); }
+                    [this, id]() {
+                        QrCodeGenerator generator(this);
+                        const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
+                        show_qr_code(
+                            this, QPixmap::fromImage(qr_image), "QR code",
+                            id
+                        );
+                    }
                 );
 
                 auto *view_survey_button =
@@ -219,15 +226,6 @@ void CreatedSurveysWindow::show_survey_preview(
         delete preview_answers;
     });
     preview_window->show();
-}
-
-void CreatedSurveysWindow::show_qr_code(int id) {
-    QrCodeGenerator generator(this);
-    const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
-    show_message_box(
-        this, QPixmap::fromImage(qr_image), "QR code",
-        "Survey ID:\n" + QString::number(id)
-    );
 }
 
 }  // namespace survey

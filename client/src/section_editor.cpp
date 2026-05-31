@@ -265,7 +265,7 @@ void SectionEditor::to_json(
 
     (*section)["questions"] = nlohmann::json::array();
     if (questions_.empty()) {
-        success({});
+        success(*section);
     } else {
         build_questions_json(preview_mode, section, 0, success, failure);
     }

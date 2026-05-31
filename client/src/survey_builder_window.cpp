@@ -168,7 +168,7 @@ void SurveyBuilderWindow::build_survey_json(
 
     (*survey)["sections"] = nlohmann::json::array();
     if (sections_.empty()) {
-        success({});
+        success(*survey);
     } else {
         build_sections_json(preview_mode, survey, 0, success, failure);
     }
@@ -194,9 +194,8 @@ void SurveyBuilderWindow::save_survey() {
                     QrCodeGenerator generator(this);
                     const QImage qr_image =
                         generator.generateQr(QString::number(id), 260, 4);
-                    show_message_box(
-                        parentWidget(), QPixmap::fromImage(qr_image), "Saved",
-                        "Survey has been saved.\nYour ID:\n" + QString::number(id)
+                    show_qr_code(
+                        parentWidget(), QPixmap::fromImage(qr_image), "Saved", id
                     );
                     deleteLater();
                 },
