@@ -8,6 +8,7 @@
 #include <QNetworkRequest>
 #include <nlohmann/json.hpp>
 #include <string>
+#include "enums.hpp"
 
 namespace survey {
 class ServerInteraction : public QObject {
@@ -77,6 +78,13 @@ public:
     );
     void complete_auth(
         const std::string &challenge_id,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+    void generate_question(
+        const nlohmann::json &section_data,
+        SurveyType survey_type,
+        BlockType block_type,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
