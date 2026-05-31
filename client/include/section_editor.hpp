@@ -18,7 +18,7 @@ class SectionEditor : public QWidget {
     Q_OBJECT
 public:
     explicit SectionEditor(
-        Created_Type type,
+        SurveyType type,
         QStringListModel *sections_list,
         QWidget *parent = nullptr
     );
@@ -51,7 +51,7 @@ private:
     QVBoxLayout *outcomes_layout_ = nullptr;
     QPushButton *add_block_button_ = nullptr;
 
-    Created_Type type_;
+    SurveyType type_;
 };
 }  // namespace survey
 

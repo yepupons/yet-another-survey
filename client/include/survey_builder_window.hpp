@@ -19,14 +19,14 @@ namespace survey {
 class SurveyBuilderWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit SurveyBuilderWindow(Created_Type type, QWidget *parent = nullptr);
+    explicit SurveyBuilderWindow(SurveyType type, QWidget *parent = nullptr);
 
 private slots:
     void add_section();
     void save_survey();
 
 private:
-    Created_Type type_;
+    SurveyType type_;
 
     QWidget *content_ = nullptr;
 
@@ -52,7 +52,7 @@ private:
         std::function<void(const std::string &)> failure
     ) const;
     static int generate_survey_id();
-    static const QString write_type(Created_Type type);
+    static const QString write_type(SurveyType type);
 };
 }  // namespace survey
 

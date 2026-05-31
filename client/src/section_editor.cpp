@@ -6,6 +6,7 @@
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include "abstract_block_editor.hpp"
+#include "enums.hpp"
 #include "multiple_choice_block_editor.hpp"
 #include "quiz_choice_block_editor.hpp"
 #include "single_choice_block_editor.hpp"
@@ -13,7 +14,7 @@
 
 namespace survey {
 SectionEditor::SectionEditor(
-    Created_Type type,
+    SurveyType type,
     QStringListModel *sections_list,
     QWidget *parent
 )
@@ -25,7 +26,7 @@ SectionEditor::SectionEditor(
     layout->setContentsMargins(24, 24, 24, 24);
     layout->setSpacing(12);
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         layout->addWidget(new QLabel(
             "Section " +
                 QString::number(sections_list->stringList().size() - 1),
@@ -39,7 +40,7 @@ SectionEditor::SectionEditor(
         layout->addWidget(new QLabel("Questions", this));
     }
 
-    if (type_ == QUIZ) {
+    if (type_ == SurveyType::Quiz) {
         outcomes_model_ = new QStringListModel(this);
         auto *outcomes_label_ = new QLabel("Outcomes", this);
         outcomes_label_->setObjectName("sectionLabel");
@@ -72,7 +73,7 @@ SectionEditor::SectionEditor(
     auto *bottom_row = new QHBoxLayout();
     layout->addLayout(bottom_row);
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         next_section_ = new QComboBox(this);
         next_section_->setModel(sections_list);
         bottom_row->addWidget(next_section_);
@@ -142,7 +143,7 @@ void SectionEditor::add_outcome() {
 void SectionEditor::add_block() {
     BlockEditor *block = nullptr;
 
-    if (type_ == QUIZ) {
+    if (type_ == SurveyType::Quiz) {
         block = new QuizChoiceBlockEditor(outcomes_model_, this);
     } else {
         auto *menu = new QMenu(this);
@@ -283,7 +284,7 @@ void SectionEditor::to_json(
 ) const {
     auto section = std::make_shared<nlohmann::json>();
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         (*section)["title"] =
             title_ ? title_->text().trimmed().toStdString() : "";
         (*section)["next_section_id"] =

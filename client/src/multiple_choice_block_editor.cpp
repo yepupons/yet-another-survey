@@ -9,11 +9,12 @@
 #include <QWidget>
 #include <algorithm>
 #include <vector>
+#include "enums.hpp"
 #include "server_interaction.hpp"
 
 namespace survey {
 MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
-    Created_Type type,
+    SurveyType type,
     QWidget *parent
 )
     : BlockEditor(type, parent) {
@@ -72,7 +73,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         auto *correct_label = new QLabel("Mark the correct answer(s)", this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
@@ -114,7 +115,7 @@ void MultipleChoiceBlockEditor::add_option() {
     options_.push_back(option);
 
     QAbstractButton *correct_button = nullptr;
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         auto *correct = new QCheckBox("Correct", row_widget);
         correct->setObjectName("correctOptionToggle");
         row_layout->addWidget(correct);
@@ -166,7 +167,7 @@ void MultipleChoiceBlockEditor::to_json(
 
     block["required"] = required_->isChecked();
 
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         std::vector<int> answers;
         for (int i = 0; i < options_layout_->count(); ++i) {
             auto *item = options_layout_->itemAt(i);

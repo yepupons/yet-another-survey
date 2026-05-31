@@ -4,6 +4,7 @@
 #include <QPushButton>
 #include <QWidget>
 #include <algorithm>
+#include "enums.hpp"
 #include "server_interaction.hpp"
 
 namespace survey {
@@ -11,7 +12,7 @@ QuizChoiceBlockEditor::QuizChoiceBlockEditor(
     QStringListModel *outcomes_model,
     QWidget *parent
 )
-    : BlockEditor(QUIZ, parent), outcomes_model_(outcomes_model) {
+    : BlockEditor(SurveyType::Quiz, parent), outcomes_model_(outcomes_model) {
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();

@@ -15,7 +15,7 @@ class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
     explicit MultipleChoiceBlockEditor(
-        Created_Type type,
+        SurveyType type,
         QWidget *parent = nullptr
     );
 
