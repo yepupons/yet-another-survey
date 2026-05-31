@@ -27,11 +27,13 @@ public:
         bool preview_mode,
         std::shared_ptr<nlohmann::json> section,
         int current_question,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const;
     void to_json(
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const;
 
 private slots:

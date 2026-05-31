@@ -24,7 +24,8 @@ public:
 
     void to_json(
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const override;
 
 private slots:

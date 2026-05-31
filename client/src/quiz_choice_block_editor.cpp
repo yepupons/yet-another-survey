@@ -137,7 +137,8 @@ void QuizChoiceBlockEditor::add_option() {
 
 void QuizChoiceBlockEditor::to_json(
     bool preview_mode,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     nlohmann::json block;
     block["type"] = "single";
@@ -160,14 +161,13 @@ void QuizChoiceBlockEditor::to_json(
             image_name_.toStdString(), image_data_,
             [=](const std::string &image_oid) mutable {
                 block["image"] = image_oid;
-                callback(block);
+                success(block);
             },
-            [](const std::string &) {}
+            failure
         );
         return;
     }
-
-    callback(block);
+    success(block);
 }
 
 }  // namespace survey

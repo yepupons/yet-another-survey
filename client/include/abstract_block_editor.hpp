@@ -26,7 +26,8 @@ public:
     virtual ~BlockEditor() = default;
     virtual void to_json(
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const = 0;
 
 signals:
@@ -51,7 +52,7 @@ protected slots:
                 if (file_name.isEmpty()) {
                     return;
                 }
-                if (file_name.size() > 5 * 1024 * 1024) {
+                if (file_content.size() > 1024 * 1024) {
                     show_message_box(
                         this, QMessageBox::Warning, "Error", "File size too big"
                     );

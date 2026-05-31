@@ -230,26 +230,29 @@ void SectionEditor::build_questions_json(
     bool preview_mode,
     std::shared_ptr<nlohmann::json> section,
     int current_question,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     questions_[current_question]->to_json(
         preview_mode,
         [=, this](const nlohmann::json &question) {
             (*section)["questions"].push_back(question);
             if (current_question == questions_.size() - 1) {
-                callback(*section);
+                success(*section);
                 return;
             }
             build_questions_json(
-                preview_mode, section, current_question + 1, callback
+                preview_mode, section, current_question + 1, success, failure
             );
-        }
+        },
+        failure
     );
 }
 
 void SectionEditor::to_json(
     bool preview_mode,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     auto section = std::make_shared<nlohmann::json>();
 
@@ -262,9 +265,9 @@ void SectionEditor::to_json(
 
     (*section)["questions"] = nlohmann::json::array();
     if (questions_.empty()) {
-        callback({});
+        success({});
     } else {
-        build_questions_json(preview_mode, section, 0, callback);
+        build_questions_json(preview_mode, section, 0, success, failure);
     }
 }
 }  // namespace survey

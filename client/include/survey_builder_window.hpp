@@ -42,12 +42,14 @@ private:
         bool preview_mode,
         std::shared_ptr<nlohmann::json> survey,
         int current_section,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const;
     void build_survey_json(
         int id,
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const;
     static int generate_survey_id();
     static const QString write_type(Created_Type type);

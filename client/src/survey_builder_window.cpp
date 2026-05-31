@@ -112,6 +112,9 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
                 preview->setAttribute(Qt::WA_DeleteOnClose);
                 preview->setWindowTitle("Preview");
                 preview->show();
+            },
+            [=, this](const std::string &error) {
+                show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
             }
         );
     });
@@ -130,27 +133,30 @@ void SurveyBuilderWindow::build_sections_json(
     bool preview_mode,
     std::shared_ptr<nlohmann::json> survey,
     int current_section,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     sections_[current_section]->to_json(
         preview_mode,
         [=, this](const nlohmann::json &section) {
             (*survey)["sections"].push_back(section);
             if (current_section == sections_.size() - 1) {
-                callback(*survey);
+                success(*survey);
                 return;
             }
             build_sections_json(
-                preview_mode, survey, current_section + 1, callback
+                preview_mode, survey, current_section + 1, success, failure
             );
-        }
+        },
+        failure
     );
 }
 
 void SurveyBuilderWindow::build_survey_json(
     int id,
     bool preview_mode,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     auto survey = std::make_shared<nlohmann::json>();
     (*survey)["data"]["id"] = id;
@@ -162,9 +168,9 @@ void SurveyBuilderWindow::build_survey_json(
 
     (*survey)["sections"] = nlohmann::json::array();
     if (sections_.empty()) {
-        callback({});
+        success({});
     } else {
-        build_sections_json(preview_mode, survey, 0, callback);
+        build_sections_json(preview_mode, survey, 0, success, failure);
     }
 }
 
@@ -180,27 +186,32 @@ int SurveyBuilderWindow::generate_survey_id() {
 
 void SurveyBuilderWindow::save_survey() {
     const int id = generate_survey_id();
-    build_survey_json(id, false, [=, this](const nlohmann::json &survey_data) {
-        server().post_survey(
-            survey_data,
-            [&, id]() {
-                QrCodeGenerator generator(this);
-                const QImage qr_image =
-                    generator.generateQr(QString::number(id), 260, 4);
-                show_message_box(
-                    parentWidget(), QPixmap::fromImage(qr_image), "Saved",
-                    "Survey has been saved.\nYour ID:\n" + QString::number(id)
-                );
-                deleteLater();
-            },
-            [=, this](const std::string &error) {
-                show_message_box(
-                    this, QMessageBox::Warning, "Error",
-                    QString::fromStdString(error)
-                );
-            }
-        );
-    });
+    build_survey_json(id, false,
+        [=, this](const nlohmann::json &survey_data) {
+            server().post_survey(
+                survey_data,
+                [&, id]() {
+                    QrCodeGenerator generator(this);
+                    const QImage qr_image =
+                        generator.generateQr(QString::number(id), 260, 4);
+                    show_message_box(
+                        parentWidget(), QPixmap::fromImage(qr_image), "Saved",
+                        "Survey has been saved.\nYour ID:\n" + QString::number(id)
+                    );
+                    deleteLater();
+                },
+                [=, this](const std::string &error) {
+                    show_message_box(
+                        this, QMessageBox::Warning, "Error",
+                        QString::fromStdString(error)
+                    );
+                }
+            );
+        },
+        [=, this](const std::string &error) {
+            show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
+        }
+    );
 }
 
 const QString SurveyBuilderWindow::write_type(Created_Type type){
