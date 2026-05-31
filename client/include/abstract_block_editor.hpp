@@ -10,16 +10,15 @@
 #include <QWidget>
 #include <functional>
 #include <nlohmann/json.hpp>
+#include "enums.hpp"
 #include "pretty_view.hpp"
 
 namespace survey {
-enum Created_Type { SURVEY, TEST, QUIZ };
-
 class BlockEditor : public QWidget {
     Q_OBJECT
 
 public:
-    BlockEditor(Created_Type type, QWidget *parent)
+    BlockEditor(SurveyType type, QWidget *parent)
         : QWidget(parent), type_(type) {
     }
 
@@ -36,7 +35,7 @@ signals:
     void move_down_requested(BlockEditor *editor);
 
 protected:
-    Created_Type type_;
+    SurveyType type_;
     QLineEdit *question_ = nullptr;
     QPushButton *upload_image_button_ = nullptr;
     QLabel *image_preview_ = nullptr;

@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include "database.hpp"
+#include "ollama_interaction.hpp"
 
 using namespace drogon;
 
@@ -450,6 +451,24 @@ int main(int argc, char *argv[]) {
                 result["error"] = e.what();
                 auto resp = HttpResponse::newHttpJsonResponse(result);
                 resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/generate-question",
+        [](const HttpRequestPtr &request,
+           std::function<void(const HttpResponsePtr &)> &&cb) {
+            auto resp = HttpResponse::newHttpResponse();
+            const auto user_message = std::string(request->getBody());
+            try {
+                resp->setBody(send_generate_request(user_message));
+                cb(resp);
+            } catch (const std::exception &e) {
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
                 cb(resp);
             }
         },

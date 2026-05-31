@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "created_surveys_window.hpp"
+#include "enums.hpp"
 #include "login_window.hpp"
 #include "pretty_view.hpp"
 #include "session.hpp"
@@ -265,13 +266,13 @@ void MainWindow::create_survey() {
     menu->setStyleSheet(styleSheet());
 
     auto *survey = menu->addAction("Survey");
-    survey->setData(survey::SURVEY);
+    survey->setData(static_cast<int>(SurveyType::Survey));
     menu->addSeparator();
     auto *test = menu->addAction("Test");
-    test->setData(survey::TEST);
+    test->setData(static_cast<int>(SurveyType::Test));
     menu->addSeparator();
     auto *quiz = menu->addAction("Quiz");
-    quiz->setData(survey::QUIZ);
+    quiz->setData(static_cast<int>(SurveyType::Quiz));
 
     connect(
         menu, &QMenu::triggered, this,
@@ -279,8 +280,7 @@ void MainWindow::create_survey() {
             if (!chosen) {
                 return;
             }
-            auto chosen_type =
-                static_cast<survey::Created_Type>(chosen->data().toInt());
+            auto chosen_type = static_cast<SurveyType>(chosen->data().toInt());
             auto *builder = new SurveyBuilderWindow(chosen_type);
             builder->setAttribute(Qt::WA_DeleteOnClose);
             builder->showMaximized();

@@ -234,6 +234,8 @@ else()
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
 
+        client/include/russian_hotkeys_handler.hpp
+
         client/resources/resources.qrc
     )
 
@@ -244,7 +246,6 @@ else()
     target_link_libraries(client PRIVATE
         Qt6::Widgets
         Qt6::Network
-        CURL::libcurl
         nlohmann_json::nlohmann_json
         matplot
         qrcodegenerator
@@ -254,6 +255,7 @@ else()
     add_executable(server
         server/src/main.cpp
         server/src/database.cpp
+        server/src/ollama_interaction.cpp
     )
 
     target_include_directories(server PRIVATE
@@ -267,6 +269,7 @@ else()
         mongo::mongocxx_shared
         matplot
         OpenSSL::Crypto
+        CURL::libcurl
     )
 
     # TG bot

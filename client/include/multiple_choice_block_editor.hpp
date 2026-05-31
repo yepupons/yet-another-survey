@@ -15,7 +15,12 @@ class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
     explicit MultipleChoiceBlockEditor(
-        Created_Type type,
+        SurveyType type,
+        QWidget *parent = nullptr
+    );
+    explicit MultipleChoiceBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
         QWidget *parent = nullptr
     );
 

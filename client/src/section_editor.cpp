@@ -6,14 +6,16 @@
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include "abstract_block_editor.hpp"
+#include "enums.hpp"
 #include "multiple_choice_block_editor.hpp"
 #include "quiz_choice_block_editor.hpp"
+#include "server_interaction.hpp"
 #include "single_choice_block_editor.hpp"
 #include "text_block_editor.hpp"
 
 namespace survey {
 SectionEditor::SectionEditor(
-    Created_Type type,
+    SurveyType type,
     QStringListModel *sections_list,
     QWidget *parent
 )
@@ -25,7 +27,7 @@ SectionEditor::SectionEditor(
     layout->setContentsMargins(24, 24, 24, 24);
     layout->setSpacing(12);
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         layout->addWidget(new QLabel(
             "Section " +
                 QString::number(sections_list->stringList().size() - 1),
@@ -39,7 +41,7 @@ SectionEditor::SectionEditor(
         layout->addWidget(new QLabel("Questions", this));
     }
 
-    if (type_ == QUIZ) {
+    if (type_ == SurveyType::Quiz) {
         outcomes_model_ = new QStringListModel(this);
         auto *outcomes_label_ = new QLabel("Outcomes", this);
         outcomes_label_->setObjectName("sectionLabel");
@@ -72,10 +74,14 @@ SectionEditor::SectionEditor(
     auto *bottom_row = new QHBoxLayout();
     layout->addLayout(bottom_row);
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         next_section_ = new QComboBox(this);
         next_section_->setModel(sections_list);
         bottom_row->addWidget(next_section_);
+
+        use_AI_ = new QCheckBox("Use AI", this);
+        use_AI_->setObjectName("requiredToggle");
+        bottom_row->addWidget(use_AI_);
     }
 
     add_block_button_ = new QPushButton("Add question", this);
@@ -87,6 +93,35 @@ SectionEditor::SectionEditor(
     );
 
     setLayout(layout);
+}
+
+void SectionEditor::setup_block_actions(BlockEditor *block) {
+    connect(block, &BlockEditor::remove_requested, this, [this, block]() {
+        questions_.erase(
+            std::remove(questions_.begin(), questions_.end(), block),
+            questions_.end()
+        );
+        questions_layout_->removeWidget(block);
+        block->deleteLater();
+    });
+    connect(block, &BlockEditor::move_up_requested, this, [this, block]() {
+        int idx = questions_.indexOf(block);
+        if (idx <= 0) {
+            return;
+        }
+        std::swap(questions_[idx], questions_[idx - 1]);
+        questions_layout_->removeWidget(block);
+        questions_layout_->insertWidget(idx - 1, block);
+    });
+    connect(block, &BlockEditor::move_down_requested, this, [this, block]() {
+        int idx = questions_.indexOf(block);
+        if (idx < 0 || idx >= questions_.size() - 1) {
+            return;
+        }
+        std::swap(questions_[idx], questions_[idx + 1]);
+        questions_layout_->removeWidget(block);
+        questions_layout_->insertWidget(idx + 1, block);
+    });
 }
 
 void SectionEditor::add_outcome() {
@@ -142,115 +177,100 @@ void SectionEditor::add_outcome() {
 void SectionEditor::add_block() {
     BlockEditor *block = nullptr;
 
-    if (type_ == QUIZ) {
+    if (type_ == SurveyType::Quiz) {
         block = new QuizChoiceBlockEditor(outcomes_model_, this);
+        questions_.push_back(block);
+        questions_layout_->addWidget(questions_.back());
+        setup_block_actions(block);
     } else {
         auto *menu = new QMenu(this);
         menu->setMinimumWidth(add_block_button_->width());
         menu->setStyleSheet(styleSheet());
-        auto *single = menu->addAction("Single Choice");
-        auto *multiple = menu->addAction("Multiple Choice");
         auto *text = menu->addAction("Text");
+        text->setData(static_cast<int>(BlockType::Text));
+        auto *single = menu->addAction("Single Choice");
+        single->setData(static_cast<int>(BlockType::Single));
+        auto *multiple = menu->addAction("Multiple Choice");
+        multiple->setData(static_cast<int>(BlockType::Multiple));
 
-        connect(
-            menu, &QMenu::triggered, this,
-            [this, single, multiple, text](QAction *chosen) {
-                if (!chosen) {
-                    return;
-                }
-
+        connect(menu, &QMenu::triggered, this, [this](QAction *chosen) {
+            if (!chosen) {
+                return;
+            }
+            auto block_type = static_cast<BlockType>(chosen->data().toInt());
+            if (!use_AI_->isChecked()) {
                 BlockEditor *block = nullptr;
-                if (chosen == single) {
-                    block = new SingleChoiceBlockEditor(
-                        type_, sections_list_, this
-                    );
-                } else if (chosen == multiple) {
-                    block = new MultipleChoiceBlockEditor(type_, this);
-                } else if (chosen == text) {
-                    block = new TextBlockEditor(type_, this);
+                switch (block_type) {
+                    case BlockType::Text:
+                        block = new TextBlockEditor(type_, this);
+                        break;
+                    case BlockType::Single:
+                        block = new SingleChoiceBlockEditor(
+                            type_, sections_list_, this
+                        );
+                        break;
+                    case BlockType::Multiple:
+                        block = new MultipleChoiceBlockEditor(type_, this);
+                        break;
                 }
-
-                if (!block) {
-                    return;
-                }
-
                 questions_.push_back(block);
                 questions_layout_->addWidget(questions_.back());
-
-                connect(
-                    block, &BlockEditor::remove_requested, this,
-                    [this, block]() {
-                        questions_.erase(
-                            std::remove(
-                                questions_.begin(), questions_.end(), block
-                            ),
-                            questions_.end()
+                setup_block_actions(block);
+            } else {
+                add_block_button_->setEnabled(false);
+                to_json(
+                    true,
+                    [=, this](const nlohmann::json &section_data) {
+                        server().generate_question(
+                            section_data, type_, block_type,
+                            [=, this](const nlohmann::json &question_data) {
+                                BlockEditor *block = nullptr;
+                                switch (block_type) {
+                                    case BlockType::Text:
+                                        block = new TextBlockEditor(
+                                            type_, question_data, this
+                                        );
+                                        break;
+                                    case BlockType::Single:
+                                        block = new SingleChoiceBlockEditor(
+                                            type_, question_data,
+                                            sections_list_, this
+                                        );
+                                        break;
+                                    case BlockType::Multiple:
+                                        block = new MultipleChoiceBlockEditor(
+                                            type_, question_data, this
+                                        );
+                                        break;
+                                }
+                                questions_.push_back(block);
+                                questions_layout_->addWidget(questions_.back());
+                                setup_block_actions(block);
+                                add_block_button_->setEnabled(true);
+                            },
+                            [=, this](const std::string &error) {
+                                show_message_box(
+                                    this, QMessageBox::Warning, "Error",
+                                    QString::fromStdString(error)
+                                );
+                                add_block_button_->setEnabled(true);
+                            }
                         );
-                        questions_layout_->removeWidget(block);
-                        block->deleteLater();
-                    }
-                );
-                connect(
-                    block, &BlockEditor::move_up_requested, this,
-                    [this, block]() {
-                        int idx = questions_.indexOf(block);
-                        if (idx <= 0) {
-                            return;
-                        }
-                        std::swap(questions_[idx], questions_[idx - 1]);
-                        questions_layout_->removeWidget(block);
-                        questions_layout_->insertWidget(idx - 1, block);
-                    }
-                );
-                connect(
-                    block, &BlockEditor::move_down_requested, this,
-                    [this, block]() {
-                        int idx = questions_.indexOf(block);
-                        if (idx < 0 || idx >= questions_.size() - 1) {
-                            return;
-                        }
-                        std::swap(questions_[idx], questions_[idx + 1]);
-                        questions_layout_->removeWidget(block);
-                        questions_layout_->insertWidget(idx + 1, block);
+                    },
+                    [=, this](const std::string &error) {
+                        show_message_box(
+                            this, QMessageBox::Warning, "Error",
+                            QString::fromStdString(error)
+                        );
+                        add_block_button_->setEnabled(true);
                     }
                 );
             }
-        );
+        });
         menu->popup(add_block_button_->mapToGlobal(
             QPoint(0, add_block_button_->height())
         ));
-        return;
     }
-
-    questions_.push_back(block);
-    questions_layout_->addWidget(questions_.back());
-
-    connect(block, &BlockEditor::remove_requested, this, [this, block]() {
-        questions_.erase(
-            std::remove(questions_.begin(), questions_.end(), block),
-            questions_.end()
-        );
-        questions_layout_->removeWidget(block);
-        block->deleteLater();
-    });
-    connect(block, &BlockEditor::move_up_requested, this, [this, block]() {
-        int idx = questions_.indexOf(block);
-        if (idx <= 0) {
-            return;
-        }
-        std::swap(questions_[idx], questions_[idx - 1]);
-        questions_layout_->removeWidget(block);
-        questions_layout_->insertWidget(idx - 1, block);
-    });
-    connect(block, &BlockEditor::move_down_requested, this, [this, block]() {
-        int idx = questions_.indexOf(block);
-        if (idx >= questions_.size() - 1) {
-            return;
-        }
-        std::swap(questions_[idx], questions_[idx + 1]);
-        questions_layout_->removeWidget(block);
-        questions_layout_->insertWidget(idx + 1, block);
-    });
 }
 
 void SectionEditor::build_questions_json(
@@ -283,7 +303,7 @@ void SectionEditor::to_json(
 ) const {
     auto section = std::make_shared<nlohmann::json>();
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         (*section)["title"] =
             title_ ? title_->text().trimmed().toStdString() : "";
         (*section)["next_section_id"] =

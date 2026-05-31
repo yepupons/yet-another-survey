@@ -8,23 +8,14 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
-#include <unordered_map>
+#include "enums.hpp"
 #include "multiple_choice_block.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "pretty_view.hpp"
-#include "server_interaction.hpp"
 #include "single_choice_block.hpp"
 #include "text_block.hpp"
 
 namespace survey {
-enum class BlockType { Text, Multiple, Single };
-
-const std::unordered_map<std::string, BlockType> COMPARATOR{
-    {"text", BlockType::Text},
-    {"multiple", BlockType::Multiple},
-    {"single", BlockType::Single}
-};
-
 SurveyWindow::SurveyWindow(
     const nlohmann::json &survey_data,
     nlohmann::json &answer_data,
@@ -88,7 +79,7 @@ SurveyWindow::SurveyWindow(
 
     for (const auto &block : section_data_.at("questions")) {
         const std::string block_type = block.at("type").get<std::string>();
-        switch (COMPARATOR.at(block_type)) {
+        switch (BLOCK_TYPE.at(block_type)) {
             case BlockType::Text: {
                 questions_.push_back(new TextBlock(block, content));
                 break;

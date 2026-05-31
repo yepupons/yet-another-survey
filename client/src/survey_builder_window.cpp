@@ -10,9 +10,9 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QString>
-#include <algorithm>
 #include <chrono>
 #include <memory>
+#include "enums.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "pretty_view.hpp"
 #include "section_editor.hpp"
@@ -21,7 +21,7 @@
 #include "survey_taking.hpp"
 
 namespace survey {
-SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
+SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     : QMainWindow(parent), type_(type) {
     auto *central = new QWidget(this);
     central->setObjectName("centralWidget");
@@ -74,7 +74,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
 
     central_layout->addWidget(scroll_area);
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         auto *bottom_row = new QHBoxLayout();
         bottom_row->addStretch();
 
@@ -221,13 +221,13 @@ void SurveyBuilderWindow::save_survey() {
     );
 }
 
-const QString SurveyBuilderWindow::write_type(Created_Type type) {
+const QString SurveyBuilderWindow::write_type(SurveyType type) {
     switch (type) {
-        case SURVEY:
+        case SurveyType::Survey:
             return "survey";
-        case TEST:
+        case SurveyType::Test:
             return "test";
-        case QUIZ:
+        case SurveyType::Quiz:
             return "quiz";
     }
 }

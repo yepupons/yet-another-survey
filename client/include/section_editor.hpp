@@ -1,5 +1,6 @@
 #ifndef SECTION_EDITOR_HPP_
 #define SECTION_EDITOR_HPP_
+#include <qcheckbox.h>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
@@ -18,7 +19,7 @@ class SectionEditor : public QWidget {
     Q_OBJECT
 public:
     explicit SectionEditor(
-        Created_Type type,
+        SurveyType type,
         QStringListModel *sections_list,
         QWidget *parent = nullptr
     );
@@ -35,6 +36,7 @@ public:
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     ) const;
+    void setup_block_actions(BlockEditor *block);
 
 private slots:
     void add_block();
@@ -49,9 +51,10 @@ private:
     QStringListModel *outcomes_model_ = nullptr;
     QList<QLineEdit *> outcomes_;
     QVBoxLayout *outcomes_layout_ = nullptr;
+    QCheckBox *use_AI_ = nullptr;
     QPushButton *add_block_button_ = nullptr;
 
-    Created_Type type_;
+    SurveyType type_;
 };
 }  // namespace survey
 

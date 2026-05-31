@@ -17,7 +17,13 @@ class SingleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
     explicit SingleChoiceBlockEditor(
-        Created_Type type,
+        SurveyType type,
+        QStringListModel *sections_list,
+        QWidget *parent = nullptr
+    );
+    explicit SingleChoiceBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
         QStringListModel *sections_list,
         QWidget *parent = nullptr
     );
