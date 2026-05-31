@@ -170,6 +170,17 @@ std::string Database::read_created_surveys(const std::string &session_id) {
     throw std::runtime_error("User not found");
 }
 
+bool Database::is_survey_creator(
+    const std::string &survey_id,
+    const std::string &user_id
+) {
+    auto result = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << "data.creator_id" << user_id
+                   << finalize
+    );
+    return static_cast<bool>(result);
+}
+
 std::string Database::read_statistics_json(const std::string &survey_id) {
     auto survey = db()["surveys"].find_one(
         document{} << "data.id" << survey_id << finalize

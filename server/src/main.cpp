@@ -265,11 +265,15 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                std::string survey_id = request->getParameter("survey-id")  ;
+                std::string survey_id = request->getParameter("survey-id");
                 std::string format = request->getParameter("format");
                 std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
                     return std::tolower(c);
                 });
+                const std::string requester_id = db.user_id_by_access_token(bearer_token(request));
+                if (!db.is_survey_creator(survey_id, requester_id)) {
+                    throw std::invalid_argument("Forbidden");
+                }
 
                 auto resp = HttpResponse::newHttpResponse();
                 std::string survey_statistics_data;

@@ -40,6 +40,7 @@ public:
 
     std::string read_passed_surveys(const std::string &session_id);
     std::string read_created_surveys(const std::string &session_id);
+    bool is_survey_creator(const std::string &survey_id, const std::string &user_id);
 
     std::string read_statistics_json(const std::string &survey_id);
     std::string read_statistics_txt(const std::string &survey_id);
