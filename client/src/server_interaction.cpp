@@ -126,7 +126,8 @@ void ServerInteraction::get_created_surveys(
 }
 
 void ServerInteraction::get_survey_statistics(
-    int survey_id, const std::string &file_format,
+    int survey_id,
+    const std::string &file_format,
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {

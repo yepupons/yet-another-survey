@@ -9,11 +9,11 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QString>
 #include <algorithm>
 #include <chrono>
 #include <memory>
 #include "nlohmann/json_fwd.hpp"
-#include <QString>
 #include "pretty_view.hpp"
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
@@ -30,7 +30,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
     central_layout->setAlignment(Qt::AlignTop);
     central_layout->setContentsMargins(24, 24, 24, 24);
     central_layout->setSpacing(16);
-    
+
     setWindowTitle("Survey Builder (" + write_type(type) + ")");
 
     auto *top_row = new QHBoxLayout();
@@ -114,7 +114,10 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
                 preview->show();
             },
             [=, this](const std::string &error) {
-                show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
+                show_message_box(
+                    this, QMessageBox::Warning, "Error",
+                    QString::fromStdString(error)
+                );
             }
         );
     });
@@ -186,7 +189,8 @@ int SurveyBuilderWindow::generate_survey_id() {
 
 void SurveyBuilderWindow::save_survey() {
     const int id = generate_survey_id();
-    build_survey_json(id, false,
+    build_survey_json(
+        id, false,
         [=, this](const nlohmann::json &survey_data) {
             server().post_survey(
                 survey_data,
@@ -195,7 +199,8 @@ void SurveyBuilderWindow::save_survey() {
                     const QImage qr_image =
                         generator.generateQr(QString::number(id), 260, 4);
                     show_qr_code(
-                        parentWidget(), QPixmap::fromImage(qr_image), "Saved", id
+                        parentWidget(), QPixmap::fromImage(qr_image), "Saved",
+                        id
                     );
                     deleteLater();
                 },
@@ -208,13 +213,16 @@ void SurveyBuilderWindow::save_survey() {
             );
         },
         [=, this](const std::string &error) {
-            show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
         }
     );
 }
 
-const QString SurveyBuilderWindow::write_type(Created_Type type){
-    switch (type){
+const QString SurveyBuilderWindow::write_type(Created_Type type) {
+    switch (type) {
         case SURVEY:
             return "survey";
         case TEST:

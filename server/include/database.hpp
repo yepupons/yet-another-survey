@@ -39,7 +39,8 @@ public:
 
     std::string read_statistics_json(int survey_id);
     std::string read_statistics_txt(int survey_id);
-    std::string read_statistics_image(int survey_id, const std::string &image_format);
+    std::string
+    read_statistics_image(int survey_id, const std::string &image_format);
 
     std::string
     read_survey_results(const std::string &session_id, int survey_id);

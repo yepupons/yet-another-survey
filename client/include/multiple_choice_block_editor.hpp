@@ -14,7 +14,10 @@ namespace survey {
 class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit MultipleChoiceBlockEditor(Created_Type type, QWidget *parent = nullptr);
+    explicit MultipleChoiceBlockEditor(
+        Created_Type type,
+        QWidget *parent = nullptr
+    );
 
     void to_json(
         bool preview_mode,

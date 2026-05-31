@@ -6,11 +6,11 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QString>
 #include <QStringListModel>
 #include <QVBoxLayout>
 #include <functional>
 #include <memory>
-#include <QString>
 #include <nlohmann/json.hpp>
 #include "nlohmann/json_fwd.hpp"
 #include "section_editor.hpp"

@@ -3,11 +3,11 @@
 #include <qmessagebox.h>
 #include <qobject.h>
 #include <qstringview.h>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
 #include <QPixmap>
-#include <QFileDialog>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -126,10 +126,10 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                     show_qr_button, &QPushButton::clicked, this,
                     [this, id]() {
                         QrCodeGenerator generator(this);
-                        const QImage qr_image = generator.generateQr(QString::number(id), 260, 4);
+                        const QImage qr_image =
+                            generator.generateQr(QString::number(id), 260, 4);
                         show_qr_code(
-                            this, QPixmap::fromImage(qr_image), "QR code",
-                            id
+                            this, QPixmap::fromImage(qr_image), "QR code", id
                         );
                     }
                 );
@@ -196,15 +196,24 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     setLayout(layout);
 }
 
-void CreatedSurveysWindow::export_statistics(int survey_id, const std::string &file_format) {
+void CreatedSurveysWindow::export_statistics(
+    int survey_id,
+    const std::string &file_format
+) {
     server().get_survey_statistics(
-        survey_id,
-        file_format,
+        survey_id, file_format,
         [=](const std::string &file_data) {
-            QFileDialog::saveFileContent(QByteArray::fromStdString(file_data), QString::number(survey_id) + '.' + QString::fromStdString(file_format));
+            QFileDialog::saveFileContent(
+                QByteArray::fromStdString(file_data),
+                QString::number(survey_id) + '.' +
+                    QString::fromStdString(file_format)
+            );
         },
         [=, this](const std::string &error) {
-            show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
         }
     );
 }

@@ -123,7 +123,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     open_survey_button_ = new QPushButton("Open Survey", card);
     open_survey_button_->setObjectName("primaryButton");
-    open_survey_button_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    open_survey_button_->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Fixed
+    );
     input_row->addWidget(open_survey_button_, 0, 1);
 
     card_layout->addLayout(input_row);
@@ -277,7 +279,8 @@ void MainWindow::create_survey() {
             if (!chosen) {
                 return;
             }
-            auto chosen_type = static_cast<survey::Created_Type>(chosen->data().toInt());
+            auto chosen_type =
+                static_cast<survey::Created_Type>(chosen->data().toInt());
             auto *builder = new SurveyBuilderWindow(chosen_type);
             builder->setAttribute(Qt::WA_DeleteOnClose);
             builder->showMaximized();

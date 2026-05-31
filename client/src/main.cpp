@@ -1,8 +1,8 @@
 #include <QApplication>
 #include <QFile>
 #include <nlohmann/json.hpp>
-#include "russian_hotkeys_handler.hpp"
 #include "main_window.hpp"
+#include "russian_hotkeys_handler.hpp"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

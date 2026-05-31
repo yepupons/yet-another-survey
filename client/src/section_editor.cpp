@@ -7,9 +7,9 @@
 #include <nlohmann/json_fwd.hpp>
 #include "abstract_block_editor.hpp"
 #include "multiple_choice_block_editor.hpp"
+#include "quiz_choice_block_editor.hpp"
 #include "single_choice_block_editor.hpp"
 #include "text_block_editor.hpp"
-#include "quiz_choice_block_editor.hpp"
 
 namespace survey {
 SectionEditor::SectionEditor(
@@ -27,7 +27,8 @@ SectionEditor::SectionEditor(
 
     if (type_ != QUIZ) {
         layout->addWidget(new QLabel(
-            "Section " + QString::number(sections_list->stringList().size() - 1),
+            "Section " +
+                QString::number(sections_list->stringList().size() - 1),
             this
         ));
 
@@ -52,9 +53,11 @@ SectionEditor::SectionEditor(
         layout->addWidget(add_outcome_button);
 
         add_outcome();
-        
-        connect(add_outcome_button, &QPushButton::clicked, this,
-            &SectionEditor::add_outcome);
+
+        connect(
+            add_outcome_button, &QPushButton::clicked, this,
+            &SectionEditor::add_outcome
+        );
 
         auto *divider = new QFrame(this);
         divider->setFrameShape(QFrame::HLine);
@@ -97,20 +100,24 @@ void SectionEditor::add_outcome() {
     row_layout->addWidget(outcome_edit);
     outcomes_.push_back(outcome_edit);
 
-    connect(outcome_edit, &QLineEdit::textChanged, this, [this](const QString &) {
-        QStringList list;
-        for (auto *edit : outcomes_) {
-            list.append(edit->text().trimmed());
+    connect(
+        outcome_edit, &QLineEdit::textChanged, this,
+        [this](const QString &) {
+            QStringList list;
+            for (auto *edit : outcomes_) {
+                list.append(edit->text().trimmed());
+            }
+            outcomes_model_->setStringList(list);
         }
-        outcomes_model_->setStringList(list);
-    });
+    );
 
     auto *delete_button = new QPushButton(row_widget);
     delete_button->setObjectName("dangerIconButton");
     delete_button->setFixedSize(36, 36);
     row_layout->addWidget(delete_button);
 
-    connect(delete_button, &QPushButton::clicked, this,
+    connect(
+        delete_button, &QPushButton::clicked, this,
         [this, row_widget, outcome_edit]() {
             if (outcomes_.size() <= 1) {
                 return;
@@ -154,8 +161,9 @@ void SectionEditor::add_block() {
 
                 BlockEditor *block = nullptr;
                 if (chosen == single) {
-                    block =
-                        new SingleChoiceBlockEditor(type_, sections_list_, this);
+                    block = new SingleChoiceBlockEditor(
+                        type_, sections_list_, this
+                    );
                 } else if (chosen == multiple) {
                     block = new MultipleChoiceBlockEditor(type_, this);
                 } else if (chosen == text) {
@@ -169,33 +177,48 @@ void SectionEditor::add_block() {
                 questions_.push_back(block);
                 questions_layout_->addWidget(questions_.back());
 
-                connect(block, &BlockEditor::remove_requested, this, [this, block]() {
-                    questions_.erase(
-                        std::remove(questions_.begin(), questions_.end(), block),
-                        questions_.end()
-                    );
-                    questions_layout_->removeWidget(block);
-                    block->deleteLater();
-                });
-                connect(block, &BlockEditor::move_up_requested, this, [this, block]() {
-                    int idx = questions_.indexOf(block);
-                    if (idx <= 0) return;
-                    std::swap(questions_[idx], questions_[idx - 1]);
-                    questions_layout_->removeWidget(block);
-                    questions_layout_->insertWidget(idx - 1, block);
-                });
-                connect(block, &BlockEditor::move_down_requested, this, [this, block]() {
-                    int idx = questions_.indexOf(block);
-                    if (idx < 0 || idx >= questions_.size() - 1) return;
-                    std::swap(questions_[idx], questions_[idx + 1]);
-                    questions_layout_->removeWidget(block);
-                    questions_layout_->insertWidget(idx + 1, block);
-                });
+                connect(
+                    block, &BlockEditor::remove_requested, this,
+                    [this, block]() {
+                        questions_.erase(
+                            std::remove(
+                                questions_.begin(), questions_.end(), block
+                            ),
+                            questions_.end()
+                        );
+                        questions_layout_->removeWidget(block);
+                        block->deleteLater();
+                    }
+                );
+                connect(
+                    block, &BlockEditor::move_up_requested, this,
+                    [this, block]() {
+                        int idx = questions_.indexOf(block);
+                        if (idx <= 0) {
+                            return;
+                        }
+                        std::swap(questions_[idx], questions_[idx - 1]);
+                        questions_layout_->removeWidget(block);
+                        questions_layout_->insertWidget(idx - 1, block);
+                    }
+                );
+                connect(
+                    block, &BlockEditor::move_down_requested, this,
+                    [this, block]() {
+                        int idx = questions_.indexOf(block);
+                        if (idx < 0 || idx >= questions_.size() - 1) {
+                            return;
+                        }
+                        std::swap(questions_[idx], questions_[idx + 1]);
+                        questions_layout_->removeWidget(block);
+                        questions_layout_->insertWidget(idx + 1, block);
+                    }
+                );
             }
         );
-        menu->popup(
-            add_block_button_->mapToGlobal(QPoint(0, add_block_button_->height()))
-        );
+        menu->popup(add_block_button_->mapToGlobal(
+            QPoint(0, add_block_button_->height())
+        ));
         return;
     }
 
@@ -212,14 +235,18 @@ void SectionEditor::add_block() {
     });
     connect(block, &BlockEditor::move_up_requested, this, [this, block]() {
         int idx = questions_.indexOf(block);
-        if (idx <= 0) return;
+        if (idx <= 0) {
+            return;
+        }
         std::swap(questions_[idx], questions_[idx - 1]);
         questions_layout_->removeWidget(block);
         questions_layout_->insertWidget(idx - 1, block);
     });
     connect(block, &BlockEditor::move_down_requested, this, [this, block]() {
         int idx = questions_.indexOf(block);
-        if (idx >= questions_.size() - 1) return;
+        if (idx >= questions_.size() - 1) {
+            return;
+        }
         std::swap(questions_[idx], questions_[idx + 1]);
         questions_layout_->removeWidget(block);
         questions_layout_->insertWidget(idx + 1, block);
@@ -257,10 +284,10 @@ void SectionEditor::to_json(
     auto section = std::make_shared<nlohmann::json>();
 
     if (type_ != QUIZ) {
-        (*section)["title"] = title_ ? title_->text().trimmed().toStdString() : "";
-        (*section)["next_section_id"] = next_section_
-                                            ? next_section_->currentIndex() - 1
-                                            : -1;
+        (*section)["title"] =
+            title_ ? title_->text().trimmed().toStdString() : "";
+        (*section)["next_section_id"] =
+            next_section_ ? next_section_->currentIndex() - 1 : -1;
     }
 
     (*section)["questions"] = nlohmann::json::array();

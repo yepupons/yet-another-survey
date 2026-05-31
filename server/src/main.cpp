@@ -246,9 +246,10 @@ int main(int argc, char *argv[]) {
             try {
                 int survey_id = std::stoi(request->getParameter("survey-id"));
                 std::string format = request->getParameter("format");
-                std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
-                    return std::tolower(c);
-                });
+                std::transform(
+                    format.begin(), format.end(), format.begin(),
+                    [](unsigned char c) { return std::tolower(c); }
+                );
 
                 auto resp = HttpResponse::newHttpResponse();
                 std::string survey_statistics_data;
@@ -258,8 +259,10 @@ int main(int argc, char *argv[]) {
                 } else if (format == "txt") {
                     survey_statistics_data = db.read_statistics_txt(survey_id);
                     resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-                } else if (format == "jpg" || format == "jpeg" || format == "png") {
-                    survey_statistics_data = db.read_statistics_image(survey_id, format);
+                } else if (format == "jpg" || format == "jpeg" ||
+                           format == "png") {
+                    survey_statistics_data =
+                        db.read_statistics_image(survey_id, format);
                     resp->setContentTypeString("image/" + format);
                 } else {
                     throw std::runtime_error("Bad format");

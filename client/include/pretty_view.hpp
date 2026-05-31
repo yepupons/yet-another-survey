@@ -58,7 +58,8 @@ inline void show_qr_code(
     qr_label->setFixedSize(qr_pixmap.size());
     qr_label->setScaledContents(false);
 
-    auto *text_label = new QLabel("Your survey ID:\n" + QString::number(survey_id), content);
+    auto *text_label =
+        new QLabel("Your survey ID:\n" + QString::number(survey_id), content);
     text_label->setWordWrap(true);
 
     message_row->addWidget(qr_label);
@@ -66,7 +67,10 @@ inline void show_qr_code(
 
     auto *copy_button = new QPushButton("Copy to clipboard", content);
     QBoxLayout::connect(
-        copy_button, &QPushButton::clicked, dialog, [survey_id]() {QApplication::clipboard()->setText(QString::number(survey_id));}
+        copy_button, &QPushButton::clicked, dialog,
+        [survey_id]() {
+            QApplication::clipboard()->setText(QString::number(survey_id));
+        }
     );
 
     auto *ok_button = new QPushButton("OK", content);
