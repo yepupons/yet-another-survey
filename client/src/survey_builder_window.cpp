@@ -161,7 +161,11 @@ void SurveyBuilderWindow::build_survey_json(
                              : title_->text().trimmed().toStdString();
 
     (*survey)["sections"] = nlohmann::json::array();
-    build_sections_json(preview_mode, survey, 0, callback);
+    if (sections_.empty()) {
+        callback({});
+    } else {
+        build_sections_json(preview_mode, survey, 0, callback);
+    }
 }
 
 int SurveyBuilderWindow::generate_survey_id() {

@@ -261,6 +261,10 @@ void SectionEditor::to_json(
     }
 
     (*section)["questions"] = nlohmann::json::array();
-    build_questions_json(preview_mode, section, 0, callback);
+    if (questions_.empty()) {
+        callback({});
+    } else {
+        build_questions_json(preview_mode, section, 0, callback);
+    }
 }
 }  // namespace survey
