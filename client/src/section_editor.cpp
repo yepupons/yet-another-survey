@@ -78,14 +78,17 @@ SectionEditor::SectionEditor(
         next_section_ = new QComboBox(this);
         next_section_->setModel(sections_list);
         bottom_row->addWidget(next_section_);
-
+    }
+    
+    bottom_row->addStretch();
+    add_block_button_ = new QPushButton("Add question", this);
+    bottom_row->addWidget(add_block_button_);
+    
+    if (type_ != SurveyType::Quiz) {
         use_AI_ = new QCheckBox("Use AI", this);
         use_AI_->setObjectName("requiredToggle");
         bottom_row->addWidget(use_AI_);
     }
-
-    add_block_button_ = new QPushButton("Add question", this);
-    bottom_row->addWidget(add_block_button_);
 
     connect(
         add_block_button_, &QPushButton::clicked, this,
