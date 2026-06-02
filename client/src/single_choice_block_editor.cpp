@@ -14,7 +14,7 @@
 
 namespace survey {
 SingleChoiceBlockEditor::SingleChoiceBlockEditor(
-    Created_Type type,
+    SurveyType type,
     QStringListModel *sections_list,
     QWidget *parent
 )
@@ -74,7 +74,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         auto *correct_label = new QLabel("Mark the correct answer", this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
@@ -101,6 +101,32 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     layout->addWidget(required_);
 
     setLayout(layout);
+}
+
+SingleChoiceBlockEditor::SingleChoiceBlockEditor(
+    SurveyType type,
+    const nlohmann::json &question_data,
+    QStringListModel *sections_list,
+    QWidget *parent
+)
+    : SingleChoiceBlockEditor(type, sections_list, parent) {
+    question_->setText(
+        QString::fromStdString(question_data.at("text").get<std::string>())
+    );
+
+    const auto &options_data = question_data.at("options");
+    for (int i = 0; i < options_data.size() - 1; ++i) {
+        options_.back()->setText(QString::fromStdString(options_data[i]));
+        add_option();
+    }
+    options_.back()->setText(QString::fromStdString(options_data.back()));
+
+    required_->setChecked(question_data.at("required").get<bool>());
+    if (type_ == SurveyType::Test) {
+        correct_answers_->buttons()
+            .at(question_data.at("answer").get<int>() - 1)
+            ->setChecked(true);
+    }
 }
 
 void SingleChoiceBlockEditor::add_option() {
@@ -133,7 +159,7 @@ void SingleChoiceBlockEditor::add_option() {
     });
 
     QAbstractButton *correct_button = nullptr;
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         auto *correct = new QRadioButton("Correct", row_widget);
         correct->setObjectName("sectionLabel");
         row_layout->addWidget(correct);
@@ -180,7 +206,8 @@ void SingleChoiceBlockEditor::add_option() {
 
 void SingleChoiceBlockEditor::to_json(
     bool preview_mode,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     nlohmann::json block;
     block["type"] = "single";
@@ -204,7 +231,7 @@ void SingleChoiceBlockEditor::to_json(
 
     block["required"] = required_->isChecked();
 
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         int answer_index = 0;
         if (auto *checked = correct_answers_->checkedButton()) {
             const auto buttons = correct_answers_->buttons();
@@ -231,14 +258,13 @@ void SingleChoiceBlockEditor::to_json(
             image_name_.toStdString(), image_data_,
             [=](const std::string &image_oid) mutable {
                 block["image"] = image_oid;
-                callback(block);
+                success(block);
             },
-            [](const std::string &) {}
+            failure
         );
         return;
     }
-
-    callback(block);
+    success(block);
 }
 
 }  // namespace survey

@@ -1,8 +1,8 @@
 #ifndef QUIZ_CHOICE_BLOCK_HPP_
 #define QUIZ_CHOICE_BLOCK_HPP_
 
-#include <nlohmann/json_fwd.hpp>
 #include <QWidget>
+#include <nlohmann/json_fwd.hpp>
 #include "abstract_block.hpp"
 
 class QLabel;
@@ -12,10 +12,7 @@ namespace survey {
 class QuizChoiceBlock : public Block {
     Q_OBJECT
 public:
-    QuizChoiceBlock(
-        const nlohmann::json &block,
-        QWidget *parent = nullptr
-    );
+    QuizChoiceBlock(const nlohmann::json &block, QWidget *parent = nullptr);
 
     void save_answer(nlohmann::json &) const override;
     bool has_answer() const override;

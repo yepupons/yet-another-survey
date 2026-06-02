@@ -8,16 +8,23 @@
 #include <QWidget>
 #include <nlohmann/json.hpp>
 #include "abstract_block_editor.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 namespace survey {
 class TextBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit TextBlockEditor(Created_Type type, QWidget *parent = nullptr);
+    explicit TextBlockEditor(SurveyType type, QWidget *parent = nullptr);
+    explicit TextBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
+        QWidget *parent = nullptr
+    );
 
     void to_json(
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const override;
 
 private slots:

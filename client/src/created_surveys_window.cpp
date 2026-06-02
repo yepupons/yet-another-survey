@@ -3,11 +3,11 @@
 #include <qmessagebox.h>
 #include <qobject.h>
 #include <qstringview.h>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
 #include <QPixmap>
-#include <QFileDialog>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -125,7 +125,9 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 actions_layout->addWidget(show_qr_button, 1);
                 connect(
                     show_qr_button, &QPushButton::clicked, this,
-                    [this, id]() { show_qr_code(id); }
+                    [this, id]() {
+                        show_qr_code(id);
+                    }
                 );
 
                 auto *view_survey_button =
@@ -192,13 +194,15 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
 void CreatedSurveysWindow::export_statistics(const std::string &survey_id, const std::string &file_format) {
     server().get_survey_statistics(
-        survey_id,
-        file_format,
+        survey_id, file_format,
         [=](const std::string &file_data) {
             QFileDialog::saveFileContent(QByteArray::fromStdString(file_data), QString::fromStdString(survey_id) + '.' + QString::fromStdString(file_format));
         },
         [=, this](const std::string &error) {
-            show_message_box(this, QMessageBox::Warning, "Error", QString::fromStdString(error));
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
         }
     );
 }
@@ -226,9 +230,8 @@ void CreatedSurveysWindow::show_qr_code(const std::string &id) {
     QrCodeGenerator generator(this);
     const QString survey_id = QString::fromStdString(id);
     const QImage qr_image = generator.generateQr(survey_id, 260, 4);
-    show_message_box(
-        this, QPixmap::fromImage(qr_image), "QR code",
-        "Survey ID:\n" + survey_id
+    survey::show_qr_code(
+        this, QPixmap::fromImage(qr_image), "QR code", survey_id
     );
 }
 

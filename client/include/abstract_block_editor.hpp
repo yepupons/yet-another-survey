@@ -10,23 +10,23 @@
 #include <QWidget>
 #include <functional>
 #include <nlohmann/json.hpp>
+#include "enums.hpp"
 #include "pretty_view.hpp"
 
 namespace survey {
-enum Created_Type { SURVEY, TEST, QUIZ };
-
 class BlockEditor : public QWidget {
     Q_OBJECT
 
 public:
-    BlockEditor(Created_Type type, QWidget *parent)
+    BlockEditor(SurveyType type, QWidget *parent)
         : QWidget(parent), type_(type) {
     }
 
     virtual ~BlockEditor() = default;
     virtual void to_json(
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const = 0;
 
 signals:
@@ -35,7 +35,7 @@ signals:
     void move_down_requested(BlockEditor *editor);
 
 protected:
-    Created_Type type_;
+    SurveyType type_;
     QLineEdit *question_ = nullptr;
     QPushButton *upload_image_button_ = nullptr;
     QLabel *image_preview_ = nullptr;
@@ -51,7 +51,7 @@ protected slots:
                 if (file_name.isEmpty()) {
                     return;
                 }
-                if (file_name.size() > 5 * 1024 * 1024) {
+                if (file_content.size() > 1024 * 1024) {
                     show_message_box(
                         this, QMessageBox::Warning, "Error", "File size too big"
                     );

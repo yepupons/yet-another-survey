@@ -14,11 +14,20 @@ namespace survey {
 class MultipleChoiceBlockEditor : public BlockEditor {
     Q_OBJECT
 public:
-    explicit MultipleChoiceBlockEditor(Created_Type type, QWidget *parent = nullptr);
+    explicit MultipleChoiceBlockEditor(
+        SurveyType type,
+        QWidget *parent = nullptr
+    );
+    explicit MultipleChoiceBlockEditor(
+        SurveyType type,
+        const nlohmann::json &question_data,
+        QWidget *parent = nullptr
+    );
 
     void to_json(
         bool preview_mode,
-        std::function<void(const nlohmann::json &)> callback
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
     ) const override;
 
 private slots:

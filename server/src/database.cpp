@@ -1,9 +1,11 @@
 #include "database.hpp"
+#include <matplot/matplot.h>
 #include <openssl/sha.h>
 #include <algorithm>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/json.hpp>
+#include <chrono>
 #include <cstdint>
 #include <iomanip>
 #include <nlohmann/json.hpp>
@@ -13,9 +15,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <matplot/matplot.h>
 #include <thread>
-#include <chrono>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -260,13 +260,15 @@ std::string Database::read_statistics_txt(const std::string &survey_id) {
 
     std::stringstream file;
     file << "Survey: " << survey["title"] << "\n\n";
-    file << "Total number of answers: " << stats["total_answers"] << "\n\n"; file << "Statistic by sections:\n\n";
+    file << "Total number of answers: " << stats["total_answers"] << "\n\n";
+    file << "Statistic by sections:\n\n";
     for (int i = 0; i < survey["sections"].size(); ++i) {
         file << "Section " << survey["sections"][i]["title"] << ":\n\n";
         for (int j = 0; j < survey["sections"][i]["questions"].size(); ++j) {
             const auto &question = survey["sections"][i]["questions"][j];
             file << "Question " << question["text"] << ":\n";
-            if (question["type"] == "single" || question["type"] == "multiple") {
+            if (question["type"] == "single" ||
+                question["type"] == "multiple") {
                 for (int k = 1; k <= question["options"].size(); ++k) {
                     file << question["options"][k - 1] << ": ";
                     if (stats["sections"][i][j].contains(std::to_string(k))) {
@@ -277,8 +279,10 @@ std::string Database::read_statistics_txt(const std::string &survey_id) {
                     file << " answer(s)\n";
                 }
             } else if (question["type"] == "text") {
-                for (const auto &answer_count : stats["sections"][i][j].items()) {
-                    file << '\"' << answer_count.key() << "\": " << answer_count.value() << "answer(s)\n";
+                for (const auto &answer_count :
+                     stats["sections"][i][j].items()) {
+                    file << '\"' << answer_count.key()
+                         << "\": " << answer_count.value() << "answer(s)\n";
                 }
             }
             file << '\n';
@@ -369,10 +373,11 @@ std::string Database::read_statistics_image(const std::string &survey_id, const 
     }
     auto filename = survey_id + '.' + image_format;
     f->save(filename);
-    
+
     bool file_ready = false;
     for (int attempt = 0; attempt < 100; ++attempt) {
-        if (std::filesystem::exists(filename) && std::filesystem::file_size(filename) > 0) {
+        if (std::filesystem::exists(filename) &&
+            std::filesystem::file_size(filename) > 0) {
             file_ready = true;
             break;
         }
@@ -387,7 +392,7 @@ std::string Database::read_statistics_image(const std::string &survey_id, const 
     if (!file) {
         throw std::runtime_error("Unable to open file on server");
     }
-    
+
     std::string image_data{std::istreambuf_iterator<char>{file}, {}};
     file.close();
     std::filesystem::remove(filename);
