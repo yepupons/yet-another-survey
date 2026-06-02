@@ -15,18 +15,19 @@ class ServerInteraction : public QObject {
     Q_OBJECT
 public:
     void get_survey(
-        int survey_id,
+        const std::string &survey_id,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
     void post_survey(
         const nlohmann::json &survey_data,
-        std::function<void()> success,
+        std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
     void post_answer(
         const nlohmann::json &answer_data,
-        std::function<void()> success,
+        const std::string &survey_id,
+        std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
     void check_answer(
@@ -45,14 +46,13 @@ public:
         std::function<void(const std::string &)> failure
     );
     void get_survey_statistics(
-        int survey_id,
-        const std::string &file_format,
+        const std::string &survey_id, const std::string &file_format,
         std::function<void(const std::string &)> success,
         std::function<void(const std::string &)> failure
     );
     void get_survey_results(
         const std::string &user_id,
-        int survey_id,
+        const std::string &survey_id,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
@@ -85,6 +85,19 @@ public:
         const nlohmann::json &section_data,
         SurveyType survey_type,
         BlockType block_type,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+
+    void post_rate(
+        const std::string &survey_id,
+        const std::string &answer_id,
+        const bool is_like,
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+
+    void get_surveys_top(
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );

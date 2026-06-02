@@ -11,15 +11,13 @@
 #include "test_results.hpp"
 
 namespace survey {
-SurveyTaking::SurveyTaking(int survey_id, QWidget *parent)
-    : QWidget(parent), preview_mode_(false) {
+SurveyTaking::SurveyTaking(const std::string &survey_id, QWidget *parent)
+    : QWidget(parent), preview_mode_(false), survey_id_(survey_id) {
     server().get_survey(
         survey_id,
         [=, this](const nlohmann::json &survey_data) {
             survey_data_ = survey_data;
-            answer_data_["data"]["id"] = 67;  // when it will be valid...
             answer_data_["data"]["survey_id"] = survey_id;
-            answer_data_["data"]["respondent_id"] = session().get_id();
             answer_data_["sections"] = nlohmann::json::array();
             for (int i = 0; i < survey_data_.at("sections").size(); ++i) {
                 answer_data_["sections"].push_back(nlohmann::json::array());
@@ -42,9 +40,9 @@ SurveyTaking::SurveyTaking(
     QWidget *parent
 )
     : QWidget(parent), preview_mode_(preview_mode), survey_data_(survey_data) {
-    answer_data_["data"]["id"] = -1;
-    answer_data_["data"]["survey_id"] = survey_data_.at("data").at("id");
-    answer_data_["data"]["respondent_id"] = session().get_id();
+    std::string survey_id = survey_data_.at("data").value("id", "preview");
+    survey_id_ = survey_id;
+    answer_data_["data"]["survey_id"] = survey_id;
     answer_data_["sections"] = nlohmann::json::array();
 
     for (std::size_t i = 0; i < survey_data_.at("sections").size(); ++i) {
@@ -64,19 +62,33 @@ void SurveyTaking::open_next_section(int next_section_id) {
             deleteLater();
             return;
         }
+        auto show_rating = [=, this](const std::string &answer_id) {
+            auto *box = show_question_box(
+                parentWidget(), QMessageBox::Question,
+                "Rate this survey", "Did you like this survey?",
+                QMessageBox::Yes, QMessageBox::No
+            );
+            connect(box, &QMessageBox::finished, this, [=, this](int result) {
+                server().post_rate(
+                    survey_id_, answer_id, result == QMessageBox::Yes,
+                    [](const nlohmann::json &) {}, [](const std::string &) {}
+                );
+                deleteLater();
+            });
+        };
+
         auto type =
             SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>()
             );
         switch (type) {
             case SurveyType::Survey: {
                 server().post_answer(
-                    answer_data_,
-                    [=, this]() {
-                        show_message_box(
-                            parentWidget(), QMessageBox::Information, "Saved",
-                            "Your answers have been successfully saved."
-                        );
-                        deleteLater();
+                    answer_data_, survey_id_,
+                    [=, this](const nlohmann::json &submission_result) {
+                        submission_result_ = submission_result;
+                        const std::string answer_id =
+                            submission_result.at("answer_id").get<std::string>();
+                        show_rating(answer_id);
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -95,6 +107,9 @@ void SurveyTaking::open_next_section(int next_section_id) {
                         auto *view = new ViewTestResults(result, this);
                         view->setAttribute(Qt::WA_DeleteOnClose);
                         view->show();
+                        show_rating(
+                            result.at("data").at("answer_id").get<std::string>()
+                        );
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -142,10 +157,25 @@ void SurveyTaking::open_next_section(int next_section_id) {
                     this, QMessageBox::Information, "Result",
                     "You are: " + QString::fromStdString(winner)
                 );
-                deleteLater();
+                server().post_answer(
+                    answer_data_, survey_id_,
+                    [=, this](const nlohmann::json &submission_result) {
+                        const std::string answer_id =
+                            submission_result.at("answer_id").get<std::string>();
+                        show_rating(answer_id);
+                    },
+                    [=, this](const std::string &error) {
+                        show_message_box(
+                            parentWidget(), QMessageBox::Warning, "Error",
+                            QString::fromStdString(error)
+                        );
+                        deleteLater();
+                    }
+                );
                 break;
             }
         }
+
     } else {
         current_section_ = new SurveyWindow(
             survey_data_, answer_data_, next_section_id, preview_mode_, this

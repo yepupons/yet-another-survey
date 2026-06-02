@@ -9,6 +9,7 @@
 #include <QString>
 #include <QStringListModel>
 #include <QVBoxLayout>
+#include <QTextEdit>
 #include <functional>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -31,6 +32,7 @@ private:
     QWidget *content_ = nullptr;
 
     QLineEdit *title_ = nullptr;
+    QTextEdit *description_ = nullptr;
     QList<SectionEditor *> sections_;
     QVBoxLayout *sections_layout_ = nullptr;
     QStringListModel *sections_list_ = nullptr;
@@ -46,12 +48,10 @@ private:
         std::function<void(const std::string &)> failure
     ) const;
     void build_survey_json(
-        int id,
         bool preview_mode,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     ) const;
-    static int generate_survey_id();
     static const QString write_type(SurveyType type);
 };
 }  // namespace survey

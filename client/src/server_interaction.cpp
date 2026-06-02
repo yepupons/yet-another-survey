@@ -55,12 +55,12 @@ void ServerInteraction::send_request(
 }
 
 void ServerInteraction::get_survey(
-    int survey_id,
+    const std::string &survey_id,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/survey?id=" + std::to_string(survey_id);
+        "http://127.0.0.1:8080/survey?id=" + survey_id;
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -72,24 +72,30 @@ void ServerInteraction::get_survey(
 
 void ServerInteraction::post_survey(
     const nlohmann::json &survey_data,
-    std::function<void()> success,
+    std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url = "http://127.0.0.1:8080/survey";
     send_request(
-        url, Method::POST, [success](const std::string &) { success(); },
+        url, Method::POST,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
         failure, true, survey_data.dump()
     );
 }
 
 void ServerInteraction::post_answer(
     const nlohmann::json &answer_data,
-    std::function<void()> success,
+    const std::string &survey_id,
+    std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/answer";
+    std::string url = "http://127.0.0.1:8080/api/surveys/" + survey_id + "/answers";
     send_request(
-        url, Method::POST, [success](const std::string &) { success(); },
+        url, Method::POST, [success](const std::string &submission_result) { 
+            success(nlohmann::json::parse(submission_result)); 
+        },
         failure, true, answer_data.dump()
     );
 }
@@ -127,25 +133,24 @@ void ServerInteraction::get_created_surveys(
 }
 
 void ServerInteraction::get_survey_statistics(
-    int survey_id,
-    const std::string &file_format,
+    const std::string &survey_id, const std::string &file_format,
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url = "http://127.0.0.1:8080/statistics?survey-id=" +
-                      std::to_string(survey_id) + "&format=" + file_format;
+                      survey_id + "&format=" + file_format;
     send_request(url, Method::GET, success, failure, true);
 }
 
 void ServerInteraction::get_survey_results(
     const std::string &user_id,
-    int survey_id,
+    const std::string &survey_id,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
         "http://127.0.0.1:8080/survey-results?session-id=" + user_id +
-        "&survey-id=" + std::to_string(survey_id);
+        "&survey-id=" + survey_id;
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -260,6 +265,42 @@ void ServerInteraction::complete_auth(
         failure, false, challenge.dump()
     );
 }
+
+void ServerInteraction::post_rate(
+    const std::string &survey_id,
+    const std::string &answer_id,
+    const bool is_like,
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
+) {
+    std::string url = "http://127.0.0.1:8080/api/surveys/" + survey_id + "/ratings";
+    nlohmann::json rate_data = {
+        {"answer_id", answer_id},
+        {"rate", is_like ? "like" : "dislike"}
+    };
+    send_request(
+        url, Method::POST,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
+        failure, true, rate_data.dump()
+    );
+}
+
+void ServerInteraction::get_surveys_top(
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
+) {
+    std::string url = "http://127.0.0.1:8080/api/surveys/top";
+    send_request(
+        url, Method::GET,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
+        failure
+    );
+};
+
 
 void ServerInteraction::generate_question(
     const nlohmann::json &section_data,

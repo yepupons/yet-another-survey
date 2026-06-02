@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <QObject>
+#include <string>
 
 namespace survey {
 class ViewPassedSurveys : public QDialog {
@@ -16,7 +17,7 @@ class ViewSurveyResults : public QDialog {
 
 public:
     explicit ViewSurveyResults(
-        int survey_id,
+        const std::string &survey_id,
         const std::string &session_id,
         QWidget *parent = nullptr
     );

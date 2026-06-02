@@ -3,7 +3,10 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QDialog>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
@@ -32,7 +35,7 @@ inline void show_qr_code(
     QWidget *parent,
     const QPixmap &qr_pixmap,
     const QString &title,
-    int survey_id
+    const QString &survey_id
 ) {
     auto dialog = new QDialog(parent);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -59,7 +62,7 @@ inline void show_qr_code(
     qr_label->setScaledContents(false);
 
     auto *text_label =
-        new QLabel("Your survey ID:\n" + QString::number(survey_id), content);
+        new QLabel("Your survey ID:\n" + survey_id, content);
     text_label->setWordWrap(true);
 
     message_row->addWidget(qr_label);
@@ -69,7 +72,7 @@ inline void show_qr_code(
     QBoxLayout::connect(
         copy_button, &QPushButton::clicked, dialog,
         [survey_id]() {
-            QApplication::clipboard()->setText(QString::number(survey_id));
+            QApplication::clipboard()->setText(survey_id);
         }
     );
 

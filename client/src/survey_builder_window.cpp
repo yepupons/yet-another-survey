@@ -3,6 +3,7 @@
 #include <qglobal.h>
 #include <qlineedit.h>
 #include <qobject.h>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
@@ -10,6 +11,8 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QString>
+#include <QTextEdit>
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include "enums.hpp"
@@ -48,9 +51,39 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
 
     central_layout->addLayout(top_row);
 
-    title_ = new QLineEdit(this);
-    title_->setPlaceholderText("Write survey title here");
-    central_layout->addWidget(title_);
+    auto *meta_card = new QWidget(this);
+    meta_card->setObjectName("card");
+
+    auto *meta_layout = new QVBoxLayout(meta_card);
+    meta_layout->setContentsMargins(16, 10, 16, 12);
+    meta_layout->setSpacing(4);
+
+    auto *title_field_label = new QLabel("Title", meta_card);
+    title_field_label->setObjectName("surveyMetaLabel");
+    meta_layout->addWidget(title_field_label);
+
+    title_ = new QLineEdit(meta_card);
+    title_->setObjectName("surveyTitleInput");
+    title_->setPlaceholderText("Untitled survey");
+    meta_layout->addWidget(title_);
+
+    auto *divider = new QFrame(meta_card);
+    divider->setObjectName("dividerLine");
+    divider->setFrameShape(QFrame::HLine);
+    meta_layout->addSpacing(3);
+    meta_layout->addWidget(divider);
+    meta_layout->addSpacing(3);
+
+    auto *desc_field_label = new QLabel("Description", meta_card);
+    desc_field_label->setObjectName("surveyMetaLabel");
+    meta_layout->addWidget(desc_field_label);
+
+    description_ = new QTextEdit(meta_card);
+    description_->setObjectName("surveyDescriptionInput");
+    description_->setPlaceholderText("Add a description (optional)");
+    description_->setFixedHeight(56);
+    description_->setFrameShape(QFrame::NoFrame);
+    meta_layout->addWidget(description_);
 
     auto *scroll_area = new QScrollArea(central);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -65,6 +98,8 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     sections_layout_->setContentsMargins(0, 0, 0, 0);
     sections_layout_->setSpacing(16);
     content_->setLayout(sections_layout_);
+
+    sections_layout_->addWidget(meta_card);
 
     sections_list_ = new QStringListModel(this);
     QStringList list = sections_list_->stringList();
@@ -104,9 +139,9 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
         &SurveyBuilderWindow::save_survey
     );
     connect(preview_button, &QPushButton::clicked, this, [this]() {
-        const int preview_id = generate_survey_id();
+        // const int preview_id = generate_survey_id();
         build_survey_json(
-            preview_id, true,
+             true,
             [=, this](const nlohmann::json &survey) {
                 auto *preview = new SurveyTaking(survey, true, this);
                 preview->setAttribute(Qt::WA_DeleteOnClose);
@@ -156,18 +191,17 @@ void SurveyBuilderWindow::build_sections_json(
 }
 
 void SurveyBuilderWindow::build_survey_json(
-    int id,
     bool preview_mode,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) const {
     auto survey = std::make_shared<nlohmann::json>();
-    (*survey)["data"]["id"] = id;
     (*survey)["data"]["creator_id"] = session().get_id();
     (*survey)["data"]["type"] = write_type(type_).toStdString();
     (*survey)["title"] = title_->text().trimmed().isEmpty()
                              ? "Unnamed"
                              : title_->text().trimmed().toStdString();
+    (*survey)["description"] = description_->toPlainText().trimmed().toStdString();
 
     (*survey)["sections"] = nlohmann::json::array();
     if (sections_.empty()) {
@@ -177,27 +211,19 @@ void SurveyBuilderWindow::build_survey_json(
     }
 }
 
-int SurveyBuilderWindow::generate_survey_id() {
-    auto now = std::chrono::system_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                  now.time_since_epoch()
-    )
-                  .count();
-
-    return static_cast<int>(ms % 1000000000);
-}
 
 void SurveyBuilderWindow::save_survey() {
-    const int id = generate_survey_id();
     build_survey_json(
-        id, false,
+        false,
         [=, this](const nlohmann::json &survey_data) {
             server().post_survey(
                 survey_data,
-                [&, id]() {
+                [=, this](const nlohmann::json &response) {
+                    const QString id = QString::fromStdString(
+                        response.at("survey_id").get<std::string>()
+                    );
                     QrCodeGenerator generator(this);
-                    const QImage qr_image =
-                        generator.generateQr(QString::number(id), 260, 4);
+                    const QImage qr_image = generator.generateQr(id, 260, 4);
                     show_qr_code(
                         parentWidget(), QPixmap::fromImage(qr_image), "Saved",
                         id

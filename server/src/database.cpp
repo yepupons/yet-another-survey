@@ -25,7 +25,7 @@ using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
 namespace survey {
-std::string Database::read_survey(int survey_id) {
+std::string Database::read_survey(const std::string &survey_id) {
     mongocxx::options::find opts;
     opts.projection(document{} << "sections.questions.answer" << 0 << finalize);
     auto result = db()["surveys"].find_one(
@@ -37,17 +37,26 @@ std::string Database::read_survey(int survey_id) {
     throw std::runtime_error("Survey not found");
 }
 
-void Database::write_survey(const std::string &survey_data) {
-    bsoncxx::document::value doc = bsoncxx::from_json(survey_data);
+std::string Database::read_survey_with_answers(const std::string &survey_id) {
+    auto result = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << finalize
+    );
+    if (result) {
+        return bsoncxx::to_json(result->view());
+    }
+    throw std::runtime_error("Survey not found");
+}
+
+std::string Database::write_survey(
+    const std::string &survey_id,
+    const std::string &creator_id,
+    const nlohmann::json &survey_data
+) {
+    bsoncxx::document::value doc = bsoncxx::from_json(survey_data.dump());
     auto insert_result = db()["surveys"].insert_one(doc.view());
     if (!insert_result) {
         throw std::runtime_error("Writing survey into database failed");
     }
-
-    nlohmann::json json = nlohmann::json::parse(survey_data);
-    int survey_id = json["data"]["id"].get<int>();
-    std::string creator_id = json["data"]["creator_id"].get<std::string>();
-
     auto find_result =
         db()["users"].find_one(document{} << "id" << creator_id << finalize);
     if (!find_result) {
@@ -62,6 +71,10 @@ void Database::write_survey(const std::string &survey_data) {
         document{} << "$push" << open_document << "created_surveys" << survey_id
                    << close_document << finalize
     );
+    nlohmann::json result;
+    result["status"] = "Saved";
+    result["survey_id"] = survey_id;
+    return result.dump();
 }
 
 /*
@@ -76,17 +89,20 @@ std::string Database::read_answer(int answer_id) {
 }
 */
 
-void Database::write_answer(const std::string &answer_data) {
-    bsoncxx::document::value doc = bsoncxx::from_json(answer_data);
+std::string Database::write_answer(
+    const std::string &answer_id,
+    const std::string &respondent_id,
+    const std::string &answer_data
+) {
+    nlohmann::json json = nlohmann::json::parse(answer_data);
+    json["data"]["id"] = answer_id;
+    json["data"]["respondent_id"] = respondent_id;
+
+    bsoncxx::document::value doc = bsoncxx::from_json(json.dump());
     auto insert_result = db()["answers"].insert_one(doc.view());
     if (!insert_result) {
         throw std::runtime_error("Writing answer into database failed");
     }
-
-    nlohmann::json json = nlohmann::json::parse(answer_data);
-    int answer_id = json["data"]["id"].get<int>();
-    std::string respondent_id =
-        json["data"]["respondent_id"].get<std::string>();
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << respondent_id << finalize);
@@ -102,6 +118,12 @@ void Database::write_answer(const std::string &answer_data) {
         document{} << "$push" << open_document << "given_answers" << answer_id
                    << close_document << finalize
     );
+
+    nlohmann::json result;
+    result["status"] = "Saved";
+    result["answer_id"] = answer_id;
+    result["survey_id"] = json["data"]["survey_id"];
+    return result.dump();
 }
 
 std::string Database::read_passed_surveys(const std::string &session_id) {
@@ -114,20 +136,19 @@ std::string Database::read_passed_surveys(const std::string &session_id) {
     auto cursor = db()["answers"].find(
         document{} << "data.respondent_id" << session_id << finalize, opts
     );
-    std::set<int> passed_surveys;
+    std::set<std::string> passed_surveys;
     for (auto &&doc : cursor) {
         auto elem = doc["data"]["survey_id"];
         if (!elem) {
             continue;
         }
-        if (elem.type() == bsoncxx::type::k_int32) {
-            passed_surveys.insert(elem.get_int32().value);
-        } else if (elem.type() == bsoncxx::type::k_int64) {
-            passed_surveys.insert(static_cast<int>(elem.get_int64().value));
+        if (elem.type() != bsoncxx::type::k_string) {
+            continue;
         }
+        passed_surveys.insert(std::string(elem.get_string().value));
     }
     nlohmann::json result = nlohmann::json::array();
-    for (int id : passed_surveys) {
+    for (const auto &id : passed_surveys) {
         result.push_back(id);
     }
     return result.dump();
@@ -151,7 +172,18 @@ std::string Database::read_created_surveys(const std::string &session_id) {
     throw std::runtime_error("User not found");
 }
 
-std::string Database::read_statistics_json(int survey_id) {
+bool Database::is_survey_creator(
+    const std::string &survey_id,
+    const std::string &user_id
+) {
+    auto result = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << "data.creator_id" << user_id
+                   << finalize
+    );
+    return static_cast<bool>(result);
+}
+
+std::string Database::read_statistics_json(const std::string &survey_id) {
     auto survey = db()["surveys"].find_one(
         document{} << "data.id" << survey_id << finalize
     );
@@ -222,7 +254,7 @@ std::string Database::read_statistics_json(int survey_id) {
     return result.dump();
 }
 
-std::string Database::read_statistics_txt(int survey_id) {
+std::string Database::read_statistics_txt(const std::string &survey_id) {
     auto survey = nlohmann::json::parse(read_survey(survey_id));
     auto stats = nlohmann::json::parse(read_statistics_json(survey_id));
 
@@ -259,10 +291,7 @@ std::string Database::read_statistics_txt(int survey_id) {
     return file.str();
 }
 
-std::string Database::read_statistics_image(
-    int survey_id,
-    const std::string &image_format
-) {
+std::string Database::read_statistics_image(const std::string &survey_id, const std::string &image_format) {
     using namespace matplot;
 
     auto survey = nlohmann::json::parse(read_survey(survey_id));
@@ -342,7 +371,7 @@ std::string Database::read_statistics_image(
             ylim({0, static_cast<double>(max_value + 1)});
         }
     }
-    auto filename = std::to_string(survey_id) + '.' + image_format;
+    auto filename = survey_id + '.' + image_format;
     f->save(filename);
 
     bool file_ready = false;
@@ -372,7 +401,7 @@ std::string Database::read_statistics_image(
 }
 
 std::string
-Database::read_survey_results(const std::string &session_id, int survey_id) {
+Database::read_survey_results(const std::string &session_id, const std::string &survey_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
@@ -393,77 +422,6 @@ Database::read_survey_results(const std::string &session_id, int survey_id) {
         }
     }
     return results.dump();
-}
-
-std::string Database::get_result(const std::string &user_result_data) {
-    Database::write_answer(user_result_data);
-    nlohmann::json user_json = nlohmann::json::parse(user_result_data);
-    int survey_id = user_json.at("data").at("survey_id").get<int>();
-    mongocxx::options::find opts;
-    opts.projection(
-        document{} << "sections.questions.answer" << 1
-                   << "sections.questions.type" << 1 << "_id" << 0 << finalize
-    );
-    auto result = db()["surveys"].find_one(
-        document{} << "data.id" << survey_id << finalize, opts
-    );
-
-    nlohmann::json survey_json =
-        nlohmann::json::parse(bsoncxx::to_json(result->view()));
-    nlohmann::json out;
-    out["data"] = {
-        {"survey_id", survey_id},
-    };
-    out["sections"] = nlohmann::json::array();
-    int question_amount = 0;
-    int correct_answers = 0;
-    for (int section_indx = 0; section_indx < survey_json["sections"].size();
-         ++section_indx) {
-        if (user_json["sections"].at(section_indx).empty()) {
-            out["sections"].push_back(nlohmann::json::array());
-            continue;
-        }
-        nlohmann::json section_result = nlohmann::json::array();
-        for (int question_indx = 0;
-             question_indx <
-             survey_json["sections"].at(section_indx)["questions"].size();
-             ++question_indx) {
-            ++question_amount;
-            const auto &question =
-                survey_json["sections"].at(section_indx)["questions"].at(
-                    question_indx
-                );
-            std::string type = question.at("type");
-            const auto &correct_answer = question.at("answer");
-            const auto &user_answer = user_json["sections"]
-                                          .at(section_indx)
-                                          .at(question_indx)
-                                          .at("answer");
-
-            if (type == "single" || type == "multiple") {
-                if (correct_answer == user_answer) {
-                    ++correct_answers;
-                    section_result.emplace_back(1);
-                    continue;
-                }
-                section_result.emplace_back(0);
-            } else if (type == "text") {
-                if (std::find(
-                        correct_answer.begin(), correct_answer.end(),
-                        user_answer
-                    ) != correct_answer.end()) {
-                    ++correct_answers;
-                    section_result.emplace_back(1);
-                    continue;
-                }
-                section_result.emplace_back(0);
-            }
-        }
-        out["sections"].push_back(section_result);
-    }
-    out["data"]["question_amount"] = question_amount;
-    out["data"]["correct_answers"] = correct_answers;
-    return out.dump();
 }
 
 std::string Database::write_image(const drogon::HttpFile &file) {
@@ -652,6 +610,8 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
     const std::string telegram_first_name =
         std::string(telegram_user["first_name"].get_string().value);
     const std::string access_token = "access_" + generate_token();
+    const std::string access_token_hash = sha256(access_token);
+    const auto access_token_expires_at = now + std::chrono::hours(12);
     auto user_result = db()["users"].find_one(
         document{} << "telegram_user_id" << telegram_user_id << finalize
     );
@@ -664,8 +624,10 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
             document{} << "$set" << open_document << "telegram_username"
                        << telegram_username << "telegram_first_name"
                        << telegram_first_name << "updated_at"
-                       << bsoncxx::types::b_date{now} << "access_token"
-                       << access_token << close_document << finalize
+                       << bsoncxx::types::b_date{now} << "access_token_hash"
+                       << access_token_hash << "access_token_expires_at"
+                       << bsoncxx::types::b_date{access_token_expires_at}
+                       << close_document << finalize
         );
     } else {
         user_id = generate_uuid();
@@ -675,8 +637,10 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
                        << telegram_username << "telegram_first_name"
                        << telegram_first_name << "created_at"
                        << bsoncxx::types::b_date{now} << "updated_at"
-                       << bsoncxx::types::b_date{now} << "access_token"
-                       << access_token << "created_surveys" << open_array
+                       << bsoncxx::types::b_date{now} << "access_token_hash"
+                       << access_token_hash << "access_token_expires_at"
+                       << bsoncxx::types::b_date{access_token_expires_at}
+                       << "created_surveys" << open_array
                        << close_array << "given_answers" << open_array
                        << close_array << finalize
         );
@@ -703,13 +667,151 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
 }
 
 std::string Database::user_id_by_access_token(const std::string &access_token) {
+    const std::string token_hash = sha256(access_token);
     auto result = db()["users"].find_one(
-        document{} << "access_token" << access_token << finalize
+        document{} << "access_token_hash" << token_hash << finalize
     );
     if (!result) {
         throw std::invalid_argument("Invalid access token");
     }
-    return std::string(result->view()["id"].get_string().value);
+    auto view = result->view();
+
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    );
+    if (view["access_token_expires_at"].get_date().value <= now_ms) {
+        throw std::invalid_argument("Access token expired");
+    }
+    return std::string(view["id"].get_string().value);
 }
 
+std::string Database::save_rate(
+    const std::string &rate_data,
+    const std::string &survey_id,
+    const std::string &user_id
+) {
+    nlohmann::json json = nlohmann::json::parse(rate_data);
+    const std::string answer_id = json["answer_id"].get<std::string>();
+    const std::string rate = json["rate"].get<std::string>();
+
+    int rate_value = 0;
+    if (rate == "like") {
+        rate_value = 1;
+    } else if (rate == "dislike") {
+        rate_value = -1;
+    } else {
+        throw std::invalid_argument("Invalid rate");
+    }
+
+    auto survey_existence = db()["surveys"].find_one(
+        document{} << "data.id" << survey_id
+                   << finalize
+    );
+    if (!survey_existence){
+        throw std::invalid_argument("Survey not found");
+    }
+
+    auto answer_result = db()["answers"].find_one(
+        document{} << "data.id" << answer_id
+                   << "data.survey_id" << survey_id
+                   << "data.respondent_id" << user_id
+                   << finalize
+    );
+    if (!answer_result) {
+        throw std::invalid_argument("Answer not found");
+    }
+
+    auto existing_rate_result = db()["survey_rates"].find_one(
+        document{} << "survey_id" << survey_id
+                   << "answer_id" << answer_id
+                   << "user_id" << user_id
+                   << finalize
+    );
+    if (existing_rate_result) {
+        throw std::invalid_argument("Survey already rated");
+    }
+
+    const std::string rate_id = generate_uuid();
+    auto insert_rate_result = db()["survey_rates"].insert_one(
+        document{} << "id" << rate_id
+                   << "survey_id" << survey_id
+                   << "answer_id" << answer_id
+                   << "user_id" << user_id
+                   << "value" << rate_value
+                   << finalize
+    );
+
+    const std::string rate_counter_field =
+        rate_value == 1 ? "data.likes_count" : "data.dislikes_count";
+
+    auto update_survey_result = db()["surveys"].update_one(
+        document{} << "data.id" << survey_id << finalize,
+        document{} << "$inc" << open_document
+                    << rate_counter_field << 1
+                    << "data.ratings_count" << 1
+                    << "data.rating_score" << rate_value
+                   << close_document << finalize
+    );
+
+
+    nlohmann::json result;
+    result["status"] = "Saved";
+    result["rate_id"] = rate_id;
+    result["survey_id"] = survey_id;
+    result["answer_id"] = answer_id;
+    result["rating_score_delta"] = rate_value;
+    return result.dump();
+}
+
+std::string Database::get_top_surveys() {
+    mongocxx::options::find opts;
+    opts.sort(
+        document{} << "data.rating_score" << -1
+                   << "data.ratings_count" << -1
+                   << finalize
+    );
+    opts.limit(10);
+
+    auto cursor = db()["surveys"].find(
+        document{} << finalize,
+        opts
+    );
+
+    auto str_or = [](bsoncxx::document::view doc, const char *key, const char *def = "") -> std::string {
+        auto el = doc[key];
+        return (el && el.type() == bsoncxx::type::k_string)
+            ? std::string(el.get_string().value) : def;
+    };
+    auto int_or = [](bsoncxx::document::view doc, const char *key, int def = 0) -> int {
+        auto el = doc[key];
+        return (el && el.type() == bsoncxx::type::k_int32)
+            ? el.get_int32().value : def;
+    };
+
+    nlohmann::json result = nlohmann::json::array();
+    for (auto &&survey : cursor) {
+        const auto data = survey["data"].get_document().value;
+        nlohmann::json survey_json;
+        survey_json["id"] = str_or(data, "id");
+        survey_json["title"] = str_or(survey, "title");
+        survey_json["description"] = str_or(survey, "description");
+        survey_json["likes_count"] = int_or(data, "likes_count");
+        survey_json["dislikes_count"] = int_or(data, "dislikes_count");
+        survey_json["ratings_count"] = int_or(data, "ratings_count");
+        survey_json["rating_score"] = int_or(data, "rating_score");
+        result.push_back(survey_json);
+    }
+    return result.dump();
+}
+
+void Database::revoke_access_token(const std::string &access_token) {
+    const std::string token_hash = sha256(access_token);
+    db()["users"].update_one(
+        document{} << "access_token_hash" << token_hash << finalize,
+        document{} << "$unset" << open_document
+                   << "access_token_hash" << ""
+                   << "access_token_expires_at" << ""
+                   << close_document << finalize
+    );
+}
 }  // namespace survey

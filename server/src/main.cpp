@@ -2,6 +2,8 @@
 #include <drogon/drogon.h>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <cstdlib>
+#include "survey_service.hpp"
 #include "database.hpp"
 #include "ollama_interaction.hpp"
 
@@ -23,8 +25,21 @@ static std::string bearer_token(const HttpRequestPtr &request) {
     return auth.substr(prefix.size());
 }
 
+static void require_bot_secret(const HttpRequestPtr &request) {
+    const char *expected = std::getenv("BOT_CONFIRM_SECRET");
+    if (!expected || std::string(expected).empty()) {
+        throw std::runtime_error("Bot secret is not configured");
+    }
+
+    const std::string provided = request->getHeader("X-Bot-Secret");
+    if (provided != expected) {
+        throw std::invalid_argument("Forbidden");
+    }
+}
+
 int main(int argc, char *argv[]) {
     survey::Database db;
+    survey::SurveyService service(db);
     app().addListener("127.0.0.1", 8080);
 
     app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
@@ -63,7 +78,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                int survey_id = std::stoi(request->getParameter("id"));
+                std::string survey_id = request->getParameter("id");
                 const auto survey_data = db.read_survey(survey_id);
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setContentTypeCode(CT_APPLICATION_JSON);
@@ -86,17 +101,15 @@ int main(int argc, char *argv[]) {
 
     app().registerHandler(
         "/survey",
-        [&db](
+        [&service](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
+            std::string out;
             try {
-                auto survey_data =
-                    nlohmann::json::parse(std::string(request->getBody()));
-                survey_data["data"]["creator_id"] =
-                    db.user_id_by_access_token(bearer_token(request));
-                db.write_survey(survey_data.dump());
+                auto survey_data = nlohmann::json::parse(std::string(request->getBody()));
+                out = service.create_survey(bearer_token(request), survey_data);
 #ifdef YAZ_DEBUG
                 std::cerr << "Received survey: " << survey_data.dump(2)
                           << std::endl;
@@ -112,25 +125,25 @@ int main(int argc, char *argv[]) {
                 cb(resp);
                 return;
             }
-            resp->setBody("Saved");
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->setBody(out);
             cb(resp);
         },
         {Post}
     );
 
     app().registerHandler(
-        "/answer",
-        [&db](
+        "/api/surveys/{1}/answers",
+        [&service](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
         ) {
             auto resp = HttpResponse::newHttpResponse();
+            std::string out;
             try {
-                auto answer_data =
-                    nlohmann::json::parse(std::string(request->getBody()));
-                answer_data["data"]["respondent_id"] =
-                    db.user_id_by_access_token(bearer_token(request));
-                db.write_answer(answer_data.dump());
+                auto answer_data = nlohmann::json::parse(std::string(request->getBody()));
+                out = service.submit_answer(bearer_token(request), answer_data, survey_id);
 #ifdef YAZ_DEBUG
                 std::cerr << "Received answer: " << answer_data.dump(2)
                           << std::endl;
@@ -144,7 +157,8 @@ int main(int argc, char *argv[]) {
                 cb(resp);
                 return;
             }
-            resp->setBody("Saved");
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->setBody(out);
             cb(resp);
         },
         {Post}
@@ -189,7 +203,7 @@ int main(int argc, char *argv[]) {
             try {
                 std::string session_id =
                     db.user_id_by_access_token(bearer_token(request));
-                int survey_id = std::stoi(request->getParameter("survey-id"));
+                std::string survey_id = request->getParameter("survey-id");
                 const auto survey_results_data =
                     db.read_survey_results(session_id, survey_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -245,12 +259,16 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                int survey_id = std::stoi(request->getParameter("survey-id"));
+                std::string survey_id = request->getParameter("survey-id");
                 std::string format = request->getParameter("format");
                 std::transform(
                     format.begin(), format.end(), format.begin(),
                     [](unsigned char c) { return std::tolower(c); }
                 );
+                const std::string requester_id = db.user_id_by_access_token(bearer_token(request));
+                if (!db.is_survey_creator(survey_id, requester_id)) {
+                    throw std::invalid_argument("Forbidden");
+                }
 
                 auto resp = HttpResponse::newHttpResponse();
                 std::string survey_statistics_data;
@@ -282,15 +300,16 @@ int main(int argc, char *argv[]) {
 
     app().registerHandler(
         "/check",
-        [&db](
+        [&service](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             auto resp = HttpResponse::newHttpResponse();
             std::string out;
             try {
-                auto user_answers = request->getJsonObject();
-                out = db.get_result(user_answers->toStyledString());
+                auto user_answers =
+                    nlohmann::json::parse(std::string(request->getBody()));
+                out = service.check_answer(bearer_token(request), user_answers);
             } catch (const std::exception &e) {
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
@@ -410,6 +429,7 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
+                require_bot_secret(request);
                 auto resp = HttpResponse::newHttpResponse();
                 auto login_data = request->getJsonObject()->toStyledString();
                 auto login_status = db.bot_check_login_data(login_data);
@@ -426,7 +446,7 @@ int main(int argc, char *argv[]) {
                 result["error"] = e.what();
 
                 auto resp = HttpResponse::newHttpJsonResponse(result);
-                resp->setStatusCode(k404NotFound);
+                resp->setStatusCode(k403Forbidden);
                 cb(resp);
             }
         },
@@ -469,6 +489,75 @@ int main(int argc, char *argv[]) {
             } catch (const std::exception &e) {
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/api/surveys/{1}/ratings",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
+        ) {
+            try {
+                auto rating_data = request->getJsonObject()->toStyledString();
+                std::string user_id = db.user_id_by_access_token(bearer_token(request));
+                std::string result = db.save_rate(rating_data, survey_id, user_id);
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody(result);
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/api/surveys/top",
+        [&db](
+            const HttpRequestPtr &request,
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                std::string result = db.get_top_surveys();
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setBody(result);
+                resp->setContentTypeCode(CT_APPLICATION_JSON);
+                cb(resp);
+            } catch (const std::exception &e) {
+                Json::Value result;
+                result["error"] = e.what();
+                auto resp = HttpResponse::newHttpJsonResponse(result);
+                resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Get}
+    );
+
+    app().registerHandler(
+        "/api/auth/logout",
+        [&db](
+            const HttpRequestPtr &request, 
+            std::function<void(const HttpResponsePtr &)> &&cb
+        ) {
+            try {
+                db.revoke_access_token(bearer_token(request));
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k204NoContent);
+                cb(resp);
+            } catch (...) {
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k401Unauthorized);
                 cb(resp);
             }
         },

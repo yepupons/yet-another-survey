@@ -311,6 +311,9 @@ void SectionEditor::to_json(
             title_ ? title_->text().trimmed().toStdString() : "";
         (*section)["next_section_id"] =
             next_section_ ? next_section_->currentIndex() - 1 : -1;
+    } else {
+        (*section)["title"] = "Quiz";
+        (*section)["next_section_id"] = -1;
     }
 
     (*section)["questions"] = nlohmann::json::array();

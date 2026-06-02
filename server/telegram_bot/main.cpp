@@ -28,7 +28,7 @@ std::string http_get(const std::string &url, const std::string &body) {
     return body;
 }
 
-std::string http_post(const std::string &url, const std::string &body) {
+std::string http_post(const std::string &url, const std::string &body, const std::string &bot_secret) {
     std::string response;
     CURL *curl = curl_easy_init();
     if (!curl) {
@@ -36,6 +36,8 @@ std::string http_post(const std::string &url, const std::string &body) {
     }
     curl_slist *headers = nullptr;
     headers = curl_slist_append(headers, "Content-Type: application/json");
+    const std::string secret_header = "X-Bot-Secret: " + bot_secret;
+    headers = curl_slist_append(headers, secret_header.c_str());
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
@@ -76,8 +78,12 @@ void confirm_login(
     auth_data["telegram_user"]["id"] = telegram_id;
     auth_data["telegram_user"]["username"] = username;
     auth_data["telegram_user"]["first_name"] = first_name;
-    const std::string response = http_post(link_url, auth_data.dump());
-
+    const char *secret_env = std::getenv("BOT_CONFIRM_SECRET");
+    if (!secret_env) {
+        bot.getApi().sendMessage(chat_id, "Secret is not configured, please, contact admin.");
+        return;
+    }
+    const std::string response = http_post(link_url, auth_data.dump(), secret_env);
     if (response.empty()) {
         bot.getApi().sendMessage(chat_id, "Server did not return a response.");
         return;

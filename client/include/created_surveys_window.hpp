@@ -15,9 +15,10 @@ public:
     explicit CreatedSurveysWindow(QWidget *parent = nullptr);
 
 public slots:
+    void show_qr_code(const std::string &id);
     void
     show_survey_preview(QWidget *parent, const nlohmann::json &survey_data);
-    void export_statistics(int survey_id, const std::string &file_format);
+    void export_statistics(const std::string &survey_id, const std::string &file_format);
 };
 }  // namespace survey
 
