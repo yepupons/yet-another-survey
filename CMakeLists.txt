@@ -27,7 +27,7 @@ if(EMSCRIPTEN)
     # Dependencies
     find_package(Qt6 REQUIRED COMPONENTS Widgets)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg Test)
 
     set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
     if (EXISTS "${NLOHMANN_JSON_LOCAL_DIR}/CMakeLists.txt")
@@ -139,7 +139,7 @@ else()
     find_package(Boost 1.65.1 REQUIRED)
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg Test)
 
     # Drogon Options
     option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -277,6 +277,24 @@ else()
         OpenSSL::Crypto
         CURL::libcurl
     )
+
+    enable_testing()
+
+    add_executable(survey_validator_tests
+        tests/server/survey_validator_tests.cpp
+        server/src/survey_validator.cpp
+    )
+
+    target_include_directories(survey_validator_tests PRIVATE
+        ${PROJECT_SOURCE_DIR}/server/include/
+    )
+
+    target_link_libraries(survey_validator_tests PRIVATE
+        Qt6::Test
+        nlohmann_json::nlohmann_json
+    )
+
+    add_test(NAME survey_validator_tests COMMAND survey_validator_tests)
 
     # TG bot
     add_executable(telegram_bot
