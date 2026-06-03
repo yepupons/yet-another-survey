@@ -31,10 +31,33 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
 
     auto *central_layout = new QVBoxLayout();
     central_layout->setAlignment(Qt::AlignTop);
-    central_layout->setContentsMargins(24, 24, 24, 24);
-    central_layout->setSpacing(16);
+    central_layout->setContentsMargins(0, 0, 0, 0);
+    central_layout->setSpacing(0);
 
     setWindowTitle("Survey Builder (" + write_type(type) + ")");
+
+    auto *header = new QWidget(central);
+    header->setObjectName("topHeader");
+    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    header->setMinimumWidth(500);
+
+    auto *header_layout = new QHBoxLayout(header);
+    header_layout->setContentsMargins(24, 4, 24, 4);
+    header_layout->setSpacing(12);
+
+    auto *back_button = new QPushButton("←", header);
+    back_button->setObjectName("headerNavButton");
+    header_layout->addWidget(back_button);
+    header_layout->addStretch();
+
+    connect(back_button, &QPushButton::clicked, this, &SurveyBuilderWindow::close);
+
+    central_layout->addWidget(header);
+
+    auto *content_wrapper = new QWidget(central);
+    auto *content_wrapper_layout = new QVBoxLayout(content_wrapper);
+    content_wrapper_layout->setContentsMargins(24, 24, 24, 24);
+    content_wrapper_layout->setSpacing(16);
 
     auto *top_row = new QHBoxLayout();
 
@@ -49,7 +72,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     top_row->addStretch();
     top_row->addWidget(preview_button);
 
-    central_layout->addLayout(top_row);
+    content_wrapper_layout->addLayout(top_row);
 
     auto *meta_card = new QWidget(this);
     meta_card->setObjectName("card");
@@ -107,7 +130,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
 
     add_section();
 
-    central_layout->addWidget(scroll_area);
+    content_wrapper_layout->addWidget(scroll_area);
 
     if (type_ != SurveyType::Quiz) {
         auto *bottom_row = new QHBoxLayout();
@@ -118,13 +141,14 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
         add_section_button_->setFixedSize(180, 40);
         bottom_row->addWidget(add_section_button_);
 
-        central_layout->addLayout(bottom_row);
+        content_wrapper_layout->addLayout(bottom_row);
     }
 
     save_survey_button_ = new QPushButton("Save " + write_type(type), central);
     save_survey_button_->setObjectName("primaryButton");
-    central_layout->addWidget(save_survey_button_);
+    content_wrapper_layout->addWidget(save_survey_button_);
 
+    central_layout->addWidget(content_wrapper);
     central->setLayout(central_layout);
     setCentralWidget(central);
 
@@ -146,7 +170,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
                 auto *preview = new SurveyTaking(survey, true, this);
                 preview->setAttribute(Qt::WA_DeleteOnClose);
                 preview->setWindowTitle("Preview");
-                preview->show();
+                preview->showFullScreen();
             },
             [=, this](const std::string &error) {
                 show_message_box(

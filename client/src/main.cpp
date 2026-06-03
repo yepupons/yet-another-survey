@@ -17,6 +17,6 @@ int main(int argc, char *argv[]) {
     app.setFont(font);
     app.installEventFilter(new RussianHotkeysHandler(&app));
     survey::MainWindow window;
-    window.showMaximized();
+    window.showFullScreen();
     return app.exec();
 }

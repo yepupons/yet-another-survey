@@ -237,7 +237,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
             login_window, &LoginWindow::login_completed, this,
             &MainWindow::update_auth_action
         );
-        login_window->showMaximized();
+        login_window->showFullScreen();
     });
 }
 
@@ -292,7 +292,7 @@ void MainWindow::create_survey() {
             auto chosen_type = static_cast<SurveyType>(chosen->data().toInt());
             auto *builder = new SurveyBuilderWindow(chosen_type);
             builder->setAttribute(Qt::WA_DeleteOnClose);
-            builder->showMaximized();
+            builder->showFullScreen();
             builder->raise();
             builder->activateWindow();
         }
@@ -305,7 +305,7 @@ void MainWindow::create_survey() {
 void MainWindow::get_created_surveys() {
     auto *created_surveys = new CreatedSurveysWindow(this);
     created_surveys->setAttribute(Qt::WA_DeleteOnClose);
-    created_surveys->showMaximized();
+    created_surveys->showFullScreen();
 }
 
 void MainWindow::show_trending() {
@@ -313,7 +313,7 @@ void MainWindow::show_trending() {
         [this](const nlohmann::json &surveys) {
             auto *window = new TopSurveysWindow(surveys, this);
             window->setAttribute(Qt::WA_DeleteOnClose);
-            window->showMaximized();
+            window->showFullScreen();
         },
         [this](const std::string &error) {
             show_message_box(
@@ -327,6 +327,6 @@ void MainWindow::show_trending() {
 void MainWindow::get_passed_surveys() {
     auto *view = new ViewPassedSurveys(this);
     view->setAttribute(Qt::WA_DeleteOnClose);
-    view->showMaximized();
+    view->showFullScreen();
 }
 }  // namespace survey
