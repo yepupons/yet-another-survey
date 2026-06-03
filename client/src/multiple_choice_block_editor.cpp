@@ -210,13 +210,7 @@ void MultipleChoiceBlockEditor::to_json(
         block["answer"] = answers;
     }
 
-    // NOT WORK
-
-    // if (preview_mode && !image_path_.isEmpty()) {
-    //     block["image_path"] = image_path_.toStdString();
-    // }
-
-    if (!preview_mode && !image_data_.isEmpty()) {
+    if (!image_data_.isEmpty()) {
         server().post_image(
             image_name_.toStdString(), image_data_,
             [=](const std::string &image_oid) mutable {
