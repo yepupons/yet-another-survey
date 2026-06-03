@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "survey_service.hpp"
 #include "database.hpp"
+#include "ollama_interaction.hpp"
 
 using namespace drogon;
 
@@ -260,9 +261,10 @@ int main(int argc, char *argv[]) {
             try {
                 std::string survey_id = request->getParameter("survey-id");
                 std::string format = request->getParameter("format");
-                std::transform(format.begin(), format.end(), format.begin(), [](unsigned char c) {
-                    return std::tolower(c);
-                });
+                std::transform(
+                    format.begin(), format.end(), format.begin(),
+                    [](unsigned char c) { return std::tolower(c); }
+                );
                 const std::string requester_id = db.user_id_by_access_token(bearer_token(request));
                 if (!db.is_survey_creator(survey_id, requester_id)) {
                     throw std::invalid_argument("Forbidden");
@@ -276,8 +278,10 @@ int main(int argc, char *argv[]) {
                 } else if (format == "txt") {
                     survey_statistics_data = db.read_statistics_txt(survey_id);
                     resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
-                } else if (format == "jpg" || format == "jpeg" || format == "png") {
-                    survey_statistics_data = db.read_statistics_image(survey_id, format);
+                } else if (format == "jpg" || format == "jpeg" ||
+                           format == "png") {
+                    survey_statistics_data =
+                        db.read_statistics_image(survey_id, format);
                     resp->setContentTypeString("image/" + format);
                 } else {
                     throw std::runtime_error("Bad format");
@@ -467,6 +471,24 @@ int main(int argc, char *argv[]) {
                 result["error"] = e.what();
                 auto resp = HttpResponse::newHttpJsonResponse(result);
                 resp->setStatusCode(k400BadRequest);
+                cb(resp);
+            }
+        },
+        {Post}
+    );
+
+    app().registerHandler(
+        "/generate-question",
+        [](const HttpRequestPtr &request,
+           std::function<void(const HttpResponsePtr &)> &&cb) {
+            auto resp = HttpResponse::newHttpResponse();
+            const auto user_message = std::string(request->getBody());
+            try {
+                resp->setBody(send_generate_request(user_message));
+                cb(resp);
+            } catch (const std::exception &e) {
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody(e.what());
                 cb(resp);
             }
         },

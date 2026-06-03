@@ -12,10 +12,7 @@
 #include "server_interaction.hpp"
 
 namespace survey {
-QuizChoiceBlock::QuizChoiceBlock(
-    const nlohmann::json &block,
-    QWidget *parent
-)
+QuizChoiceBlock::QuizChoiceBlock(const nlohmann::json &block, QWidget *parent)
     : Block(parent, block.value("required", false)) {
     setObjectName("questionBlockContainer");
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -29,8 +26,9 @@ QuizChoiceBlock::QuizChoiceBlock(
         pixmap.load(image_path);
     } else if (block.contains("image") && block.at("image").is_string()) {
         try {
-            const std::string image_data =
-                ServerInteraction::get_image(block.at("image").get<std::string>());
+            const std::string image_data = ServerInteraction::get_image(
+                block.at("image").get<std::string>()
+            );
 
             const QByteArray byte_array = QByteArray::fromStdString(image_data);
             pixmap.loadFromData(byte_array);

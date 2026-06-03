@@ -8,6 +8,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <string>
+#include "enums.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "session.hpp"
 
@@ -290,7 +291,7 @@ void ServerInteraction::get_surveys_top(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/api/surveys/top/";
+    std::string url = "http://127.0.0.1:8080/api/surveys/top";
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -300,4 +301,47 @@ void ServerInteraction::get_surveys_top(
     );
 };
 
+
+void ServerInteraction::generate_question(
+    const nlohmann::json &section_data,
+    SurveyType survey_type,
+    BlockType block_type,
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
+) {
+    std::string url = "http://127.0.0.1:8080/generate-question";
+
+    std::string user_message =
+        "Текущее состояние раздела:\n" + section_data.dump() + '\n';
+    switch (survey_type) {
+        case SurveyType::Survey:
+            user_message += "Создаю опрос.";
+            break;
+        case SurveyType::Test:
+            user_message += "Создаю тест.";
+            break;
+        case SurveyType::Quiz:
+            user_message += "Создаю квиз.";
+            break;
+    }
+    switch (block_type) {
+        case BlockType::Text:
+            user_message += "Сгенерируй текстовый вопрос.";
+            break;
+        case BlockType::Single:
+            user_message += "Сгенерируй вопрос с единичным выбором ответа.";
+            break;
+        case BlockType::Multiple:
+            user_message += "Сгенерируй вопрос с множественным выбором ответа.";
+            break;
+    }
+
+    send_request(
+        url, Method::POST,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
+        failure, false, user_message
+    );
+}
 }  // namespace survey

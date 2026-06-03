@@ -9,11 +9,12 @@
 #include <QWidget>
 #include <algorithm>
 #include <vector>
+#include "enums.hpp"
 #include "server_interaction.hpp"
 
 namespace survey {
 MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
-    Created_Type type,
+    SurveyType type,
     QWidget *parent
 )
     : BlockEditor(type, parent) {
@@ -72,7 +73,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     image_preview_ = new QLabel(this);
     layout->addWidget(image_preview_);
 
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         auto *correct_label = new QLabel("Mark the correct answer(s)", this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
@@ -102,6 +103,31 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     setLayout(layout);
 }
 
+MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
+    SurveyType type,
+    const nlohmann::json &question_data,
+    QWidget *parent
+)
+    : MultipleChoiceBlockEditor(type, parent) {
+    question_->setText(
+        QString::fromStdString(question_data.at("text").get<std::string>())
+    );
+
+    const auto &options_data = question_data.at("options");
+    for (int i = 0; i < options_data.size() - 1; ++i) {
+        options_.back()->setText(QString::fromStdString(options_data[i]));
+        add_option();
+    }
+    options_.back()->setText(QString::fromStdString(options_data.back()));
+
+    required_->setChecked(question_data.at("required").get<bool>());
+    if (type_ == SurveyType::Test) {
+        for (int index : question_data.at("answer")) {
+            correct_answers_->buttons().at(index - 1)->setChecked(true);
+        }
+    }
+}
+
 void MultipleChoiceBlockEditor::add_option() {
     auto *row_widget = new QWidget(this);
     auto *row_layout = new QHBoxLayout(row_widget);
@@ -114,7 +140,7 @@ void MultipleChoiceBlockEditor::add_option() {
     options_.push_back(option);
 
     QAbstractButton *correct_button = nullptr;
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         auto *correct = new QCheckBox("Correct", row_widget);
         correct->setObjectName("correctOptionToggle");
         row_layout->addWidget(correct);
@@ -150,7 +176,8 @@ void MultipleChoiceBlockEditor::add_option() {
 
 void MultipleChoiceBlockEditor::to_json(
     bool preview_mode,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     nlohmann::json block;
     block["type"] = "multiple";
@@ -165,7 +192,7 @@ void MultipleChoiceBlockEditor::to_json(
 
     block["required"] = required_->isChecked();
 
-    if (type_ == TEST) {
+    if (type_ == SurveyType::Test) {
         std::vector<int> answers;
         for (int i = 0; i < options_layout_->count(); ++i) {
             auto *item = options_layout_->itemAt(i);
@@ -194,13 +221,12 @@ void MultipleChoiceBlockEditor::to_json(
             image_name_.toStdString(), image_data_,
             [=](const std::string &image_oid) mutable {
                 block["image"] = image_oid;
-                callback(block);
+                success(block);
             },
-            [](const std::string &) {}
+            failure
         );
         return;
     }
-
-    callback(block);
+    success(block);
 }
 }  // namespace survey

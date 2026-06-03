@@ -1,7 +1,12 @@
 #ifndef PRETTY_VIEW_HPP_
 #define PRETTY_VIEW_HPP_
 
+#include <QApplication>
+#include <QClipboard>
+#include <QDialog>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
@@ -26,15 +31,14 @@ inline void show_message_box(
     box->show();
 }
 
-inline void show_message_box(
+inline void show_qr_code(
     QWidget *parent,
-    const QPixmap &pixmap,
+    const QPixmap &qr_pixmap,
     const QString &title,
-    const QString &text
+    const QString &survey_id
 ) {
     auto dialog = new QDialog(parent);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
-
     dialog->setWindowTitle(title);
 
     auto *root = new QVBoxLayout(dialog);
@@ -53,15 +57,24 @@ inline void show_message_box(
     message_row->setSpacing(24);
 
     auto *qr_label = new QLabel(content);
-    qr_label->setPixmap(pixmap);
-    qr_label->setFixedSize(pixmap.size());
+    qr_label->setPixmap(qr_pixmap);
+    qr_label->setFixedSize(qr_pixmap.size());
     qr_label->setScaledContents(false);
 
-    auto *text_label = new QLabel(text, content);
+    auto *text_label =
+        new QLabel("Your survey ID:\n" + survey_id, content);
     text_label->setWordWrap(true);
 
     message_row->addWidget(qr_label);
     message_row->addWidget(text_label);
+
+    auto *copy_button = new QPushButton("Copy to clipboard", content);
+    QBoxLayout::connect(
+        copy_button, &QPushButton::clicked, dialog,
+        [survey_id]() {
+            QApplication::clipboard()->setText(survey_id);
+        }
+    );
 
     auto *ok_button = new QPushButton("OK", content);
     QBoxLayout::connect(
@@ -70,6 +83,7 @@ inline void show_message_box(
 
     auto *button_row = new QHBoxLayout();
     button_row->addStretch();
+    button_row->addWidget(copy_button);
     button_row->addWidget(ok_button);
 
     content_layout->addLayout(message_row);

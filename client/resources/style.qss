@@ -395,6 +395,16 @@ QWidget#questionCard:hover {
     border: 1px solid #b8c4d3;
 }
 
+QWidget#surveyCard {
+    background-color: white;
+    border: 1px solid #cfd8e3;
+    border-radius: 18px;
+}
+
+QWidget#surveyCard:hover {
+    border: 1px solid #263244;
+}
+
 QLabel#questionTitle {
     font-size: 24px;
     font-weight: 700;

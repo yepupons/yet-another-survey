@@ -10,12 +10,13 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QString>
 #include <QTextEdit>
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include "enums.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include <QString>
 #include "pretty_view.hpp"
 #include "section_editor.hpp"
 #include "server_interaction.hpp"
@@ -23,7 +24,7 @@
 #include "survey_taking.hpp"
 
 namespace survey {
-SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
+SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     : QMainWindow(parent), type_(type) {
     auto *central = new QWidget(this);
     central->setObjectName("centralWidget");
@@ -32,7 +33,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
     central_layout->setAlignment(Qt::AlignTop);
     central_layout->setContentsMargins(24, 24, 24, 24);
     central_layout->setSpacing(16);
-    
+
     setWindowTitle("Survey Builder (" + write_type(type) + ")");
 
     auto *top_row = new QHBoxLayout();
@@ -108,7 +109,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
 
     central_layout->addWidget(scroll_area);
 
-    if (type_ != QUIZ) {
+    if (type_ != SurveyType::Quiz) {
         auto *bottom_row = new QHBoxLayout();
         bottom_row->addStretch();
 
@@ -146,6 +147,12 @@ SurveyBuilderWindow::SurveyBuilderWindow(Created_Type type, QWidget *parent)
                 preview->setAttribute(Qt::WA_DeleteOnClose);
                 preview->setWindowTitle("Preview");
                 preview->show();
+            },
+            [=, this](const std::string &error) {
+                show_message_box(
+                    this, QMessageBox::Warning, "Error",
+                    QString::fromStdString(error)
+                );
             }
         );
     });
@@ -164,26 +171,29 @@ void SurveyBuilderWindow::build_sections_json(
     bool preview_mode,
     std::shared_ptr<nlohmann::json> survey,
     int current_section,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     sections_[current_section]->to_json(
         preview_mode,
         [=, this](const nlohmann::json &section) {
             (*survey)["sections"].push_back(section);
             if (current_section == sections_.size() - 1) {
-                callback(*survey);
+                success(*survey);
                 return;
             }
             build_sections_json(
-                preview_mode, survey, current_section + 1, callback
+                preview_mode, survey, current_section + 1, success, failure
             );
-        }
+        },
+        failure
     );
 }
 
 void SurveyBuilderWindow::build_survey_json(
     bool preview_mode,
-    std::function<void(const nlohmann::json &)> callback
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
 ) const {
     auto survey = std::make_shared<nlohmann::json>();
     (*survey)["data"]["creator_id"] = session().get_id();
@@ -194,44 +204,56 @@ void SurveyBuilderWindow::build_survey_json(
     (*survey)["description"] = description_->toPlainText().trimmed().toStdString();
 
     (*survey)["sections"] = nlohmann::json::array();
-    build_sections_json(preview_mode, survey, 0, callback);
+    if (sections_.empty()) {
+        success(*survey);
+    } else {
+        build_sections_json(preview_mode, survey, 0, success, failure);
+    }
 }
 
 
 void SurveyBuilderWindow::save_survey() {
-    build_survey_json(false, [=, this](const nlohmann::json &survey_data) {
-    server().post_survey(
-        survey_data,
-        [=, this](const nlohmann::json &response) {
-            const QString id = QString::fromStdString(response.at("survey_id").get<std::string>());
-            QrCodeGenerator generator(this);
-            const QImage qr_image =
-                generator.generateQr(id, 260, 4);
-
-            show_message_box(
-                parentWidget(), QPixmap::fromImage(qr_image), "Saved",
-                "Survey has been saved.\nYour ID:\n" + id
+    build_survey_json(
+        false,
+        [=, this](const nlohmann::json &survey_data) {
+            server().post_survey(
+                survey_data,
+                [=, this](const nlohmann::json &response) {
+                    const QString id = QString::fromStdString(
+                        response.at("survey_id").get<std::string>()
+                    );
+                    QrCodeGenerator generator(this);
+                    const QImage qr_image = generator.generateQr(id, 260, 4);
+                    show_qr_code(
+                        parentWidget(), QPixmap::fromImage(qr_image), "Saved",
+                        id
+                    );
+                    deleteLater();
+                },
+                [=, this](const std::string &error) {
+                    show_message_box(
+                        this, QMessageBox::Warning, "Error",
+                        QString::fromStdString(error)
+                    );
+                }
             );
-
-            deleteLater();
         },
-            [=, this](const std::string &error) {
-                show_message_box(
-                    this, QMessageBox::Warning, "Error",
-                    QString::fromStdString(error)
-                );
-            }
-        );
-    });
+        [=, this](const std::string &error) {
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
+        }
+    );
 }
 
-const QString SurveyBuilderWindow::write_type(Created_Type type){
-    switch (type){
-        case SURVEY:
+const QString SurveyBuilderWindow::write_type(SurveyType type) {
+    switch (type) {
+        case SurveyType::Survey:
             return "survey";
-        case TEST:
+        case SurveyType::Test:
             return "test";
-        case QUIZ:
+        case SurveyType::Quiz:
             return "quiz";
     }
 }

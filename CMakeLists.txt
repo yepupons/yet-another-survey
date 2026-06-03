@@ -80,6 +80,7 @@ if(EMSCRIPTEN)
         client/src/view_passed_surveys.cpp
         client/src/test_results.cpp
         client/src/created_surveys_window.cpp
+        client/src/top_surveys_window.cpp
 
         # Headers
         client/include/main_window.hpp
@@ -104,6 +105,9 @@ if(EMSCRIPTEN)
         client/include/view_passed_surveys.hpp
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
+
+        client/include/russian_hotkeys_handler.hpp
+        client/include/top_surveys_window.hpp
 
         # Resources
         client/resources/resources.qrc
@@ -208,6 +212,7 @@ else()
         client/src/view_passed_surveys.cpp
         client/src/test_results.cpp
         client/src/created_surveys_window.cpp
+        client/src/top_surveys_window.cpp
 
         # Because of Qt issues
         client/include/main_window.hpp
@@ -232,6 +237,9 @@ else()
         client/include/test_results.hpp
         client/include/created_surveys_window.hpp
 
+        client/include/russian_hotkeys_handler.hpp
+        client/include/top_surveys_window.hpp
+
         client/resources/resources.qrc
     )
 
@@ -242,7 +250,6 @@ else()
     target_link_libraries(client PRIVATE
         Qt6::Widgets
         Qt6::Network
-        CURL::libcurl
         nlohmann_json::nlohmann_json
         matplot
         qrcodegenerator
@@ -252,6 +259,7 @@ else()
     add_executable(server
         server/src/main.cpp
         server/src/database.cpp
+        server/src/ollama_interaction.cpp
         server/src/survey_service.cpp
     )
 
@@ -266,6 +274,7 @@ else()
         mongo::mongocxx_shared
         matplot
         OpenSSL::Crypto
+        CURL::libcurl
     )
 
     # TG bot

@@ -15,8 +15,11 @@
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
 #include "created_surveys_window.hpp"
+#include "enums.hpp"
 #include "login_window.hpp"
 #include "pretty_view.hpp"
+#include "server_interaction.hpp"
+#include "top_surveys_window.hpp"
 #include "session.hpp"
 #include "survey_builder_window.hpp"
 #include "survey_taking.hpp"
@@ -57,6 +60,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         QSizePolicy::Expanding, QSizePolicy::Preferred
     );
     header_layout->addWidget(header_spacer);
+
+    auto *trending_button = new QPushButton("Trending", header);
+    trending_button->setObjectName("headerNavButton");
+    header_layout->addWidget(trending_button);
 
     auto *profile_button = new QToolButton(header);
     profile_button->setObjectName("profileButton");
@@ -123,7 +130,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     open_survey_button_ = new QPushButton("Open Survey", card);
     open_survey_button_->setObjectName("primaryButton");
-    open_survey_button_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    open_survey_button_->setSizePolicy(
+        QSizePolicy::Expanding, QSizePolicy::Fixed
+    );
     input_row->addWidget(open_survey_button_, 0, 1);
 
     card_layout->addLayout(input_row);
@@ -181,6 +190,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     outer_layout->addWidget(header);
     outer_layout->addWidget(content_wrapper);
 
+    connect(
+        trending_button, &QPushButton::clicked, this,
+        &MainWindow::show_trending
+    );
     connect(
         open_survey_button_, &QPushButton::clicked, this,
         &MainWindow::open_survey
@@ -262,13 +275,13 @@ void MainWindow::create_survey() {
     menu->setStyleSheet(styleSheet());
 
     auto *survey = menu->addAction("Survey");
-    survey->setData(survey::SURVEY);
+    survey->setData(static_cast<int>(SurveyType::Survey));
     menu->addSeparator();
     auto *test = menu->addAction("Test");
-    test->setData(survey::TEST);
+    test->setData(static_cast<int>(SurveyType::Test));
     menu->addSeparator();
     auto *quiz = menu->addAction("Quiz");
-    quiz->setData(survey::QUIZ);
+    quiz->setData(static_cast<int>(SurveyType::Quiz));
 
     connect(
         menu, &QMenu::triggered, this,
@@ -276,7 +289,7 @@ void MainWindow::create_survey() {
             if (!chosen) {
                 return;
             }
-            auto chosen_type = static_cast<survey::Created_Type>(chosen->data().toInt());
+            auto chosen_type = static_cast<SurveyType>(chosen->data().toInt());
             auto *builder = new SurveyBuilderWindow(chosen_type);
             builder->setAttribute(Qt::WA_DeleteOnClose);
             builder->showMaximized();
@@ -293,6 +306,22 @@ void MainWindow::get_created_surveys() {
     auto *created_surveys = new CreatedSurveysWindow(this);
     created_surveys->setAttribute(Qt::WA_DeleteOnClose);
     created_surveys->showMaximized();
+}
+
+void MainWindow::show_trending() {
+    server().get_surveys_top(
+        [this](const nlohmann::json &surveys) {
+            auto *window = new TopSurveysWindow(surveys, this);
+            window->setAttribute(Qt::WA_DeleteOnClose);
+            window->showMaximized();
+        },
+        [this](const std::string &error) {
+            show_message_box(
+                this, QMessageBox::Warning, "Error",
+                QString::fromStdString(error)
+            );
+        }
+    );
 }
 
 void MainWindow::get_passed_surveys() {

@@ -1,8 +1,9 @@
 #include "survey_taking.hpp"
 #include <qobject.h>
-#include <map>
 #include <QMessageBox>
 #include <QWidget>
+#include <map>
+#include "enums.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "pretty_view.hpp"
 #include "server_interaction.hpp"
@@ -61,11 +62,6 @@ void SurveyTaking::open_next_section(int next_section_id) {
             deleteLater();
             return;
         }
-        const std::string type =
-            survey_data_.at("data").at("type").get<std::string>();
-        const std::string sid =
-            survey_data_.at("data").at("id").get<std::string>();
-
         auto show_rating = [=, this](const std::string &answer_id) {
             auto *box = show_question_box(
                 parentWidget(), QMessageBox::Question,
@@ -74,95 +70,110 @@ void SurveyTaking::open_next_section(int next_section_id) {
             );
             connect(box, &QMessageBox::finished, this, [=, this](int result) {
                 server().post_rate(
-                    sid, answer_id, result == QMessageBox::Yes,
+                    survey_id_, answer_id, result == QMessageBox::Yes,
                     [](const nlohmann::json &) {}, [](const std::string &) {}
                 );
                 deleteLater();
             });
         };
 
-        if (type == "test") {
-            server().check_answer(
-                answer_data_,
-                [=, this](const nlohmann::json &result) {
-                    auto *view = new ViewTestResults(result, this);
-                    view->setAttribute(Qt::WA_DeleteOnClose);
-                    view->show();
-                    show_rating(
-                        result.at("data").at("answer_id").get<std::string>()
-                    );
-                },
-                [=, this](const std::string &error) {
-                    show_message_box(
-                        parentWidget(), QMessageBox::Warning, "Error",
-                        QString::fromStdString(error)
-                    );
-                    deleteLater();
-                });
-            return;
-        } else if (type == "quiz") {
-            std::map<std::string, int> scores;
+        auto type =
+            SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>()
+            );
+        switch (type) {
+            case SurveyType::Survey: {
+                server().post_answer(
+                    answer_data_, survey_id_,
+                    [=, this](const nlohmann::json &submission_result) {
+                        submission_result_ = submission_result;
+                        const std::string answer_id =
+                            submission_result.at("answer_id").get<std::string>();
+                        show_rating(answer_id);
+                    },
+                    [=, this](const std::string &error) {
+                        show_message_box(
+                            parentWidget(), QMessageBox::Warning, "Error",
+                            QString::fromStdString(error)
+                        );
+                        deleteLater();
+                    }
+                );
+                break;
+            }
+            case SurveyType::Test: {
+                server().check_answer(
+                    answer_data_,
+                    [=, this](const nlohmann::json &result) {
+                        auto *view = new ViewTestResults(result, this);
+                        view->setAttribute(Qt::WA_DeleteOnClose);
+                        view->show();
+                        show_rating(
+                            result.at("data").at("answer_id").get<std::string>()
+                        );
+                    },
+                    [=, this](const std::string &error) {
+                        show_message_box(
+                            parentWidget(), QMessageBox::Warning, "Error",
+                            QString::fromStdString(error)
+                        );
+                        deleteLater();
+                    }
+                );
+                break;
+            }
+            case SurveyType::Quiz: {
+                std::map<std::string, int> scores;
 
-            for (size_t i = 0; i < answer_data_["sections"].size(); ++i) {
-                const auto &answers = answer_data_["sections"][i];
-                const auto &questions = survey_data_["sections"][i]["questions"];
+                for (size_t i = 0; i < answer_data_["sections"].size(); ++i) {
+                    const auto &answers = answer_data_["sections"][i];
+                    const auto &questions =
+                        survey_data_["sections"][i]["questions"];
 
-                for (size_t j = 0; j < answers.size(); ++j) {
-                    int answer_idx = answers[j]["answer"].get<int>();
-                    if (answer_idx <= 0) continue;
+                    for (size_t j = 0; j < answers.size(); ++j) {
+                        int answer_idx = answers[j]["answer"].get<int>();
+                        if (answer_idx <= 0) {
+                            continue;
+                        }
 
-                    const auto &scores_arr = questions[j]["scores"];
-                    if (static_cast<size_t>(answer_idx - 1) < scores_arr.size()) {
-                        scores[scores_arr[answer_idx - 1].get<std::string>()]++;
+                        const auto &scores_arr = questions[j]["scores"];
+                        if (static_cast<size_t>(answer_idx - 1) <
+                            scores_arr.size()) {
+                            scores[scores_arr[answer_idx - 1].get<std::string>(
+                            )]++;
+                        }
                     }
                 }
-            }
 
-            std::string winner;
-            int max_score = -1;
-            for (const auto &[name, score] : scores) {
-                if (score > max_score) {
-                    max_score = score;
-                    winner = name;
+                std::string winner;
+                int max_score = -1;
+                for (const auto &[name, score] : scores) {
+                    if (score > max_score) {
+                        max_score = score;
+                        winner = name;
+                    }
                 }
-            }
 
-            show_message_box(
-                this, QMessageBox::Information, "Result",
-                "You are: " + QString::fromStdString(winner)
-            );
-            server().post_answer(
-                answer_data_, survey_id_,
-                [=, this](const nlohmann::json &submission_result) {
-                    const std::string answer_id =
-                        submission_result.at("answer_id").get<std::string>();
-                    show_rating(answer_id);
-                },
-                [=, this](const std::string &error) {
-                    show_message_box(
-                        parentWidget(), QMessageBox::Warning, "Error",
-                        QString::fromStdString(error)
-                    );
-                    deleteLater();
-                }
-            );
-        } else {
-            server().post_answer(
-                answer_data_, survey_id_,
-                [=, this](const nlohmann::json &submission_result) {
-                    submission_result_ = submission_result;
-                    const std::string answer_id =
-                        submission_result.at("answer_id").get<std::string>();
-                    show_rating(answer_id);
-                },
-                [=, this](const std::string &error) {
-                    show_message_box(
-                        parentWidget(), QMessageBox::Warning, "Error",
-                        QString::fromStdString(error)
-                    );
-                    deleteLater();
-                }
-            );
+                show_message_box(
+                    this, QMessageBox::Information, "Result",
+                    "You are: " + QString::fromStdString(winner)
+                );
+                server().post_answer(
+                    answer_data_, survey_id_,
+                    [=, this](const nlohmann::json &submission_result) {
+                        const std::string answer_id =
+                            submission_result.at("answer_id").get<std::string>();
+                        show_rating(answer_id);
+                    },
+                    [=, this](const std::string &error) {
+                        show_message_box(
+                            parentWidget(), QMessageBox::Warning, "Error",
+                            QString::fromStdString(error)
+                        );
+                        deleteLater();
+                    }
+                );
+                break;
+            }
         }
 
     } else {
@@ -175,7 +186,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
         current_section_->activateWindow();
         connect(
             current_section_, &SurveyWindow::closed_with_answer, this,
-            &SurveyTaking::open_next_section
+            &SurveyTaking::open_next_section, Qt::DirectConnection
         );
         connect(
             current_section_, &SurveyWindow::closed_without_answer, this,
@@ -185,7 +196,8 @@ void SurveyTaking::open_next_section(int next_section_id) {
                     "Your answers haven't been saved"
                 );
                 deleteLater();
-            }
+            },
+            Qt::DirectConnection
         );
     }
 }
