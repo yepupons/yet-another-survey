@@ -1,0 +1,239 @@
+#include "survey_validator.hpp"
+#include <set>
+#include <stdexcept>
+
+namespace survey {
+void SurveyValidator::validate_survey_payload(
+    const nlohmann::json &payload
+) const {
+    if (!payload.contains("data") || !payload["data"].is_object()) {
+        throw std::invalid_argument("Survey data is required");
+    }
+
+    if (!payload["data"].contains("type") ||
+        !payload["data"]["type"].is_string()) {
+        throw std::invalid_argument("Survey type is required");
+    }
+
+    const std::string type = payload["data"]["type"].get<std::string>();
+    if (type != "survey" && type != "test" && type != "quiz") {
+        throw std::invalid_argument("Invalid survey type");
+    }
+
+    if (!payload.contains("title") || !payload["title"].is_string()) {
+        throw std::invalid_argument("Survey title is required");
+    }
+
+    const std::string title = payload["title"].get<std::string>();
+    if (title.empty() || title.size() > 200) {
+        throw std::invalid_argument("Invalid survey title");
+    }
+
+    if (!payload.contains("sections") || !payload["sections"].is_array()) {
+        throw std::invalid_argument("Survey sections are required");
+    }
+
+    const auto &sections = payload["sections"];
+    if (sections.empty() || sections.size() > 50) {
+        throw std::invalid_argument("Invalid sections count");
+    }
+
+    for (const auto &section : sections) {
+        if (!section.contains("questions") ||
+            !section["questions"].is_array()) {
+            throw std::invalid_argument("Section questions are required");
+        }
+
+        if (section["questions"].empty() || section["questions"].size() > 100) {
+            throw std::invalid_argument("Invalid questions count");
+        }
+
+        for (const auto &question : section["questions"]) {
+            validate_question_payload(type, question);
+        }
+    }
+}
+
+void SurveyValidator::validate_question_payload(
+    const std::string &survey_type,
+    const nlohmann::json &question
+) const {
+    if (!question.contains("type") || !question["type"].is_string()) {
+        throw std::invalid_argument("Question type is required");
+    }
+
+    const std::string type = question["type"].get<std::string>();
+    if (type != "text" && type != "single" && type != "multiple") {
+        throw std::invalid_argument("Invalid question type");
+    }
+
+    if (!question.contains("text") || !question["text"].is_string()) {
+        throw std::invalid_argument("Question text is required");
+    }
+
+    if (question["text"].get<std::string>().size() > 3000) {
+        throw std::invalid_argument("Question text is too long");
+    }
+
+    if (question.contains("required") && !question["required"].is_boolean()) {
+        throw std::invalid_argument("Question required must be boolean");
+    }
+
+    if (question.contains("image") && !question["image"].is_string()) {
+        throw std::invalid_argument("Question image must be string");
+    }
+
+    if (type == "single" || type == "multiple") {
+        if (!question.contains("options") || !question["options"].is_array()) {
+            throw std::invalid_argument("Question options are required");
+        }
+
+        const auto &options = question["options"];
+        if (options.empty() || options.size() > 50) {
+            throw std::invalid_argument("Invalid options count");
+        }
+
+        for (const auto &option : options) {
+            if (!option.is_string() || option.get<std::string>().size() > 300) {
+                throw std::invalid_argument("Invalid option");
+            }
+        }
+    }
+
+    if (survey_type == "test") {
+        if (!question.contains("answer")) {
+            throw std::invalid_argument("Correct answer is required for test");
+        }
+    }
+
+    if (survey_type == "quiz") {
+        if (!question.contains("scores") || !question["scores"].is_array()) {
+            throw std::invalid_argument("Scores are required for quiz");
+        }
+    }
+}
+
+void SurveyValidator::validate_answer_payload(
+    const nlohmann::json &survey,
+    const nlohmann::json &answer
+) const {
+    if (!answer.contains("sections") || !answer["sections"].is_array()) {
+        throw std::invalid_argument("Answer sections are required");
+    }
+
+    const auto &survey_sections = survey.at("sections");
+    const auto &answer_sections = answer.at("sections");
+    if (answer_sections.size() != survey_sections.size()) {
+        throw std::invalid_argument("Invalid answer sections count");
+    }
+
+    for (std::size_t section_index = 0; section_index < survey_sections.size();
+         ++section_index) {
+        const auto &survey_section = survey_sections.at(section_index);
+        const auto &answer_section = answer_sections.at(section_index);
+        if (!survey_section.contains("questions") ||
+            !survey_section.at("questions").is_array()) {
+            throw std::invalid_argument("Invalid survey section");
+        }
+        if (!answer_section.is_array()) {
+            throw std::invalid_argument("Answer section must be an array");
+        }
+
+        if (answer_section.empty()) {
+            continue;
+        }
+
+        const auto &questions = survey_section.at("questions");
+        if (answer_section.size() != questions.size()) {
+            throw std::invalid_argument("Invalid answers count in section");
+        }
+
+        for (std::size_t question_index = 0; question_index < questions.size();
+             ++question_index) {
+            const auto &question = questions.at(question_index);
+            const auto &answer_item = answer_section.at(question_index);
+
+            if (!question.contains("type") ||
+                !question.at("type").is_string()) {
+                throw std::invalid_argument("Question type is required");
+            }
+            if (!answer_item.is_object() || !answer_item.contains("answer")) {
+                throw std::invalid_argument("Answer item is invalid");
+            }
+
+            const std::string question_type =
+                question.at("type").get<std::string>();
+            const bool required = question.value("required", false);
+            const auto &value = answer_item.at("answer");
+
+            if (question_type == "text") {
+                if (!value.is_string()) {
+                    throw std::invalid_argument("Text answer must be string");
+                }
+                const std::string text_answer = value.get<std::string>();
+                if (required && text_answer.empty()) {
+                    throw std::invalid_argument("Required answer is empty");
+                }
+                if (text_answer.size() > 5000) {
+                    throw std::invalid_argument("Text answer is too long");
+                }
+            } else if (question_type == "single") {
+                if (!question.contains("options") ||
+                    !question.at("options").is_array()) {
+                    throw std::invalid_argument(
+                        "Single question options are required"
+                    );
+                }
+                if (!value.is_number_integer()) {
+                    throw std::invalid_argument("Single answer must be integer");
+                }
+
+                const int selected = value.get<int>();
+                const int options_count = question.at("options").size();
+                if (selected == -1 && !required) {
+                    continue;
+                }
+                if (selected < 1 || selected > options_count) {
+                    throw std::invalid_argument("Single answer is out of range");
+                }
+            } else if (question_type == "multiple") {
+                if (!question.contains("options") ||
+                    !question.at("options").is_array()) {
+                    throw std::invalid_argument(
+                        "Multiple question options are required"
+                    );
+                }
+                if (!value.is_array()) {
+                    throw std::invalid_argument("Multiple answer must be array");
+                }
+                if (required && value.empty()) {
+                    throw std::invalid_argument("Required answer is empty");
+                }
+
+                const int options_count = question.at("options").size();
+                std::set<int> selected_options;
+                for (const auto &selected_json : value) {
+                    if (!selected_json.is_number_integer()) {
+                        throw std::invalid_argument(
+                            "Multiple answer option must be integer"
+                        );
+                    }
+                    const int selected = selected_json.get<int>();
+                    if (selected < 1 || selected > options_count) {
+                        throw std::invalid_argument(
+                            "Multiple answer is out of range"
+                        );
+                    }
+                    if (!selected_options.insert(selected).second) {
+                        throw std::invalid_argument(
+                            "Multiple answer contains duplicates"
+                        );
+                    }
+                }
+            } else {
+                throw std::invalid_argument("Invalid question type");
+            }
+        }
+    }
+}
+}  // namespace survey

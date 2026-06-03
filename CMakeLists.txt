@@ -261,6 +261,7 @@ else()
         server/src/database.cpp
         server/src/ollama_interaction.cpp
         server/src/survey_service.cpp
+        server/src/survey_validator.cpp
     )
 
     target_include_directories(server PRIVATE
