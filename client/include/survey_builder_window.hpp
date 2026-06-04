@@ -1,6 +1,7 @@
 #ifndef SURVEY_BUILDER_WINDOW_HPP_
 #define SURVEY_BUILDER_WINDOW_HPP_
 #include <qtmetamacros.h>
+#include <QCheckBox>
 #include <QLineEdit>
 #include <QList>
 #include <QMainWindow>
@@ -33,6 +34,7 @@ private:
 
     QLineEdit *title_ = nullptr;
     QTextEdit *description_ = nullptr;
+    QCheckBox *is_public_ = nullptr;
     QList<SectionEditor *> sections_;
     QVBoxLayout *sections_layout_ = nullptr;
     QStringListModel *sections_list_ = nullptr;

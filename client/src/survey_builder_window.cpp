@@ -3,6 +3,7 @@
 #include <qglobal.h>
 #include <qlineedit.h>
 #include <qobject.h>
+#include <QCheckBox>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QImage>
@@ -107,6 +108,12 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     description_->setFixedHeight(56);
     description_->setFrameShape(QFrame::NoFrame);
     meta_layout->addWidget(description_);
+
+    is_public_ = new QCheckBox(tr("Public survey"), meta_card);
+    is_public_->setObjectName("requiredToggle");
+    is_public_->setChecked(true);
+    meta_layout->addSpacing(6);
+    meta_layout->addWidget(is_public_);
 
     auto *scroll_area = new QScrollArea(central);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -221,6 +228,7 @@ void SurveyBuilderWindow::build_survey_json(
     auto survey = std::make_shared<nlohmann::json>();
     (*survey)["data"]["creator_id"] = session().get_id();
     (*survey)["data"]["type"] = write_type(type_).toStdString();
+    (*survey)["data"]["is_public"] = is_public_ ? is_public_->isChecked() : true;
     (*survey)["title"] = title_->text().trimmed().isEmpty()
                              ? "Unnamed"
                              : title_->text().trimmed().toStdString();

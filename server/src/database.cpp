@@ -773,7 +773,7 @@ std::string Database::get_top_surveys() {
     opts.limit(10);
 
     auto cursor = db()["surveys"].find(
-        document{} << finalize,
+        document{} << "data.is_public" << true << finalize,
         opts
     );
 
@@ -787,6 +787,11 @@ std::string Database::get_top_surveys() {
         return (el && el.type() == bsoncxx::type::k_int32)
             ? el.get_int32().value : def;
     };
+    auto bool_or = [](bsoncxx::document::view doc, const char *key, bool def = false) -> bool {
+        auto el = doc[key];
+        return (el && el.type() == bsoncxx::type::k_bool)
+            ? el.get_bool().value : def;
+    };
 
     nlohmann::json result = nlohmann::json::array();
     for (auto &&survey : cursor) {
@@ -799,6 +804,7 @@ std::string Database::get_top_surveys() {
         survey_json["dislikes_count"] = int_or(data, "dislikes_count");
         survey_json["ratings_count"] = int_or(data, "ratings_count");
         survey_json["rating_score"] = int_or(data, "rating_score");
+        survey_json["is_public"] = bool_or(data, "is_public", true);
         result.push_back(survey_json);
     }
     return result.dump();

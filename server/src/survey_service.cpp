@@ -21,6 +21,11 @@ void SurveyService::validate_survey_payload(const nlohmann::json &payload) const
         throw std::invalid_argument("Invalid survey type");
     }
 
+    if (payload["data"].contains("is_public") &&
+        !payload["data"]["is_public"].is_boolean()) {
+        throw std::invalid_argument("Survey visibility must be boolean");
+    }
+
     if (!payload.contains("title") || !payload["title"].is_string()) {
         throw std::invalid_argument("Survey title is required");
     }
@@ -237,6 +242,9 @@ std::string SurveyService::create_survey(const std::string &access_token, const 
     nlohmann::json survey_json = payload;
     survey_json["data"]["id"] = survey_id;
     survey_json["data"]["creator_id"] = creator_id;
+    if (!survey_json["data"].contains("is_public")) {
+        survey_json["data"]["is_public"] = true;
+    }
     survey_json["data"]["likes_count"] = 0;
     survey_json["data"]["dislikes_count"] = 0;
     survey_json["data"]["ratings_count"] = 0;

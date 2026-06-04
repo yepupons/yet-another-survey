@@ -458,6 +458,11 @@
         <translation>Добавьте описание (необязательно)</translation>
     </message>
     <message>
+        <location filename="../src/survey_builder_window.cpp" line="112"/>
+        <source>Public survey</source>
+        <translation>Публичный опрос</translation>
+    </message>
+    <message>
         <location filename="../src/survey_builder_window.cpp" line="129"/>
         <source>Save answers</source>
         <translation>Сохранить ответы</translation>
