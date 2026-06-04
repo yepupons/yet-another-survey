@@ -62,6 +62,7 @@ if(EMSCRIPTEN)
         client/src/survey_taking.cpp
         client/src/multiple_choice_block.cpp
         client/src/single_choice_block.cpp
+        client/src/quiz_choice_block.cpp
         client/src/text_block.cpp
 
         client/src/survey_builder_window.cpp
@@ -87,6 +88,7 @@ if(EMSCRIPTEN)
         client/include/multiple_choice_block.hpp
         client/include/single_choice_block.hpp
         client/include/text_block.hpp
+        client/include/quiz_choice_block.hpp
         client/include/abstract_block.hpp
 
         client/include/survey_builder_window.hpp
@@ -201,6 +203,7 @@ else()
         client/src/survey_taking.cpp
         client/src/multiple_choice_block.cpp
         client/src/single_choice_block.cpp
+        client/src/quiz_choice_block.cpp
         client/src/text_block.cpp
 
         client/src/survey_builder_window.cpp
@@ -226,6 +229,7 @@ else()
         client/include/multiple_choice_block.hpp
         client/include/single_choice_block.hpp
         client/include/text_block.hpp
+        client/include/quiz_choice_block.hpp
         client/include/abstract_block.hpp
 
         client/include/survey_builder_window.hpp

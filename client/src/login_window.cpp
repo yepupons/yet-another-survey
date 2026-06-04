@@ -20,24 +20,48 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
     central->setObjectName("centralWidget");
 
     auto *layout = new QVBoxLayout(central);
-    layout->setContentsMargins(24, 24, 24, 24);
-    layout->setSpacing(16);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
-    auto *title = new QLabel(tr("Login"), central);
+    auto *header = new QWidget(central);
+    header->setObjectName("topHeader");
+    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    header->setMinimumWidth(500);
+
+    auto *header_layout = new QHBoxLayout(header);
+    header_layout->setContentsMargins(24, 4, 24, 4);
+    header_layout->setSpacing(12);
+
+    auto *back_button = new QPushButton("←", header);
+    back_button->setObjectName("headerNavButton");
+    header_layout->addWidget(back_button);
+    header_layout->addStretch();
+
+    connect(back_button, &QPushButton::clicked, this, &LoginWindow::close);
+
+    layout->addWidget(header);
+
+    auto *content_wrapper = new QWidget(central);
+    auto *content_layout = new QVBoxLayout(content_wrapper);
+    content_layout->setContentsMargins(24, 24, 24, 24);
+    content_layout->setSpacing(16);
+
+    auto *title = new QLabel(tr("Login"), content_wrapper);
     title->setObjectName("titleLabel");
-    layout->addWidget(title);
+    content_layout->addWidget(title);
 
     status_label_ =
-        new QLabel(tr("Authorize with Telegram to link your account."), central);
+        new QLabel(tr("Authorize with Telegram to link your account."), content_wrapper);
     status_label_->setObjectName("subtitleLabel");
     status_label_->setWordWrap(true);
-    layout->addWidget(status_label_);
+    content_layout->addWidget(status_label_);
 
-    login_button_ = new QPushButton(tr("Login with Telegram"), central);
+    login_button_ = new QPushButton(tr("Login with Telegram"), content_wrapper);
     login_button_->setObjectName("primaryButton");
-    layout->addWidget(login_button_);
+    content_layout->addWidget(login_button_);
 
-    layout->addStretch();
+    content_layout->addStretch();
+    layout->addWidget(content_wrapper);
     setCentralWidget(central);
 
     connect(

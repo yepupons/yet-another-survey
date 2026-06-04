@@ -8,7 +8,6 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <nlohmann/json.hpp>
-#include <stdexcept>
 #include "server_interaction.hpp"
 
 namespace survey {
@@ -25,16 +24,16 @@ QuizChoiceBlock::QuizChoiceBlock(const nlohmann::json &block, QWidget *parent)
             QString::fromStdString(block.at("image_path").get<std::string>());
         pixmap.load(image_path);
     } else if (block.contains("image") && block.at("image").is_string()) {
-        try {
-            const std::string image_data = ServerInteraction::get_image(
-                block.at("image").get<std::string>()
-            );
-
-            const QByteArray byte_array = QByteArray::fromStdString(image_data);
-            pixmap.loadFromData(byte_array);
-        } catch (const std::exception &) {
-            pixmap = QPixmap();
-        }
+        server().get_image(
+            block.at("image").get<std::string>(),
+            [&pixmap](const std::string &image_data) {
+                const QByteArray byte_array = QByteArray::fromStdString(image_data);
+                pixmap.loadFromData(byte_array);
+            },
+            [](const std::string &) {
+                // image load failed — leave pixmap null
+            }
+        );
     }
 
     if (!pixmap.isNull()) {
