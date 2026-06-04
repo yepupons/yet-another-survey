@@ -29,28 +29,27 @@ SectionEditor::SectionEditor(
 
     if (type_ != SurveyType::Quiz) {
         layout->addWidget(new QLabel(
-            "Section " +
-                QString::number(sections_list->stringList().size() - 1),
+            tr("Section %1").arg(sections_list->stringList().size() - 1),
             this
         ));
 
         title_ = new QLineEdit(this);
-        title_->setPlaceholderText("Write section title here");
+        title_->setPlaceholderText(tr("Write section title here"));
         layout->addWidget(title_);
 
-        layout->addWidget(new QLabel("Questions", this));
+        layout->addWidget(new QLabel(tr("Questions"), this));
     }
 
     if (type_ == SurveyType::Quiz) {
         outcomes_model_ = new QStringListModel(this);
-        auto *outcomes_label_ = new QLabel("Outcomes", this);
+        auto *outcomes_label_ = new QLabel(tr("Outcomes"), this);
         outcomes_label_->setObjectName("sectionLabel");
         layout->addWidget(outcomes_label_);
 
         outcomes_layout_ = new QVBoxLayout();
         layout->addLayout(outcomes_layout_);
 
-        auto *add_outcome_button = new QPushButton("Add outcome", this);
+        auto *add_outcome_button = new QPushButton(tr("Add outcome"), this);
         add_outcome_button->setObjectName("secondaryButton");
         layout->addWidget(add_outcome_button);
 
@@ -81,11 +80,11 @@ SectionEditor::SectionEditor(
     }
     
     bottom_row->addStretch();
-    add_block_button_ = new QPushButton("Add question", this);
+    add_block_button_ = new QPushButton(tr("Add question"), this);
     bottom_row->addWidget(add_block_button_);
     
     if (type_ != SurveyType::Quiz) {
-        use_AI_ = new QCheckBox("Use AI", this);
+        use_AI_ = new QCheckBox(tr("Use AI"), this);
         use_AI_->setObjectName("requiredToggle");
         bottom_row->addWidget(use_AI_);
     }
@@ -134,7 +133,7 @@ void SectionEditor::add_outcome() {
     row_layout->setSpacing(8);
 
     auto *outcome_edit = new QLineEdit(row_widget);
-    outcome_edit->setPlaceholderText("Write outcome here");
+    outcome_edit->setPlaceholderText(tr("Write outcome here"));
     row_layout->addWidget(outcome_edit);
     outcomes_.push_back(outcome_edit);
 
@@ -189,11 +188,11 @@ void SectionEditor::add_block() {
         auto *menu = new QMenu(this);
         menu->setMinimumWidth(add_block_button_->width());
         menu->setStyleSheet(styleSheet());
-        auto *text = menu->addAction("Text");
+        auto *text = menu->addAction(tr("Text"));
         text->setData(static_cast<int>(BlockType::Text));
-        auto *single = menu->addAction("Single Choice");
+        auto *single = menu->addAction(tr("Single Choice"));
         single->setData(static_cast<int>(BlockType::Single));
-        auto *multiple = menu->addAction("Multiple Choice");
+        auto *multiple = menu->addAction(tr("Multiple Choice"));
         multiple->setData(static_cast<int>(BlockType::Multiple));
 
         connect(menu, &QMenu::triggered, this, [this](QAction *chosen) {
@@ -253,7 +252,7 @@ void SectionEditor::add_block() {
                             },
                             [=, this](const std::string &error) {
                                 show_message_box(
-                                    this, QMessageBox::Warning, "Error",
+                                    this, QMessageBox::Warning, tr("Error"),
                                     QString::fromStdString(error)
                                 );
                                 add_block_button_->setEnabled(true);

@@ -16,7 +16,7 @@ QuizChoiceBlockEditor::QuizChoiceBlockEditor(
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
-    auto *title_label = new QLabel("Single choice", this);
+    auto *title_label = new QLabel(tr("Single choice"), this);
     title_label->setObjectName("sectionLabel");
 
     auto *move_up_button = new QPushButton(this);
@@ -27,7 +27,7 @@ QuizChoiceBlockEditor::QuizChoiceBlockEditor(
     move_down_button->setObjectName("moveDownButton");
     move_down_button->setFixedSize(36, 36);
 
-    auto *delete_label = new QLabel("Delete", this);
+    auto *delete_label = new QLabel(tr("Delete"), this);
     delete_label->setObjectName("sectionLabel");
 
     auto *delete_block_button = new QPushButton(this);
@@ -53,10 +53,10 @@ QuizChoiceBlockEditor::QuizChoiceBlockEditor(
     });
 
     question_ = new QLineEdit(this);
-    question_->setPlaceholderText("Write your question here");
+    question_->setPlaceholderText(tr("Write your question here"));
     layout->addWidget(question_);
 
-    upload_image_button_ = new QPushButton("Upload Image", this);
+    upload_image_button_ = new QPushButton(tr("Upload Image"), this);
     layout->addWidget(upload_image_button_);
     connect(
         upload_image_button_, &QPushButton::clicked, this,
@@ -69,7 +69,7 @@ QuizChoiceBlockEditor::QuizChoiceBlockEditor(
     options_layout_ = new QVBoxLayout();
     layout->addLayout(options_layout_);
 
-    add_option_button_ = new QPushButton("Add option", this);
+    add_option_button_ = new QPushButton(tr("Add option"), this);
     add_option_button_->setObjectName("secondaryButton");
     layout->addWidget(add_option_button_);
 
@@ -80,7 +80,7 @@ QuizChoiceBlockEditor::QuizChoiceBlockEditor(
         &QuizChoiceBlockEditor::add_option
     );
 
-    required_ = new QCheckBox("Required", this);
+    required_ = new QCheckBox(tr("Required"), this);
     required_->setObjectName("requiredToggle");
     required_->setChecked(true);
     layout->addWidget(required_);
@@ -95,7 +95,7 @@ void QuizChoiceBlockEditor::add_option() {
     row_layout->setSpacing(8);
 
     auto *option = new QLineEdit(row_widget);
-    option->setPlaceholderText("Write option text here");
+    option->setPlaceholderText(tr("Write option text here"));
     row_layout->addWidget(option);
     options_.push_back(option);
 

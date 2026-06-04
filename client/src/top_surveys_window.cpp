@@ -15,7 +15,7 @@ namespace survey {
 TopSurveysWindow::TopSurveysWindow(
     const nlohmann::json &surveys, QWidget *parent
 ) : QDialog(parent) {
-    setWindowTitle("Trending surveys");
+    setWindowTitle(tr("Trending surveys"));
 
     auto *header = new QWidget(this);
     header->setObjectName("topHeader");
@@ -57,12 +57,12 @@ TopSurveysWindow::TopSurveysWindow(
     title_layout->setContentsMargins(24, 24, 24, 24);
     title_layout->setSpacing(8);
 
-    auto *title_label = new QLabel("Trending surveys", title_card);
+    auto *title_label = new QLabel(tr("Trending surveys"), title_card);
     title_label->setObjectName("titleLabel");
     title_layout->addWidget(title_label);
 
     auto *subtitle_label = new QLabel(
-        "Top 10 surveys rated by the community.", title_card
+        tr("Top 10 surveys rated by the community."), title_card
     );
     subtitle_label->setObjectName("subtitleLabel");
     title_layout->addWidget(subtitle_label);
@@ -75,7 +75,7 @@ TopSurveysWindow::TopSurveysWindow(
         empty_card->setFixedWidth(720);
         auto *empty_layout = new QVBoxLayout(empty_card);
         empty_layout->setContentsMargins(24, 24, 24, 24);
-        auto *empty_label = new QLabel("No surveys yet.", empty_card);
+        auto *empty_label = new QLabel(tr("No surveys yet."), empty_card);
         empty_label->setObjectName("titleLabel");
         empty_layout->addWidget(empty_label);
         content_layout->addWidget(empty_card, 0, Qt::AlignHCenter);
@@ -115,7 +115,7 @@ TopSurveysWindow::TopSurveysWindow(
             card_layout->addWidget(survey_description);
         }
 
-        const QString stats = QString("Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings")
+        const QString stats = tr("Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings")
                                   .arg(score).arg(likes).arg(dislikes).arg(total);
         auto *stats_label = new QLabel(stats, card);
         stats_label->setObjectName("subtitleLabel");

@@ -143,7 +143,7 @@ SurveyWindow::SurveyWindow(
     // instructions
     content_wrapper_layout->addWidget(scroll_area);
 
-    save_answer_button_ = new QPushButton("Save answers", content_wrapper);
+    save_answer_button_ = new QPushButton(tr("Save answers"), content_wrapper);
     save_answer_button_->setObjectName("primaryButton");
     content_wrapper_layout->addWidget(save_answer_button_);
 
@@ -152,7 +152,7 @@ SurveyWindow::SurveyWindow(
     setCentralWidget(central);
 
     if (preview_mode_) {
-        save_answer_button_->setText("Next / finish preview");
+        save_answer_button_->setText(tr("Next / finish preview"));
     }
 
     connect(
@@ -173,15 +173,13 @@ void SurveyWindow::save_answer() {
         if (!question->is_valid()) {
             if (preview_mode_) {
                 auto box = show_question_box(
-                    this, QMessageBox::Question, "Continue?",
-                    "Some required answers are missing. Are you sure you want "
-                    "to continue?"
+                    this, QMessageBox::Question, tr("Continue?"),
+                    tr("Some required answers are missing. Are you sure you want to continue?")
                 );
             } else {
                 show_message_box(
-                    this, QMessageBox::Warning, "Error",
-                    "Some required answers are missing. Please complete all "
-                    "sections."
+                    this, QMessageBox::Warning, tr("Error"),
+                    tr("Some required answers are missing. Please complete all sections.")
                 );
                 return;
             }
@@ -197,11 +195,11 @@ void SurveyWindow::save_answer() {
     }
 
     if (!preview_mode_) {
-        QString message = all_answered ? "Are you sure you want to continue?"
-                                       : "Some answers are missing. Are you "
-                                         "sure you want to continue?";
+        QString message = all_answered
+                              ? tr("Are you sure you want to continue?")
+                              : tr("Some answers are missing. Are you sure you want to continue?");
         auto box =
-            show_question_box(this, QMessageBox::Question, "Save?", message);
+            show_question_box(this, QMessageBox::Question, tr("Save?"), message);
 
         connect(box, &QMessageBox::finished, this, [this](int want_to_save) {
             if (want_to_save == QMessageBox::No) {

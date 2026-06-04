@@ -34,7 +34,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     central_layout->setContentsMargins(0, 0, 0, 0);
     central_layout->setSpacing(0);
 
-    setWindowTitle("Survey Builder (" + write_type(type) + ")");
+    setWindowTitle(tr("Survey Builder (%1)").arg(write_type(type)));
 
     auto *header = new QWidget(central);
     header->setObjectName("topHeader");
@@ -61,12 +61,12 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
 
     auto *top_row = new QHBoxLayout();
 
-    auto *title_label = new QLabel("Survey Builder", central);
+    auto *title_label = new QLabel(tr("Survey Builder"), central);
     title_label->setObjectName("titleLabel");
 
-    auto *preview_button = new QPushButton("Preview", central);
+    auto *preview_button = new QPushButton(tr("Preview"), central);
     preview_button->setObjectName("primaryButton");
-    preview_button->setFixedSize(140, 40);
+    preview_button->setFixedSize(200, 40);
 
     top_row->addWidget(title_label);
     top_row->addStretch();
@@ -81,13 +81,13 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     meta_layout->setContentsMargins(16, 10, 16, 12);
     meta_layout->setSpacing(4);
 
-    auto *title_field_label = new QLabel("Title", meta_card);
+    auto *title_field_label = new QLabel(tr("Title"), meta_card);
     title_field_label->setObjectName("surveyMetaLabel");
     meta_layout->addWidget(title_field_label);
 
     title_ = new QLineEdit(meta_card);
     title_->setObjectName("surveyTitleInput");
-    title_->setPlaceholderText("Untitled survey");
+    title_->setPlaceholderText(tr("Untitled survey"));
     meta_layout->addWidget(title_);
 
     auto *divider = new QFrame(meta_card);
@@ -97,13 +97,13 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
     meta_layout->addWidget(divider);
     meta_layout->addSpacing(3);
 
-    auto *desc_field_label = new QLabel("Description", meta_card);
+    auto *desc_field_label = new QLabel(tr("Description"), meta_card);
     desc_field_label->setObjectName("surveyMetaLabel");
     meta_layout->addWidget(desc_field_label);
 
     description_ = new QTextEdit(meta_card);
     description_->setObjectName("surveyDescriptionInput");
-    description_->setPlaceholderText("Add a description (optional)");
+    description_->setPlaceholderText(tr("Add a description (optional)"));
     description_->setFixedHeight(56);
     description_->setFrameShape(QFrame::NoFrame);
     meta_layout->addWidget(description_);
@@ -126,7 +126,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
 
     sections_list_ = new QStringListModel(this);
     QStringList list = sections_list_->stringList();
-    sections_list_->setStringList(list << "Save answers");
+    sections_list_->setStringList(list << tr("Save answers"));
 
     add_section();
 
@@ -136,15 +136,15 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
         auto *bottom_row = new QHBoxLayout();
         bottom_row->addStretch();
 
-        add_section_button_ = new QPushButton("New section", central);
+        add_section_button_ = new QPushButton(tr("New section"), central);
         add_section_button_->setObjectName("primaryButton");
-        add_section_button_->setFixedSize(180, 40);
+        add_section_button_->setFixedSize(200, 40);
         bottom_row->addWidget(add_section_button_);
 
         content_wrapper_layout->addLayout(bottom_row);
     }
 
-    save_survey_button_ = new QPushButton("Save " + write_type(type), central);
+    save_survey_button_ = new QPushButton(tr("Save") + " " + write_type(type), central);
     save_survey_button_->setObjectName("primaryButton");
     content_wrapper_layout->addWidget(save_survey_button_);
 
@@ -169,8 +169,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
             [=, this](const nlohmann::json &survey) {
                 auto *preview = new SurveyTaking(survey, true, this);
                 preview->setAttribute(Qt::WA_DeleteOnClose);
-                preview->setWindowTitle("Preview");
-                preview->showFullScreen();
+                preview->setWindowTitle(tr("Preview"));
             },
             [=, this](const std::string &error) {
                 show_message_box(
@@ -184,7 +183,7 @@ SurveyBuilderWindow::SurveyBuilderWindow(SurveyType type, QWidget *parent)
 
 void SurveyBuilderWindow::add_section() {
     QStringList list = sections_list_->stringList();
-    list.push_back("Go to section " + QString::number(list.size()));
+    list.push_back(tr("Go to section ") + QString::number(list.size()));
     sections_list_->setStringList(list);
 
     sections_.push_back(new SectionEditor(type_, sections_list_, content_));
@@ -274,11 +273,11 @@ void SurveyBuilderWindow::save_survey() {
 const QString SurveyBuilderWindow::write_type(SurveyType type) {
     switch (type) {
         case SurveyType::Survey:
-            return "survey";
+            return tr("survey");
         case SurveyType::Test:
-            return "test";
+            return tr("test");
         case SurveyType::Quiz:
-            return "quiz";
+            return tr("quiz");
     }
 }
 

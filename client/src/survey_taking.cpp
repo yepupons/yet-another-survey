@@ -181,7 +181,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
             survey_data_, answer_data_, next_section_id, preview_mode_, this
         );
         current_section_->setAttribute(Qt::WA_DeleteOnClose);
-        current_section_->showMaximized();
+        current_section_->showFullScreen();
         current_section_->raise();
         current_section_->activateWindow();
         connect(

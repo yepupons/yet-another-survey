@@ -17,7 +17,7 @@ TextBlockEditor::TextBlockEditor(SurveyType type, QWidget *parent)
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
-    auto *title_label = new QLabel("Text", this);
+    auto *title_label = new QLabel(tr("Text"), this);
     title_label->setObjectName("sectionLabel");
 
     auto *move_up_button = new QPushButton(this);
@@ -28,7 +28,7 @@ TextBlockEditor::TextBlockEditor(SurveyType type, QWidget *parent)
     move_down_button->setObjectName("moveDownButton");
     move_down_button->setFixedSize(36, 36);
 
-    auto *delete_label = new QLabel("Delete", this);
+    auto *delete_label = new QLabel(tr("Delete"), this);
     delete_label->setObjectName("sectionLabel");
 
     auto *delete_block_button = new QPushButton(this);
@@ -55,10 +55,10 @@ TextBlockEditor::TextBlockEditor(SurveyType type, QWidget *parent)
     });
 
     question_ = new QLineEdit(this);
-    question_->setPlaceholderText("Write your question here");
+    question_->setPlaceholderText(tr("Write your question here"));
     layout->addWidget(question_);
 
-    upload_image_button_ = new QPushButton("Upload Image", this);
+    upload_image_button_ = new QPushButton(tr("Upload Image"), this);
     layout->addWidget(upload_image_button_);
 
     connect(
@@ -70,14 +70,14 @@ TextBlockEditor::TextBlockEditor(SurveyType type, QWidget *parent)
     layout->addWidget(image_preview_);
 
     if (type_ == SurveyType::Test) {
-        auto *correct_label = new QLabel("Correct answer(s)", this);
+        auto *correct_label = new QLabel(tr("Correct answer(s)"), this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
 
         correct_answers_layout_ = new QVBoxLayout();
         layout->addLayout(correct_answers_layout_);
 
-        add_correct_answer_button_ = new QPushButton("Add answer", this);
+        add_correct_answer_button_ = new QPushButton(tr("Add answer"), this);
         layout->addWidget(add_correct_answer_button_);
 
         connect(
@@ -88,7 +88,7 @@ TextBlockEditor::TextBlockEditor(SurveyType type, QWidget *parent)
         add_correct_answer();
     }
 
-    required_ = new QCheckBox("Required", this);
+    required_ = new QCheckBox(tr("Required"), this);
     required_->setObjectName("requiredToggle");
     required_->setChecked(true);
     layout->addWidget(required_);
@@ -127,7 +127,7 @@ void TextBlockEditor::add_correct_answer() {
     row_layout->setSpacing(8);
 
     auto answer_edit_ = new QLineEdit(row_widget);
-    answer_edit_->setPlaceholderText("Write correct answer here");
+    answer_edit_->setPlaceholderText(tr("Write correct answer here"));
     row_layout->addWidget(answer_edit_);
 
     auto *delete_button = new QPushButton(row_widget);

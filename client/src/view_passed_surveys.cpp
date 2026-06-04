@@ -64,12 +64,12 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
     title_layout->setContentsMargins(24, 24, 24, 24);
     title_layout->setSpacing(8);
 
-    auto *title_label = new QLabel("Passed surveys", title_card);
+    auto *title_label = new QLabel(tr("Passed surveys"), title_card);
     title_label->setObjectName("titleLabel");
     title_layout->addWidget(title_label);
 
     auto *subtitle_label =
-        new QLabel("Select a survey to view your answers.", title_card);
+        new QLabel(tr("Select a survey to view your answers."), title_card);
     subtitle_label->setObjectName("subtitleLabel");
     title_layout->addWidget(subtitle_label);
 
@@ -91,7 +91,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                 surveys_layout->setSpacing(12);
 
                 auto *empty_label =
-                    new QLabel("No passed surveys yet.", surveys_card);
+                    new QLabel(tr("No passed surveys yet."), surveys_card);
                 empty_label->setObjectName("subtitleLabel");
                 surveys_layout->addWidget(empty_label);
 
@@ -180,7 +180,7 @@ ViewSurveyResults::ViewSurveyResults(
     QWidget *parent
 )
     : QDialog(parent) {
-    setWindowTitle("Survey results");
+    setWindowTitle(tr("Survey results"));
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -243,7 +243,7 @@ ViewSurveyResults::ViewSurveyResults(
                         title_layout->setSpacing(16);
 
                         auto *section_number_label = new QLabel(
-                            "Section " + QString::number(section_index + 1),
+                            tr("Section %1").arg(section_index + 1),
                             content
                         );
 

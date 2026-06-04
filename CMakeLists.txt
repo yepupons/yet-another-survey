@@ -25,9 +25,7 @@ endif()
 
 if(EMSCRIPTEN)
     # Dependencies
-    find_package(Qt6 REQUIRED COMPONENTS Widgets)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg LinguistTools)
 
     set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
     if (EXISTS "${NLOHMANN_JSON_LOCAL_DIR}/CMakeLists.txt")
@@ -124,6 +122,13 @@ if(EMSCRIPTEN)
         qrcodegenerator
     )
 
+    qt_add_translations(client
+        TS_FILES
+            client/translations/app_ru.ts
+            client/translations/app_en.ts
+        RESOURCE_PREFIX "/translations"
+    )
+
     target_link_options(client PRIVATE "--bind")
     set(CMAKE_AUTORCC_OPTIONS "--no-compress")
 
@@ -139,7 +144,7 @@ else()
     find_package(Boost 1.65.1 REQUIRED)
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg)
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg LinguistTools)
 
     # Drogon Options
     option(USE_POSTGRESQL "Enable PostgreSQL" OFF)
@@ -253,6 +258,13 @@ else()
         nlohmann_json::nlohmann_json
         matplot
         qrcodegenerator
+    )
+
+    qt_add_translations(client
+        TS_FILES
+            client/translations/app_ru.ts
+            client/translations/app_en.ts
+        RESOURCE_PREFIX "/translations"
     )
 
     # Server
