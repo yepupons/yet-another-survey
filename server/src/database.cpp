@@ -11,7 +11,7 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <random>
-#include <set>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -150,26 +150,29 @@ std::string Database::read_passed_surveys(const std::string &session_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
-        << "data.survey_id" << 1 << "_id" << 0
+        << "data.survey_id" << 1 << "data.id" << 1 << "_id" << 0
         << bsoncxx::builder::stream::finalize
     );
     auto cursor = db()["answers"].find(
         document{} << "data.respondent_id" << session_id << finalize, opts
     );
-    std::set<std::string> passed_surveys;
+    std::map<std::string, std::string> passed_surveys;
     for (auto &&doc : cursor) {
-        auto elem = doc["data"]["survey_id"];
-        if (!elem) {
+        auto survey_elem = doc["data"]["survey_id"];
+        auto answer_elem = doc["data"]["id"];
+        if (!survey_elem || !answer_elem) {
             continue;
         }
-        if (elem.type() != bsoncxx::type::k_string) {
+        if (survey_elem.type() != bsoncxx::type::k_string ||
+            answer_elem.type() != bsoncxx::type::k_string) {
             continue;
         }
-        passed_surveys.insert(std::string(elem.get_string().value));
+        passed_surveys[std::string(survey_elem.get_string().value)] =
+            std::string(answer_elem.get_string().value);
     }
     nlohmann::json result = nlohmann::json::array();
-    for (const auto &id : passed_surveys) {
-        result.push_back(id);
+    for (const auto &[survey_id, answer_id] : passed_surveys) {
+        result.push_back({{"survey_id", survey_id}, {"answer_id", answer_id}});
     }
     return result.dump();
 }
