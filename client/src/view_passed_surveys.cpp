@@ -84,6 +84,9 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                     item.at("survey_id").get<std::string>();
                 const std::string answer_id =
                     item.at("answer_id").get<std::string>();
+                const std::string user_rate =
+                    item.at("user_rate").get<std::string>();
+                const bool already_rated = !user_rate.empty();
 
                 server().get_survey(
                     survey_id,
@@ -108,8 +111,15 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
 
                         auto *like_btn = new QPushButton(vote_widget);
                         like_btn->setObjectName("likeButton");
+                        like_btn->setCheckable(true);
+                        like_btn->setChecked(user_rate == "like");
+                        like_btn->setDisabled(answer_id.empty() || already_rated);
+
                         auto *dislike_btn = new QPushButton(vote_widget);
                         dislike_btn->setObjectName("dislikeButton");
+                        dislike_btn->setCheckable(true);
+                        dislike_btn->setChecked(user_rate == "dislike");
+                        dislike_btn->setDisabled(answer_id.empty() || already_rated);
 
                         vote_layout->addWidget(like_btn);
                         vote_layout->addWidget(dislike_btn);
@@ -117,14 +127,22 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                         connect(like_btn, &QPushButton::clicked, this, [=]() {
                             server().post_rate(
                                 survey_id, answer_id, true,
-                                [](const nlohmann::json &) {},
+                                [like_btn, dislike_btn](const nlohmann::json &) {
+                                    like_btn->setChecked(true);
+                                    like_btn->setDisabled(true);
+                                    dislike_btn->setDisabled(true);
+                                },
                                 [](const std::string &) {}
                             );
                         });
                         connect(dislike_btn, &QPushButton::clicked, this, [=]() {
                             server().post_rate(
                                 survey_id, answer_id, false,
-                                [](const nlohmann::json &) {},
+                                [like_btn, dislike_btn](const nlohmann::json &) {
+                                    dislike_btn->setChecked(true);
+                                    like_btn->setDisabled(true);
+                                    dislike_btn->setDisabled(true);
+                                },
                                 [](const std::string &) {}
                             );
                         });
@@ -169,8 +187,8 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                             card_layout->addWidget(desc_label);
                         }
 
-                        row_layout->addWidget(card);
                         row_layout->addWidget(vote_widget);
+                        row_layout->addWidget(card);
 
                         content_layout->addWidget(row, 0, Qt::AlignHCenter);
                     },

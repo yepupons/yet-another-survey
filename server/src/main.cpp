@@ -528,7 +528,11 @@ int main(int argc, char *argv[]) {
             std::function<void(const HttpResponsePtr &)> &&cb
         ) {
             try {
-                std::string result = db.get_top_surveys();
+                std::string session_id;
+                try {
+                    session_id = db.user_id_by_access_token(bearer_token(request));
+                } catch (...) {}
+                std::string result = db.get_top_surveys(session_id);
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setBody(result);
                 resp->setContentTypeCode(CT_APPLICATION_JSON);

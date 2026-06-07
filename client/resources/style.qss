@@ -569,6 +569,11 @@ QPushButton#likeButton:pressed {
     background-color: #dcfce7;
 }
 
+QPushButton#likeButton:checked {
+    background-color: #dcfce7;
+    border: 2px solid #22c55e;
+}
+
 QPushButton#dislikeButton {
     min-width: 36px;
     max-width: 36px;
@@ -588,6 +593,11 @@ QPushButton#dislikeButton:hover {
 
 QPushButton#dislikeButton:pressed {
     background-color: #fee2e2;
+}
+
+QPushButton#dislikeButton:checked {
+    background-color: #fee2e2;
+    border: 2px solid #ef4444;
 }
 
 QCheckBox#choiceOption::indicator:checked {

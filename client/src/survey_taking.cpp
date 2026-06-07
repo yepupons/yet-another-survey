@@ -62,22 +62,25 @@ void SurveyTaking::open_next_section(int next_section_id) {
             deleteLater();
             return;
         }
-        auto show_rating = [=, this](const std::string &answer_id) {
-            auto *box = show_question_box(
-                parentWidget(), QMessageBox::Question,
-                tr("Rate this survey"), tr("Did you like this survey?"),
-                QMessageBox::Yes, QMessageBox::No
-            );
-            connect(box, &QMessageBox::finished, this, [=, this](int result) {
-                if (result == QMessageBox::Yes || result == QMessageBox::No) {
-                    server().post_rate(
-                        survey_id_, answer_id, result == QMessageBox::Yes,
-                        [](const nlohmann::json &) {}, [](const std::string &) {}
-                    );
-                }
-                deleteLater();
-            });
-        };
+        
+        // maybe we should delete this???
+
+        // auto show_rating = [=, this](const std::string &answer_id) {
+        //     auto *box = show_question_box(
+        //         parentWidget(), QMessageBox::Question,
+        //         tr("Rate this survey"), tr("Did you like this survey?"),
+        //         QMessageBox::Yes, QMessageBox::No
+        //     );
+        //     connect(box, &QMessageBox::finished, this, [=, this](int result) {
+        //         if (result == QMessageBox::Yes || result == QMessageBox::No) {
+        //             server().post_rate(
+        //                 survey_id_, answer_id, result == QMessageBox::Yes,
+        //                 [](const nlohmann::json &) {}, [](const std::string &) {}
+        //             );
+        //         }
+        //         deleteLater();
+        //     });
+        // };
 
         auto type =
             SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>()
@@ -90,7 +93,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
                         submission_result_ = submission_result;
                         const std::string answer_id =
                             submission_result.at("answer_id").get<std::string>();
-                        show_rating(answer_id);
+                        // show_rating(answer_id);
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -109,9 +112,9 @@ void SurveyTaking::open_next_section(int next_section_id) {
                         auto *view = new ViewTestResults(result, this);
                         view->setAttribute(Qt::WA_DeleteOnClose);
                         view->show();
-                        show_rating(
-                            result.at("data").at("answer_id").get<std::string>()
-                        );
+                        // show_rating(
+                        //     result.at("data").at("answer_id").get<std::string>()
+                        // );
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -164,7 +167,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
                     [=, this](const nlohmann::json &submission_result) {
                         const std::string answer_id =
                             submission_result.at("answer_id").get<std::string>();
-                        show_rating(answer_id);
+                        // show_rating(answer_id);
                     },
                     [=, this](const std::string &error) {
                         show_message_box(

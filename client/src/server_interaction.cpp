@@ -297,7 +297,7 @@ void ServerInteraction::get_surveys_top(
         [success](const std::string &result) {
             success(nlohmann::json::parse(result));
         },
-        failure
+        failure, true
     );
 };
 
