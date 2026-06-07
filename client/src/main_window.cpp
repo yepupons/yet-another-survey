@@ -1,4 +1,6 @@
 #include "main_window.hpp"
+#include <qboxlayout.h>
+#include <qlabel.h>
 #include <QAction>
 #include <QApplication>
 #include <QDesktopServices>
@@ -14,6 +16,7 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QPushButton>
+#include <QTimer>
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QUrl>
@@ -210,8 +213,51 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     content_layout->addWidget(card);
 
+    auto *stats_row = new QWidget(content);
+    stats_row->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    auto *stats_layout = new QHBoxLayout(stats_row);
+    stats_layout->setContentsMargins(0, 0, 0, 0);
+    stats_layout->setSpacing(12);
+
+    auto make_stat_card = [&](const QString &title) -> QLabel * {
+        auto *card_widget = new QWidget(stats_row);
+        card_widget->setObjectName("statsCard");
+        card_widget->setAttribute(Qt::WA_StyledBackground, true);
+        card_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+        auto *vbox = new QVBoxLayout(card_widget);
+        vbox->setContentsMargins(16, 14, 16, 14);
+        vbox->setSpacing(4);
+
+        auto *value_label = new QLabel("—", card_widget);
+        value_label->setObjectName("statsValue");
+        value_label->setAlignment(Qt::AlignHCenter);
+        vbox->addWidget(value_label);
+
+        auto *title_label = new QLabel(title, card_widget);
+        title_label->setObjectName("statsTitle");
+        title_label->setAlignment(Qt::AlignHCenter);
+        vbox->addWidget(title_label);
+
+        stats_layout->addWidget(card_widget);
+        return value_label;
+    };
+
+    surveys_stat_label_ = make_stat_card(tr("Surveys"));
+    answers_stat_label_ = make_stat_card(tr("Completions"));
+    ratings_stat_label_ = make_stat_card(tr("Ratings"));
+    users_stat_label_ = make_stat_card(tr("Users"));
+
+    content_layout->addWidget(stats_row);
+
     outer_layout->addWidget(header);
     outer_layout->addWidget(content_wrapper);
+
+    auto *stats_timer = new QTimer(this);
+    stats_timer->setInterval(1000);
+    connect(stats_timer, &QTimer::timeout, this, &MainWindow::load_global_stats);
+    stats_timer->start();
+    load_global_stats();
 
     connect(
         trending_button, &QPushButton::clicked, this,
@@ -266,6 +312,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
 void MainWindow::update_auth_action() {
     auth_action_->setText(session().is_authenticated() ? tr("Log out") : tr("Log in"));
+}
+
+void MainWindow::load_global_stats() {
+    server().get_global_stats(
+        [this](const nlohmann::json &data) {
+            surveys_stat_label_->setText(QString::number(data.value("surveys_count", 0)));
+            answers_stat_label_->setText(QString::number(data.value("answers_count", 0)));
+            ratings_stat_label_->setText(QString::number(data.value("ratings_count", 0)));
+            users_stat_label_->setText(QString::number(data.value("users_count", 0)));
+        },
+        [](const std::string &err) {
+            qWarning() << "[stats]" << QString::fromStdString(err);
+        }
+    );
 }
 
 void MainWindow::open_survey() {

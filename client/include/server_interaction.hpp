@@ -102,6 +102,11 @@ public:
         std::function<void(const std::string &)> failure
     );
 
+    void get_global_stats(
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+
 private:
     enum class Method { POST, GET };
 

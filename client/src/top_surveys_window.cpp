@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include "survey_taking.hpp"
 #include "clickable_card.hpp"
+#include "pretty_view.hpp"
 
 namespace survey {
 
@@ -17,25 +18,10 @@ TopSurveysWindow::TopSurveysWindow(
 ) : QDialog(parent) {
     setWindowTitle(tr("Trending surveys"));
 
-    auto *header = new QWidget(this);
-    header->setObjectName("topHeader");
-    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    header->setMinimumWidth(500);
-
-    auto *header_layout = new QHBoxLayout(header);
-    header_layout->setContentsMargins(24, 4, 24, 4);
-    header_layout->setSpacing(12);
-
-    auto *back_button = new QPushButton("←", header);
-    back_button->setObjectName("headerNavButton");
-    header_layout->addWidget(back_button);
-    header_layout->addStretch();
-
-    connect(back_button, &QPushButton::clicked, this, &TopSurveysWindow::close);
-
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+    layout->addWidget(make_back_header(this, this));
 
     auto *scroll_area = new QScrollArea(this);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -127,7 +113,6 @@ TopSurveysWindow::TopSurveysWindow(
 
     content_layout->addStretch();
     scroll_area->setWidget(content);
-    layout->addWidget(header);
     layout->addWidget(scroll_area);
     setLayout(layout);
 }

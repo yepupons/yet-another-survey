@@ -65,11 +65,21 @@ std::string Database::write_survey(
                        << close_array << "given_answers" << open_array
                        << close_array << finalize
         );
+        db()["global_stats"].update_one(
+            document{} << "_id" << "main" << finalize,
+            document{} << "$inc" << open_document << "users_count" << 1 << close_document << finalize,
+            mongocxx::options::update{}.upsert(true)
+        );
     }
     db()["users"].update_one(
         document{} << "id" << creator_id << finalize,
         document{} << "$push" << open_document << "created_surveys" << survey_id
                    << close_document << finalize
+    );
+    db()["global_stats"].update_one(
+        document{} << "_id" << "main" << finalize,
+        document{} << "$inc" << open_document << "surveys_count" << 1 << close_document << finalize,
+        mongocxx::options::update{}.upsert(true)
     );
     nlohmann::json result;
     result["status"] = "Saved";
@@ -103,6 +113,11 @@ std::string Database::write_answer(
     if (!insert_result) {
         throw std::runtime_error("Writing answer into database failed");
     }
+    db()["global_stats"].update_one(
+        document{} << "_id" << "main" << finalize,
+        document{} << "$inc" << open_document << "answers_count" << 1 << close_document << finalize,
+        mongocxx::options::update{}.upsert(true)
+    );
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << respondent_id << finalize);
@@ -111,6 +126,11 @@ std::string Database::write_answer(
             document{} << "id" << respondent_id << "created_surveys"
                        << open_array << close_array << "given_answers"
                        << open_array << close_array << finalize
+        );
+        db()["global_stats"].update_one(
+            document{} << "_id" << "main" << finalize,
+            document{} << "$inc" << open_document << "users_count" << 1 << close_document << finalize,
+            mongocxx::options::update{}.upsert(true)
         );
     }
     db()["users"].update_one(
@@ -752,7 +772,11 @@ std::string Database::save_rate(
                     << "data.rating_score" << rate_value
                    << close_document << finalize
     );
-
+    db()["global_stats"].update_one(
+        document{} << "_id" << "main" << finalize,
+        document{} << "$inc" << open_document << "ratings_count" << 1 << close_document << finalize,
+        mongocxx::options::update{}.upsert(true)
+    );
 
     nlohmann::json result;
     result["status"] = "Saved";
@@ -809,6 +833,34 @@ std::string Database::get_top_surveys() {
     }
     return result.dump();
 }
+
+std::string Database::read_global_stats() {
+    nlohmann::json result;
+    result["surveys_count"] = 0;
+    result["answers_count"] = 0;
+    result["ratings_count"] = 0;
+    result["users_count"] = 0;
+
+    auto doc = db()["global_stats"].find_one(
+        document{} << "_id" << "main" << finalize
+    );
+    if (doc) {
+        auto view = doc->view();
+        auto get_int = [&](const char *key) -> int {
+            auto el = view[key];
+            if (!el) return 0;
+            if (el.type() == bsoncxx::type::k_int32) return el.get_int32().value;
+            if (el.type() == bsoncxx::type::k_int64) return static_cast<int>(el.get_int64().value);
+            return 0;
+        };
+        result["surveys_count"] = get_int("surveys_count");
+        result["answers_count"] = get_int("answers_count");
+        result["ratings_count"] = get_int("ratings_count");
+        result["users_count"] = get_int("users_count");
+    }
+    return result.dump();
+}
+
 
 void Database::revoke_access_token(const std::string &access_token) {
     const std::string token_hash = sha256(access_token);

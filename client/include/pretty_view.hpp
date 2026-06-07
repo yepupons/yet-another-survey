@@ -12,8 +12,29 @@
 #include <QPushButton>
 #include <QString>
 #include <QVBoxLayout>
+#include <QWidget>
 
 namespace survey {
+inline QWidget *make_back_header(QWidget *parent, QWidget *window_to_close) {
+    auto *header = new QWidget(parent);
+    header->setObjectName("topHeader");
+
+    auto *layout = new QHBoxLayout(header);
+    layout->setContentsMargins(24, 4, 24, 4);
+    layout->setSpacing(12);
+
+    auto *back_button = new QPushButton("←", header);
+    back_button->setObjectName("headerNavButton");
+    layout->addWidget(back_button);
+    layout->addStretch();
+
+    QObject::connect(back_button, &QPushButton::clicked, back_button, [window_to_close]() {
+        window_to_close->close();
+    });
+
+    return header;
+}
+
 inline void show_message_box(
     QWidget *parent,
     QMessageBox::Icon icon,

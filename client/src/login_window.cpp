@@ -8,6 +8,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
 
@@ -23,23 +24,6 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    auto *header = new QWidget(central);
-    header->setObjectName("topHeader");
-    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    header->setMinimumWidth(500);
-
-    auto *header_layout = new QHBoxLayout(header);
-    header_layout->setContentsMargins(24, 4, 24, 4);
-    header_layout->setSpacing(12);
-
-    auto *back_button = new QPushButton("←", header);
-    back_button->setObjectName("headerNavButton");
-    header_layout->addWidget(back_button);
-    header_layout->addStretch();
-
-    connect(back_button, &QPushButton::clicked, this, &LoginWindow::close);
-
-    layout->addWidget(header);
 
     auto *content_wrapper = new QWidget(central);
     auto *content_layout = new QVBoxLayout(content_wrapper);
@@ -60,9 +44,16 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
     login_button_->setObjectName("primaryButton");
     content_layout->addWidget(login_button_);
 
-    content_layout->addStretch();
     layout->addWidget(content_wrapper);
-    setCentralWidget(central);
+    layout->addStretch();
+
+    auto *outer = new QWidget(this);
+    auto *outer_layout = new QVBoxLayout(outer);
+    outer_layout->setContentsMargins(0, 0, 0, 0);
+    outer_layout->setSpacing(0);
+    outer_layout->addWidget(make_back_header(outer, this));
+    outer_layout->addWidget(central);
+    setCentralWidget(outer);
 
     connect(
         login_button_, &QPushButton::clicked, this,

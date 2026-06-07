@@ -629,3 +629,24 @@ QTextEdit#surveyDescriptionInput:focus {
     border: none;
     border-bottom: 2px solid #64748b;
 }
+
+QWidget#statsCard {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+QLabel#statsValue {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111827;
+    background-color: transparent;
+}
+
+QLabel#statsTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    background-color: transparent;
+    letter-spacing: 0.5px;
+}

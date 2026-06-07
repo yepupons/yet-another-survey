@@ -72,7 +72,9 @@ public:
     std::string user_id_by_access_token(const std::string &access_token);
     std::string save_rate(const std::string &rate_data, const std::string &survey_id, const std::string &user_id);
     std::string get_top_surveys();
-    void revoke_access_token(const std::string &access_token); 
+    void revoke_access_token(const std::string &access_token);
+
+    std::string read_global_stats();
 };
 }  // namespace survey
 

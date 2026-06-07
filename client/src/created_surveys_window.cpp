@@ -21,25 +21,10 @@
 
 namespace survey {
 CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
-    auto *header = new QWidget(this);
-    header->setObjectName("topHeader");
-    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    header->setMinimumWidth(500);
-
-    auto *header_layout = new QHBoxLayout(header);
-    header_layout->setContentsMargins(24, 4, 24, 4);
-    header_layout->setSpacing(12);
-
-    auto *back_button = new QPushButton("←", header);
-    back_button->setObjectName("headerNavButton");
-    header_layout->addWidget(back_button);
-    header_layout->addStretch();
-
-    connect(back_button, &QPushButton::clicked, this, &CreatedSurveysWindow::close);
-
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+    layout->addWidget(make_back_header(this, this));
 
     auto *scroll_area = new QScrollArea(this);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -204,7 +189,6 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
     content_layout->addStretch();
     scroll_area->setWidget(content);
-    layout->addWidget(header);
     layout->addWidget(scroll_area);
     setLayout(layout);
 }

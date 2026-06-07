@@ -41,24 +41,6 @@ SurveyWindow::SurveyWindow(
     central_layout->setContentsMargins(0, 0, 0, 0);
     central_layout->setSpacing(0);
 
-    auto *header = new QWidget(central);
-    header->setObjectName("topHeader");
-    header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    header->setMinimumWidth(500);
-
-    auto *header_layout = new QHBoxLayout(header);
-    header_layout->setContentsMargins(24, 4, 24, 4);
-    header_layout->setSpacing(12);
-
-    auto *back_button = new QPushButton("←", header);
-    back_button->setObjectName("headerNavButton");
-    header_layout->addWidget(back_button);
-    header_layout->addStretch();
-
-    connect(back_button, &QPushButton::clicked, this, &SurveyWindow::close);
-
-    central_layout->addWidget(header);
-
     auto *content_wrapper = new QWidget(central);
     auto *content_wrapper_layout = new QVBoxLayout(content_wrapper);
     content_wrapper_layout->setAlignment(Qt::AlignTop);
@@ -149,7 +131,14 @@ SurveyWindow::SurveyWindow(
 
     central_layout->addWidget(content_wrapper);
     central->setLayout(central_layout);
-    setCentralWidget(central);
+
+    auto *outer = new QWidget(this);
+    auto *outer_layout = new QVBoxLayout(outer);
+    outer_layout->setContentsMargins(0, 0, 0, 0);
+    outer_layout->setSpacing(0);
+    outer_layout->addWidget(make_back_header(outer, this));
+    outer_layout->addWidget(central);
+    setCentralWidget(outer);
 
     if (preview_mode_) {
         save_answer_button_->setText(tr("Next / finish preview"));

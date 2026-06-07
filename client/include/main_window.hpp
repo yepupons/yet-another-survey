@@ -2,6 +2,7 @@
 #define MAIN_WINDOW_HPP_
 
 #include <QAction>
+#include <QLabel>
 #include <QMainWindow>
 #include "survey_taking.hpp"
 
@@ -23,6 +24,7 @@ public slots:
     void get_passed_surveys();
     void show_trending();
     void update_auth_action();
+    void load_global_stats();
 
 private:
     QLineEdit *id_input_;
@@ -30,6 +32,11 @@ private:
     QPushButton *create_survey_button_;
     QAction *auth_action_;
     SurveyTaking *opened_survey_ = nullptr;
+
+    QLabel *surveys_stat_label_ = nullptr;
+    QLabel *answers_stat_label_  = nullptr;
+    QLabel *ratings_stat_label_  = nullptr;
+    QLabel *users_stat_label_    = nullptr;
 };
 }  // namespace survey
 #endif  // MAIN_WINDOW_HPP_

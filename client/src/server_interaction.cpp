@@ -301,6 +301,19 @@ void ServerInteraction::get_surveys_top(
     );
 };
 
+void ServerInteraction::get_global_stats(
+    std::function<void(const nlohmann::json &)> success,
+    std::function<void(const std::string &)> failure
+) {
+    std::string url = "http://127.0.0.1:8080/api/stats";
+    send_request(
+        url, Method::GET,
+        [success](const std::string &result) {
+            success(nlohmann::json::parse(result));
+        },
+        failure
+    );
+}
 
 void ServerInteraction::generate_question(
     const nlohmann::json &section_data,

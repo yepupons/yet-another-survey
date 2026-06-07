@@ -545,6 +545,18 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
+        "/api/stats",
+        [&db](const HttpRequestPtr &, std::function<void(const HttpResponsePtr &)> &&cb) {
+            auto resp = HttpResponse::newHttpResponse();
+            resp->setBody(db.read_global_stats());
+            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            cb(resp);
+        },
+        {Get}
+    );
+
+
+    app().registerHandler(
         "/api/auth/logout",
         [&db](
             const HttpRequestPtr &request, 
