@@ -118,6 +118,11 @@ std::string Database::write_answer(
         document{} << "$inc" << open_document << "answers_count" << 1 << close_document << finalize,
         mongocxx::options::update{}.upsert(true)
     );
+    const std::string survey_id = json["data"]["survey_id"].get<std::string>();
+    db()["surveys"].update_one(
+        document{} << "data.id" << survey_id << finalize,
+        document{} << "$inc" << open_document << "data.answers_count" << 1 << close_document << finalize
+    );
 
     auto find_result =
         db()["users"].find_one(document{} << "id" << respondent_id << finalize);
@@ -827,6 +832,7 @@ std::string Database::get_top_surveys() {
         survey_json["id"] = str_or(data, "id");
         survey_json["title"] = str_or(survey, "title");
         survey_json["description"] = str_or(survey, "description");
+        survey_json["answers_count"] = int_or(data, "answers_count");
         survey_json["likes_count"] = int_or(data, "likes_count");
         survey_json["dislikes_count"] = int_or(data, "dislikes_count");
         survey_json["ratings_count"] = int_or(data, "ratings_count");

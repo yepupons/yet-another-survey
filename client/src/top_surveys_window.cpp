@@ -75,6 +75,7 @@ TopSurveysWindow::TopSurveysWindow(
         const int dislikes = survey.value("dislikes_count", 0);
         const int total = survey.value("ratings_count", 0);
         const int score = survey.value("rating_score", 0);
+        const int complitions = survey.value("answers_count", 0);
 
         auto *card = new ClickableCard([id]() {
             auto *taking = new SurveyTaking(id);
@@ -101,8 +102,8 @@ TopSurveysWindow::TopSurveysWindow(
             card_layout->addWidget(survey_description);
         }
 
-        const QString stats = tr("Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings")
-                                  .arg(score).arg(likes).arg(dislikes).arg(total);
+        const QString stats = tr("Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings  ·  %5 complitions")
+                                  .arg(score).arg(likes).arg(dislikes).arg(total).arg(complitions);
         auto *stats_label = new QLabel(stats, card);
         stats_label->setObjectName("subtitleLabel");
         stats_label->setAttribute(Qt::WA_TransparentForMouseEvents);

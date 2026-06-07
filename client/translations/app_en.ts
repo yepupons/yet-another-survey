@@ -356,37 +356,37 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="90"/>
+        <location filename="../src/section_editor.cpp" line="89"/>
         <source>Add question</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="85"/>
+        <location filename="../src/section_editor.cpp" line="84"/>
         <source>Use AI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="137"/>
+        <location filename="../src/section_editor.cpp" line="136"/>
         <source>Write outcome here</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="192"/>
+        <location filename="../src/section_editor.cpp" line="191"/>
         <source>Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="194"/>
+        <location filename="../src/section_editor.cpp" line="193"/>
         <source>Single Choice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="196"/>
+        <location filename="../src/section_editor.cpp" line="195"/>
         <source>Multiple Choice</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/section_editor.cpp" line="256"/>
+        <location filename="../src/section_editor.cpp" line="255"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -646,25 +646,25 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/top_surveys_window.cpp" line="104"/>
-        <source>Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings</source>
-        <translation></translation>
+        <location filename="../src/top_surveys_window.cpp" line="105"/>
+        <source>Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings  ·  %5 complitions</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>survey::ViewPassedSurveys</name>
     <message>
-        <location filename="../src/view_passed_surveys.cpp" line="52"/>
+        <location filename="../src/view_passed_surveys.cpp" line="50"/>
         <source>Passed surveys</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/view_passed_surveys.cpp" line="57"/>
+        <location filename="../src/view_passed_surveys.cpp" line="55"/>
         <source>Select a survey to view your answers.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/view_passed_surveys.cpp" line="79"/>
+        <location filename="../src/view_passed_surveys.cpp" line="75"/>
         <source>No passed surveys yet.</source>
         <translation></translation>
     </message>
@@ -672,12 +672,12 @@
 <context>
     <name>survey::ViewSurveyResults</name>
     <message>
-        <location filename="../src/view_passed_surveys.cpp" line="167"/>
+        <location filename="../src/view_passed_surveys.cpp" line="202"/>
         <source>Survey results</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/view_passed_surveys.cpp" line="213"/>
+        <location filename="../src/view_passed_surveys.cpp" line="248"/>
         <source>Section %1</source>
         <translation></translation>
     </message>
