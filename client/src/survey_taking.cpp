@@ -65,7 +65,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
         auto show_rating = [=, this](const std::string &answer_id) {
             auto *box = show_question_box(
                 parentWidget(), QMessageBox::Question,
-                "Rate this survey", "Did you like this survey?",
+                tr("Rate this survey"), tr("Did you like this survey?"),
                 QMessageBox::Yes, QMessageBox::No
             );
             connect(box, &QMessageBox::finished, this, [=, this](int result) {

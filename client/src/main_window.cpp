@@ -248,6 +248,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     ratings_stat_label_ = make_stat_card(tr("Ratings"));
     users_stat_label_ = make_stat_card(tr("Users"));
 
+    auto *stats_header = new QLabel(tr("Already in our service:"), content);
+    stats_header->setObjectName("sectionLabel");
+    stats_header->setAlignment(Qt::AlignHCenter);
+    content_layout->addWidget(stats_header);
+
     content_layout->addWidget(stats_row);
 
     outer_layout->addWidget(header);
