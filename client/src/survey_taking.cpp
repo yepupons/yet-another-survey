@@ -69,10 +69,12 @@ void SurveyTaking::open_next_section(int next_section_id) {
                 QMessageBox::Yes, QMessageBox::No
             );
             connect(box, &QMessageBox::finished, this, [=, this](int result) {
-                server().post_rate(
-                    survey_id_, answer_id, result == QMessageBox::Yes,
-                    [](const nlohmann::json &) {}, [](const std::string &) {}
-                );
+                if (result == QMessageBox::Yes || result == QMessageBox::No) {
+                    server().post_rate(
+                        survey_id_, answer_id, result == QMessageBox::Yes,
+                        [](const nlohmann::json &) {}, [](const std::string &) {}
+                    );
+                }
                 deleteLater();
             });
         };
