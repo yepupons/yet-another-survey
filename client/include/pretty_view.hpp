@@ -83,7 +83,7 @@ inline void show_qr_code(
     qr_label->setScaledContents(false);
 
     auto *text_label =
-        new QLabel("Your survey ID:\n" + survey_id, content);
+        new QLabel("Survey ID:\n" + survey_id, content);
     text_label->setWordWrap(true);
 
     message_row->addWidget(qr_label);
@@ -93,7 +93,7 @@ inline void show_qr_code(
     QBoxLayout::connect(
         copy_button, &QPushButton::clicked, dialog,
         [survey_id]() {
-            QApplication::clipboard()->setText(survey_id);
+            QApplication::clipboard()->setText("localhost:8054/client.html?survey-id=" + survey_id);
         }
     );
 

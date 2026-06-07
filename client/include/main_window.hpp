@@ -1,6 +1,7 @@
 #ifndef MAIN_WINDOW_HPP_
 #define MAIN_WINDOW_HPP_
 
+#include <qobject.h>
 #include <QAction>
 #include <QLabel>
 #include <QMainWindow>
@@ -16,6 +17,7 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow(QWidget *parent = nullptr);
+    void set_survey_id(QString survey_id);
 
 public slots:
     void open_survey();

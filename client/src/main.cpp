@@ -6,6 +6,11 @@
 #include "main_window.hpp"
 #include "russian_hotkeys_handler.hpp"
 
+#ifdef Q_OS_WASM
+#include <emscripten/val.h>
+#include <QUrlQuery>
+#endif
+
 int main(int argc, char *argv[]) {
     int exit_code = 67;
     while (exit_code == 67) {
@@ -34,6 +39,14 @@ int main(int argc, char *argv[]) {
         app.installEventFilter(new RussianHotkeysHandler(&app));
 
         survey::MainWindow window;
+#ifdef Q_OS_WASM
+        emscripten::val location = emscripten::val::global("window")["location"];
+        QString query_str = QString::fromStdString(location["search"].as<std::string>()); 
+        QUrlQuery query(query_str);
+        if (query.hasQueryItem("?survey-id")) {
+            window.set_survey_id(query.queryItemValue("?survey-id"));
+        }
+#endif
         window.showFullScreen();
         exit_code = app.exec();
     }

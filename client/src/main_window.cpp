@@ -310,6 +310,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     });
 }
 
+void MainWindow::set_survey_id(QString survey_id) {
+    id_input_->setText(survey_id);
+}
+
 void MainWindow::update_auth_action() {
     auth_action_->setText(session().is_authenticated() ? tr("Log out") : tr("Log in"));
 }
