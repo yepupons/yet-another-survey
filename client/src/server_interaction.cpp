@@ -60,7 +60,7 @@ void ServerInteraction::get_survey(
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/survey?id=" + survey_id;
+        "http://127.0.0.1:8080/api/surveys/" + survey_id;
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -75,7 +75,7 @@ void ServerInteraction::post_survey(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/survey";
+    std::string url = "http://127.0.0.1:8080/api/surveys";
     send_request(
         url, Method::POST,
         [success](const std::string &result) {
@@ -106,7 +106,7 @@ void ServerInteraction::get_passed_surveys(
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/passed-surveys?session-id=" + user_id;
+        "http://127.0.0.1:8080/api/passed-surveys";
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -122,7 +122,7 @@ void ServerInteraction::get_created_surveys(
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/created-surveys?session-id=" + user_id;
+        "http://127.0.0.1:8080/api/created-surveys";
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -137,8 +137,8 @@ void ServerInteraction::get_survey_statistics(
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/statistics?survey-id=" +
-                      survey_id + "&format=" + file_format;
+    std::string url = "http://127.0.0.1:8080/api/surveys/" +
+                      survey_id + "/stats?format=" + file_format;
     send_request(url, Method::GET, success, failure, true);
 }
 
@@ -149,8 +149,7 @@ void ServerInteraction::get_survey_results(
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/survey-results?session-id=" + user_id +
-        "&survey-id=" + survey_id;
+        "http://127.0.0.1:8080/api/surveys/" + survey_id + "/results";
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -165,7 +164,7 @@ void ServerInteraction::check_answer(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/check";
+    std::string url = "http://127.0.0.1:8080/api/check-answer";
     send_request(
         url, Method::POST,
         [success](const std::string &result) {
@@ -181,7 +180,7 @@ void ServerInteraction::post_image(
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    QUrl url("http://127.0.0.1:8080/image");
+    QUrl url("http://127.0.0.1:8080/api/images");
 
     QHttpMultiPart *multiPart =
         new QHttpMultiPart(QHttpMultiPart::FormDataType);
@@ -216,7 +215,7 @@ void ServerInteraction::get_image(
     std::function<void(const std::string &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/image?id=" + image_oid;
+    std::string url = "http://127.0.0.1:8080/api/images/" + image_oid;
     send_request(url, Method::GET, success, failure);
 }
 
@@ -291,7 +290,7 @@ void ServerInteraction::get_surveys_top(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/api/surveys/top";
+    std::string url = "http://127.0.0.1:8080/api/top-surveys";
     send_request(
         url, Method::GET,
         [success](const std::string &result) {
@@ -322,7 +321,7 @@ void ServerInteraction::generate_question(
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
-    std::string url = "http://127.0.0.1:8080/generate-question";
+    std::string url = "http://127.0.0.1:8080/api/AI/generate-question";
 
     std::string user_message =
         "Текущее состояние раздела:\n" + section_data.dump() + '\n';

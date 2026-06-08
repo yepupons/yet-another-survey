@@ -72,13 +72,13 @@ int main(int argc, char *argv[]) {
     });
 
     app().registerHandler(
-        "/survey",
+        "/api/surveys/{1}",
         [&db](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
         ) {
             try {
-                std::string survey_id = request->getParameter("id");
                 const auto survey_data = db.read_survey(survey_id);
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setContentTypeCode(CT_APPLICATION_JSON);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/survey",
+        "/api/surveys",
         [&service](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/passed-surveys",
+        "/api/passed-surveys",
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
@@ -195,15 +195,15 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/survey-results",
+        "/api/surveys/{1}/results",
         [&db](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
         ) {
             try {
                 std::string session_id =
                     db.user_id_by_access_token(bearer_token(request));
-                std::string survey_id = request->getParameter("survey-id");
                 const auto survey_results_data =
                     db.read_survey_results(session_id, survey_id);
                 auto resp = HttpResponse::newHttpResponse();
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/created-surveys",
+        "/api/created-surveys",
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
@@ -253,13 +253,13 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/statistics",
+        "/api/surveys/{1}/stats",
         [&db](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &survey_id
         ) {
             try {
-                std::string survey_id = request->getParameter("survey-id");
                 std::string format = request->getParameter("format");
                 std::transform(
                     format.begin(), format.end(), format.begin(),
@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/check",
+        "/api/check-answer",
         [&service](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/image",
+        "/api/images",
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
@@ -353,13 +353,13 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/image",
+        "/api/images/{1}",
         [&db](
             const HttpRequestPtr &request,
-            std::function<void(const HttpResponsePtr &)> &&cb
+            std::function<void(const HttpResponsePtr &)> &&cb,
+            const std::string &image_oid
         ) {
             try {
-                std::string image_oid = request->getParameter("id");
                 const auto image_data = db.read_image(image_oid);
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setContentTypeCode(CT_IMAGE_JPG);
@@ -478,7 +478,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/generate-question",
+        "/api/AI/generate-question",
         [](const HttpRequestPtr &request,
            std::function<void(const HttpResponsePtr &)> &&cb) {
             auto resp = HttpResponse::newHttpResponse();
@@ -522,7 +522,7 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/api/surveys/top",
+        "/api/top-surveys",
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb
