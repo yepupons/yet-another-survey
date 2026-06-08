@@ -1,6 +1,5 @@
 #include "view_passed_surveys.hpp"
 #include <qnamespace.h>
-#include <qobject.h>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -14,6 +13,7 @@
 #include "session.hpp"
 #include "single_choice_block.hpp"
 #include "text_block.hpp"
+#include "clickable_card.hpp"
 
 namespace survey {
 nlohmann::json extract_saved_answer(nlohmann::json &saved_answer) {
@@ -36,16 +36,14 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
     content->setObjectName("centralWidget");
     auto *content_layout = new QVBoxLayout(content);
     content_layout->setAlignment(Qt::AlignTop);
-    content_layout->setContentsMargins(0, 24, 0, 0);
+    content_layout->setContentsMargins(0, 24, 0, 24);
     content_layout->setSpacing(16);
 
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
     title_card->setFixedWidth(720);
-    title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title_card);
-    title_layout->setAlignment(Qt::AlignTop);
     title_layout->setContentsMargins(24, 24, 24, 24);
     title_layout->setSpacing(8);
 
@@ -60,93 +58,148 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
 
     content_layout->addWidget(title_card, 0, Qt::AlignHCenter);
 
+    scroll_area->setWidget(content);
+    layout->addWidget(scroll_area);
+    setLayout(layout);
+
     server().get_passed_surveys(
         session().get_id(),
-        [=, this](const nlohmann::json &surveys_ids) {
-            if (surveys_ids.empty()) {
-                auto *surveys_card = new QWidget(content);
-                surveys_card->setObjectName("questionCard");
-                surveys_card->setFixedWidth(720);
-                surveys_card->setSizePolicy(
-                    QSizePolicy::Expanding, QSizePolicy::Preferred
-                );
-
-                auto *surveys_layout = new QVBoxLayout(surveys_card);
-                surveys_layout->setContentsMargins(24, 24, 24, 24);
-                surveys_layout->setSpacing(12);
-
+        [=, this](const nlohmann::json &surveys) {
+            if (surveys.empty()) {
+                auto *empty_card = new QWidget(content);
+                empty_card->setObjectName("questionCard");
+                empty_card->setFixedWidth(720);
+                auto *empty_layout = new QVBoxLayout(empty_card);
+                empty_layout->setContentsMargins(24, 24, 24, 24);
                 auto *empty_label =
-                    new QLabel(tr("No passed surveys yet."), surveys_card);
+                    new QLabel(tr("No passed surveys yet."), empty_card);
                 empty_label->setObjectName("subtitleLabel");
-                surveys_layout->addWidget(empty_label);
-
-                content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
-                content_layout->addStretch();
-                scroll_area->setWidget(content);
-                layout->addWidget(scroll_area);
-                setLayout(layout);
+                empty_layout->addWidget(empty_label);
+                content_layout->addWidget(empty_card, 0, Qt::AlignHCenter);
                 return;
             }
 
-            auto *surveys_card = new QWidget(content);
-            surveys_card->setObjectName("questionCard");
-            surveys_card->setFixedWidth(720);
-            surveys_card->setSizePolicy(
-                QSizePolicy::Expanding, QSizePolicy::Preferred
-            );
-
-            auto *surveys_layout = new QVBoxLayout(surveys_card);
-            surveys_layout->setContentsMargins(24, 24, 24, 24);
-            surveys_layout->setSpacing(12);
-
-            for (const auto &id_json : surveys_ids) {
-                const std::string id = id_json.get<std::string>();
-                auto *row_widget = new QWidget(surveys_card);
-                auto *row_layout = new QHBoxLayout(row_widget);
-                row_layout->setContentsMargins(0, 0, 0, 0);
-                row_layout->setSpacing(12);
+            for (const auto &item : surveys) {
+                const std::string survey_id =
+                    item.at("survey_id").get<std::string>();
+                const std::string answer_id =
+                    item.at("answer_id").get<std::string>();
+                const std::string user_rate =
+                    item.at("user_rate").get<std::string>();
+                const bool already_rated = !user_rate.empty();
 
                 server().get_survey(
-                    id,
+                    survey_id,
                     [=, this](const nlohmann::json &survey_data) {
-                        auto title = survey_data.at("title").get<std::string>();
-                        auto button = new QPushButton(
-                            QString::fromStdString(title), row_widget
-                        );
-                        button->setObjectName("primaryButton");
-                        button->setSizePolicy(
-                            QSizePolicy::Expanding, QSizePolicy::Preferred
-                        );
-                        row_layout->addWidget(button);
-                        surveys_layout->addWidget(row_widget);
+                        const std::string title =
+                            survey_data.at("title").get<std::string>();
+                        const std::string description =
+                            survey_data.at("description").get<std::string>();
 
-                        connect(
-                            button, &QPushButton::clicked, this,
-                            [this, id]() {
-                                std::string session_id = session().get_id();
+                        auto *row = new QWidget(content);
+                        row->setFixedWidth(720);
+                        auto *row_layout = new QHBoxLayout(row);
+                        row_layout->setContentsMargins(0, 0, 0, 0);
+                        row_layout->setSpacing(8);
+
+                        auto *vote_widget = new QWidget(row);
+                        vote_widget->setFixedWidth(52);
+                        auto *vote_layout = new QVBoxLayout(vote_widget);
+                        vote_layout->setContentsMargins(0, 0, 0, 0);
+                        vote_layout->setSpacing(4);
+                        vote_layout->setAlignment(Qt::AlignCenter);
+
+                        auto *like_btn = new QPushButton(vote_widget);
+                        like_btn->setObjectName("likeButton");
+                        like_btn->setCheckable(true);
+                        like_btn->setChecked(user_rate == "like");
+                        like_btn->setDisabled(answer_id.empty() || already_rated);
+
+                        auto *dislike_btn = new QPushButton(vote_widget);
+                        dislike_btn->setObjectName("dislikeButton");
+                        dislike_btn->setCheckable(true);
+                        dislike_btn->setChecked(user_rate == "dislike");
+                        dislike_btn->setDisabled(answer_id.empty() || already_rated);
+
+                        vote_layout->addWidget(like_btn);
+                        vote_layout->addWidget(dislike_btn);
+
+                        connect(like_btn, &QPushButton::clicked, this, [=]() {
+                            server().post_rate(
+                                survey_id, answer_id, true,
+                                [like_btn, dislike_btn](const nlohmann::json &) {
+                                    like_btn->setChecked(true);
+                                    like_btn->setDisabled(true);
+                                    dislike_btn->setDisabled(true);
+                                },
+                                [](const std::string &) {}
+                            );
+                        });
+                        connect(dislike_btn, &QPushButton::clicked, this, [=]() {
+                            server().post_rate(
+                                survey_id, answer_id, false,
+                                [like_btn, dislike_btn](const nlohmann::json &) {
+                                    dislike_btn->setChecked(true);
+                                    like_btn->setDisabled(true);
+                                    dislike_btn->setDisabled(true);
+                                },
+                                [](const std::string &) {}
+                            );
+                        });
+
+                        auto *card = new ClickableCard(
+                            [survey_id, this]() {
                                 auto *dialog = new ViewSurveyResults(
-                                    id, session_id, this
+                                    survey_id, session().get_id(), this
                                 );
                                 dialog->setAttribute(Qt::WA_DeleteOnClose);
                                 dialog->showFullScreen();
-                            }
+                            },
+                            row
                         );
+                        card->setObjectName("surveyCard");
+                        card->setSizePolicy(
+                            QSizePolicy::Expanding, QSizePolicy::Preferred
+                        );
+
+                        auto *card_layout = new QVBoxLayout(card);
+                        card_layout->setContentsMargins(24, 20, 24, 20);
+                        card_layout->setSpacing(8);
+
+                        auto *survey_title =
+                            new QLabel(QString::fromStdString(title), card);
+                        survey_title->setObjectName("titleLabel");
+                        survey_title->setWordWrap(true);
+                        survey_title->setAttribute(
+                            Qt::WA_TransparentForMouseEvents
+                        );
+                        card_layout->addWidget(survey_title);
+
+                        if (!description.empty()) {
+                            auto *desc_label = new QLabel(
+                                QString::fromStdString(description), card
+                            );
+                            desc_label->setObjectName("descriptionLabel");
+                            desc_label->setWordWrap(true);
+                            desc_label->setAttribute(
+                                Qt::WA_TransparentForMouseEvents
+                            );
+                            card_layout->addWidget(desc_label);
+                        }
+
+                        row_layout->addWidget(vote_widget);
+                        row_layout->addWidget(card);
+
+                        content_layout->addWidget(row, 0, Qt::AlignHCenter);
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
                             parentWidget(), QMessageBox::Warning, "Error",
                             QString::fromStdString(error)
                         );
-                        deleteLater();
                     }
                 );
             }
-
-            content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
-            content_layout->addStretch();
-            scroll_area->setWidget(content);
-            layout->addWidget(scroll_area);
-            setLayout(layout);
         },
         [=, this](const std::string &error) {
             show_message_box(

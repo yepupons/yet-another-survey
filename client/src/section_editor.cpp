@@ -80,14 +80,14 @@ SectionEditor::SectionEditor(
     }
     
     bottom_row->addStretch();
-    add_block_button_ = new QPushButton(tr("Add question"), this);
-    bottom_row->addWidget(add_block_button_);
-    
     if (type_ != SurveyType::Quiz) {
         use_AI_ = new QCheckBox(tr("Use AI"), this);
         use_AI_->setObjectName("requiredToggle");
         bottom_row->addWidget(use_AI_);
     }
+    
+    add_block_button_ = new QPushButton(tr("Add question"), this);
+    bottom_row->addWidget(add_block_button_);
 
     connect(
         add_block_button_, &QPushButton::clicked, this,

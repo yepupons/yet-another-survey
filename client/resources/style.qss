@@ -402,7 +402,7 @@ QWidget#surveyCard {
 }
 
 QWidget#surveyCard:hover {
-    border: 1px solid #263244;
+    border: 2px solid #263244;
 }
 
 QLabel#questionTitle {
@@ -546,6 +546,58 @@ QPushButton#moveDownButton {
     border: 1px solid #d8e0ea;
     border-radius: 10px;
     image: url(:/icons/arrow_down.svg);
+}
+
+QPushButton#likeButton {
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0;
+    background-color: #ffffff;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    image: url(:/icons/like.svg);
+}
+
+QPushButton#likeButton:hover {
+    background-color: #f0fdf4;
+    border: 1px solid #86efac;
+}
+
+QPushButton#likeButton:pressed {
+    background-color: #dcfce7;
+}
+
+QPushButton#likeButton:checked {
+    background-color: #dcfce7;
+    border: 2px solid #22c55e;
+}
+
+QPushButton#dislikeButton {
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0;
+    background-color: #ffffff;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    image: url(:/icons/dislike.svg);
+}
+
+QPushButton#dislikeButton:hover {
+    background-color: #fff1f2;
+    border: 1px solid #fca5a5;
+}
+
+QPushButton#dislikeButton:pressed {
+    background-color: #fee2e2;
+}
+
+QPushButton#dislikeButton:checked {
+    background-color: #fee2e2;
+    border: 2px solid #ef4444;
 }
 
 QCheckBox#choiceOption::indicator:checked {
