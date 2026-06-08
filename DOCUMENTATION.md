@@ -168,10 +168,6 @@ cmake --build build --parallel
 ```bash
 make build
 ```
-***(для дебага)***
-```bash
-make build-debug
-```
 
 ### Билд веба
 Для веб-сборки нужен Qt for WebAssembly под single thread и emsdk той версии, которую просит сайт Qt для твоей версии Qt.
@@ -200,7 +196,7 @@ cmake --build build-wasm --parallel
 
 Чтобы открыть веб-клиент локально:
 ```bash
-make serve-wasm
+make web
 ```
 
 После этого открываем `http://localhost:8054/client.html`.

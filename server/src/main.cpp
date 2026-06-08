@@ -85,11 +85,6 @@ int main(int argc, char *argv[]) {
                 resp->setBody(survey_data);
                 cb(resp);
             } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error reading survey "
-                          << request->getParameter("id") << ": " << e.what()
-                          << std::endl;
-#endif
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k404NotFound);
                 resp->setBody(e.what());
@@ -110,16 +105,7 @@ int main(int argc, char *argv[]) {
             try {
                 auto survey_data = nlohmann::json::parse(std::string(request->getBody()));
                 out = service.create_survey(bearer_token(request), survey_data);
-#ifdef YAZ_DEBUG
-                std::cerr << "Received survey: " << survey_data.dump(2)
-                          << std::endl;
-#endif
             } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error saving survey "
-                          << request->getParameter("id") << ": " << e.what()
-                          << std::endl;
-#endif
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
@@ -144,14 +130,7 @@ int main(int argc, char *argv[]) {
             try {
                 auto answer_data = nlohmann::json::parse(std::string(request->getBody()));
                 out = service.submit_answer(bearer_token(request), answer_data, survey_id);
-#ifdef YAZ_DEBUG
-                std::cerr << "Received answer: " << answer_data.dump(2)
-                          << std::endl;
-#endif
             } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error saving answer: " << e.what() << std::endl;
-#endif
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
                 cb(resp);
@@ -180,11 +159,6 @@ int main(int argc, char *argv[]) {
                 resp->setBody(passed_surveys_data);
                 cb(resp);
             } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error reading passed surveys for "
-                          << request->getParameter("session-id") << ": "
-                          << e.what() << std::endl;
-#endif
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
@@ -211,13 +185,6 @@ int main(int argc, char *argv[]) {
                 resp->setBody(survey_results_data);
                 cb(resp);
             } catch (const std::exception &e) {
-#ifdef YAZ_DEBUG
-                std::cerr << "Error reading survey results for "
-                          << request->getParameter("session-id")
-                          << " and survey "
-                          << request->getParameter("survey-id") << ": "
-                          << e.what() << std::endl;
-#endif
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);
                 resp->setBody(e.what());
