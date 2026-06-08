@@ -402,7 +402,7 @@ QWidget#surveyCard {
 }
 
 QWidget#surveyCard:hover {
-    border: 1px solid #263244;
+    border: 2px solid #263244;
 }
 
 QLabel#questionTitle {

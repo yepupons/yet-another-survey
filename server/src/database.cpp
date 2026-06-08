@@ -57,20 +57,6 @@ std::string Database::write_survey(
     if (!insert_result) {
         throw std::runtime_error("Writing survey into database failed");
     }
-    auto find_result =
-        db()["users"].find_one(document{} << "id" << creator_id << finalize);
-    if (!find_result) {
-        db()["users"].insert_one(
-            document{} << "id" << creator_id << "created_surveys" << open_array
-                       << close_array << "given_answers" << open_array
-                       << close_array << finalize
-        );
-        db()["global_stats"].update_one(
-            document{} << "_id" << "main" << finalize,
-            document{} << "$inc" << open_document << "users_count" << 1 << close_document << finalize,
-            mongocxx::options::update{}.upsert(true)
-        );
-    }
     db()["users"].update_one(
         document{} << "id" << creator_id << finalize,
         document{} << "$push" << open_document << "created_surveys" << survey_id
@@ -124,20 +110,6 @@ std::string Database::write_answer(
         document{} << "$inc" << open_document << "data.answers_count" << 1 << close_document << finalize
     );
 
-    auto find_result =
-        db()["users"].find_one(document{} << "id" << respondent_id << finalize);
-    if (!find_result) {
-        db()["users"].insert_one(
-            document{} << "id" << respondent_id << "created_surveys"
-                       << open_array << close_array << "given_answers"
-                       << open_array << close_array << finalize
-        );
-        db()["global_stats"].update_one(
-            document{} << "_id" << "main" << finalize,
-            document{} << "$inc" << open_document << "users_count" << 1 << close_document << finalize,
-            mongocxx::options::update{}.upsert(true)
-        );
-    }
     db()["users"].update_one(
         document{} << "id" << respondent_id << finalize,
         document{} << "$push" << open_document << "given_answers" << answer_id
@@ -688,6 +660,11 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
                        << "created_surveys" << open_array
                        << close_array << "given_answers" << open_array
                        << close_array << finalize
+        );
+        db()["global_stats"].update_one(
+            document{} << "_id" << "main" << finalize,
+            document{} << "$inc" << open_document << "users_count" << 1 << close_document << finalize,
+            mongocxx::options::update{}.upsert(true)
         );
     }
 
