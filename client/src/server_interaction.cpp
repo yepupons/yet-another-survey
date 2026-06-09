@@ -143,13 +143,12 @@ void ServerInteraction::get_survey_statistics(
 }
 
 void ServerInteraction::get_survey_results(
-    const std::string &user_id,
-    const std::string &survey_id,
+    const std::string &answer_id,
     std::function<void(const nlohmann::json &)> success,
     std::function<void(const std::string &)> failure
 ) {
     std::string url =
-        "http://127.0.0.1:8080/api/surveys/" + survey_id + "/results";
+        "http://127.0.0.1:8080/api/answers/" + answer_id;
     send_request(
         url, Method::GET,
         [success](const std::string &result) {

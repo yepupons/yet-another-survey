@@ -18,7 +18,7 @@ class ViewSurveyResults : public QDialog {
 public:
     explicit ViewSurveyResults(
         const std::string &survey_id,
-        const std::string &session_id,
+        const std::string &answer_id,
         QWidget *parent = nullptr
     );
 };

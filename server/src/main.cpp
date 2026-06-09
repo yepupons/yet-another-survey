@@ -169,17 +169,15 @@ int main(int argc, char *argv[]) {
     );
 
     app().registerHandler(
-        "/api/surveys/{1}/results",
+        "/api/answers/{1}",
         [&db](
             const HttpRequestPtr &request,
             std::function<void(const HttpResponsePtr &)> &&cb,
-            const std::string &survey_id
+            const std::string &answer_id
         ) {
             try {
-                std::string session_id =
-                    db.user_id_by_access_token(bearer_token(request));
                 const auto survey_results_data =
-                    db.read_survey_results(session_id, survey_id);
+                    db.read_survey_results(answer_id);
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setContentTypeCode(CT_APPLICATION_JSON);
                 resp->setBody(survey_results_data);

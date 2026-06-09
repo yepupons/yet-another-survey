@@ -71,8 +71,8 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
     server().get_created_surveys(
         session().get_id(),
-        [=, this](const nlohmann::json &surveys_ids) {
-            if (surveys_ids.empty()) {
+        [=, this](const nlohmann::json &surveys) {
+            if (surveys.empty()) {
                 auto *empty_label =
                     new QLabel(tr("No created surveys yet."), surveys_card);
                 empty_label->setObjectName("titleLabel");
@@ -85,8 +85,12 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 return;
             }
 
-            for (const auto &id_json : surveys_ids) {
-                const std::string id = id_json.get<std::string>();
+            for (auto iter = surveys.rbegin(); iter != surveys.rend(); iter = std::next(iter)) {
+                const auto &survey = *iter;
+                const std::string id = survey["id"];
+                const std::string title = survey["title"];
+                const std::string description = survey["description"];
+
                 auto *row_widget = new QWidget(surveys_card);
                 auto *row_layout = new QVBoxLayout(row_widget);
                 row_layout->setContentsMargins(0, 0, 0, 0);
@@ -98,23 +102,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                     QSizePolicy::Expanding, QSizePolicy::Preferred
                 );
                 survey_title->setWordWrap(true);
-                server().get_survey(
-                    id,
-                    [=, this](const nlohmann::json &survey_data) {
-                        auto title = survey_data.at("title").get<std::string>();
-                        survey_title->setText(
-                            QString::fromStdString(title) +
-                            " (id: " + QString::fromStdString(id) + ")"
-                        );
-                    },
-                    [=, this](const std::string &error) {
-                        show_message_box(
-                            parentWidget(), QMessageBox::Warning, "Error",
-                            QString::fromStdString(error)
-                        );
-                        deleteLater();
-                    }
-                );
+                survey_title->setText(QString::fromStdString(title));
                 row_layout->addWidget(survey_title);
 
                 auto *actions_layout = new QHBoxLayout();

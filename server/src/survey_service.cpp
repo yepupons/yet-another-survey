@@ -4,8 +4,19 @@
 #include <functional>
 #include <set>
 #include <nlohmann/json.hpp>
+#include <chrono>
+#include <ctime>
 
 namespace survey {
+static std::string time_now() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    std::tm* localTime = std::localtime(&currentTime);
+    char buffer[100];
+    std::strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", localTime);
+    return buffer;
+}
+
 SurveyService::SurveyService(Database &db) : db_(db) {}
 
 void SurveyService::validate_survey_payload(const nlohmann::json &payload) const {
@@ -259,22 +270,24 @@ std::string SurveyService::create_survey(const std::string &access_token, const 
     survey_json["data"]["dislikes_count"] = 0;
     survey_json["data"]["ratings_count"] = 0;
     survey_json["data"]["rating_score"] = 0;
-    return db_.write_survey(survey_id, creator_id, survey_json);
+    return db_.write_survey(survey_json);
 }
 
 std::string SurveyService::submit_answer(
-        const std::string &access_token,
-        const nlohmann::json &payload,
-        const std::string &survey_id
-    ){
-        const std::string respondent_id = db_.user_id_by_access_token(access_token);
-        const std::string answer_id = survey::Database::generate_uuid();
-        validate_answer_payload(nlohmann::json::parse(db_.read_survey(survey_id)), payload);
-        nlohmann::json answer_json = payload;
-        answer_json["data"]["survey_id"] = survey_id;
-        auto out = db_.write_answer(answer_id, respondent_id, answer_json.dump());
-        return out;
-    }
+    const std::string &access_token,
+    const nlohmann::json &payload,
+    const std::string &survey_id
+){
+    const std::string respondent_id = db_.user_id_by_access_token(access_token);
+    const std::string answer_id = survey::Database::generate_uuid();
+    validate_answer_payload(nlohmann::json::parse(db_.read_survey(survey_id)), payload);
+    nlohmann::json answer_json = payload;
+    answer_json["data"]["id"] = answer_id;
+    answer_json["data"]["survey_id"] = survey_id;
+    answer_json["data"]["respondent_id"] = respondent_id;
+    answer_json["data"]["completed_at"] = time_now();
+    return db_.write_answer(answer_json);
+}
 
 std::string SurveyService::check_answer(
     const std::string &access_token,
@@ -290,8 +303,11 @@ std::string SurveyService::check_answer(
     validate_answer_payload(survey_json, payload);
 
     nlohmann::json answer_json = payload;
+    answer_json["data"]["id"] = answer_id;
     answer_json["data"]["survey_id"] = survey_id;
-    db_.write_answer(answer_id, respondent_id, answer_json.dump());
+    answer_json["data"]["respondent_id"] = respondent_id;
+    answer_json["data"]["completed_at"] = time_now();
+    db_.write_answer(answer_json);
 
     nlohmann::json out;
     out["data"] = {
