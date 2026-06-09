@@ -28,7 +28,13 @@ public slots:
     void update_auth_action();
     void load_global_stats();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
+    void update_header_title();
+
+    QLabel *header_title_ = nullptr;
     QLineEdit *id_input_;
     QPushButton *open_survey_button_;
     QPushButton *create_survey_button_;

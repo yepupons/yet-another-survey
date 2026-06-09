@@ -29,18 +29,21 @@ TopSurveysWindow::TopSurveysWindow(
     auto *scroll_area = new QScrollArea(this);
     scroll_area->setFrameShape(QFrame::NoFrame);
     scroll_area->setWidgetResizable(true);
+    scroll_area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     auto *content = new QWidget(scroll_area);
     content->setObjectName("centralWidget");
 
     auto *content_layout = new QVBoxLayout(content);
     content_layout->setAlignment(Qt::AlignTop);
-    content_layout->setContentsMargins(0, 24, 0, 24);
+    content_layout->setContentsMargins(16, 24, 16, 24);
     content_layout->setSpacing(16);
 
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
-    title_card->setFixedWidth(720);
+    title_card->setMinimumWidth(300);
+    title_card->setMaximumWidth(720);
+    title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title_card);
     title_layout->setContentsMargins(24, 24, 24, 24);
@@ -48,12 +51,16 @@ TopSurveysWindow::TopSurveysWindow(
 
     auto *title_label = new QLabel(tr("Trending surveys"), title_card);
     title_label->setObjectName("titleLabel");
+    title_label->setMinimumWidth(0);
+    title_label->setWordWrap(true);
     title_layout->addWidget(title_label);
 
     auto *subtitle_label = new QLabel(
         tr("Top 10 surveys rated by the community."), title_card
     );
     subtitle_label->setObjectName("subtitleLabel");
+    subtitle_label->setMinimumWidth(0);
+    subtitle_label->setWordWrap(true);
     title_layout->addWidget(subtitle_label);
 
     content_layout->addWidget(title_card, 0, Qt::AlignHCenter);
@@ -61,7 +68,9 @@ TopSurveysWindow::TopSurveysWindow(
     if (surveys.empty()) {
         auto *empty_card = new QWidget(content);
         empty_card->setObjectName("questionCard");
-        empty_card->setFixedWidth(720);
+        empty_card->setMinimumWidth(300);
+        empty_card->setMaximumWidth(720);
+        empty_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         auto *empty_layout = new QVBoxLayout(empty_card);
         empty_layout->setContentsMargins(24, 24, 24, 24);
         auto *empty_label = new QLabel(tr("No surveys yet."), empty_card);
@@ -83,7 +92,9 @@ TopSurveysWindow::TopSurveysWindow(
         const bool already_rated = !user_rate.empty();
 
         auto *row = new QWidget(content);
-        row->setFixedWidth(720);
+        row->setMinimumWidth(300);
+        row->setMaximumWidth(720);
+        row->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         auto *row_layout = new QHBoxLayout(row);
         row_layout->setContentsMargins(0, 0, 0, 0);
         row_layout->setSpacing(0);
@@ -93,6 +104,7 @@ TopSurveysWindow::TopSurveysWindow(
             taking->setAttribute(Qt::WA_DeleteOnClose);
         }, row);
         card->setObjectName("surveyCard");
+        card->setMinimumWidth(300);
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
         auto *card_layout = new QVBoxLayout(card);
@@ -146,7 +158,11 @@ TopSurveysWindow::TopSurveysWindow(
         }
 
         auto *preview_label = new QLabel(card);
-        preview_label->setFixedSize(672, 189);
+        preview_label->setMinimumWidth(0);
+        preview_label->setMaximumWidth(672);
+        preview_label->setFixedHeight(189);
+        preview_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        preview_label->setScaledContents(true);
         preview_label->setAlignment(Qt::AlignCenter);
         preview_label->setAttribute(Qt::WA_TransparentForMouseEvents);
         preview_label->setAttribute(Qt::WA_OpaquePaintEvent);
@@ -158,14 +174,18 @@ TopSurveysWindow::TopSurveysWindow(
 
         auto *survey_title = new QLabel(QString::fromStdString(title), card);
         survey_title->setObjectName("titleLabel");
+        survey_title->setMinimumWidth(0);
         survey_title->setWordWrap(true);
+        survey_title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         survey_title->setAttribute(Qt::WA_TransparentForMouseEvents);
         card_layout->addWidget(survey_title);
 
         if (!description.empty()) {
             auto *survey_description = new QLabel(QString::fromStdString(description), card);
             survey_description->setObjectName("descriptionLabel");
+            survey_description->setMinimumWidth(0);
             survey_description->setWordWrap(true);
+            survey_description->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
             survey_description->setAttribute(Qt::WA_TransparentForMouseEvents);
             card_layout->addWidget(survey_description);
         }
@@ -174,6 +194,8 @@ TopSurveysWindow::TopSurveysWindow(
                                   .arg(rank).arg(likes).arg(dislikes).arg(completions);
         auto *stats_label = new QLabel(stats, card);
         stats_label->setObjectName("subtitleLabel");
+        stats_label->setMinimumWidth(0);
+        stats_label->setWordWrap(true);
         stats_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         stats_label->setAttribute(Qt::WA_TransparentForMouseEvents);
 

@@ -39,7 +39,7 @@ namespace survey {
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle(tr("ЯЗЬ"));
     resize(1100, 800);
-    setMinimumSize(520, 520);
+    setMinimumSize(320, 520);
 
     auto *central = new QWidget(this);
     central->setObjectName("centralWidget");
@@ -52,16 +52,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     auto *header = new QWidget(central);
     header->setObjectName("topHeader");
     header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    header->setMinimumWidth(500);
 
     auto *header_layout = new QHBoxLayout(header);
     header_layout->setContentsMargins(32, 18, 32, 18);
     header_layout->setSpacing(12);
 
-    auto *header_title = new QLabel(tr("yet-another-survey"), header);
-    header_title->setObjectName("headerTitle");
-    header_title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    header_layout->addWidget(header_title);
+    header_title_ = new QLabel(header);
+    header_title_->setObjectName("headerTitle");
+    header_title_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    header_layout->addWidget(header_title_);
+    update_header_title();
 
     auto *header_spacer = new QWidget(header);
     header_spacer->setSizePolicy(
@@ -427,5 +427,17 @@ void MainWindow::get_passed_surveys() {
     auto *view = new ViewPassedSurveys(this);
     view->setAttribute(Qt::WA_DeleteOnClose);
     view->showFullScreen();
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event) {
+    QMainWindow::resizeEvent(event);
+    update_header_title();
+}
+
+void MainWindow::update_header_title() {
+    if (!header_title_) {
+        return;
+    }
+    header_title_->setText(width() < 520 ? "yas" : tr("yet-another-survey"));
 }
 }  // namespace survey
