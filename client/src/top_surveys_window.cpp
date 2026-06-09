@@ -3,9 +3,11 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <functional>
 #include <nlohmann/json.hpp>
 #include "survey_taking.hpp"
 #include "clickable_card.hpp"
@@ -144,6 +146,17 @@ TopSurveysWindow::TopSurveysWindow(
         auto *card_layout = new QVBoxLayout(card);
         card_layout->setContentsMargins(24, 20, 24, 20);
         card_layout->setSpacing(8);
+
+        auto *preview_label = new QLabel(card);
+        preview_label->setFixedSize(672, 189);
+        preview_label->setAlignment(Qt::AlignCenter);
+        preview_label->setAttribute(Qt::WA_TransparentForMouseEvents);
+        preview_label->setAttribute(Qt::WA_OpaquePaintEvent);
+        preview_label->setAttribute(Qt::WA_StaticContents);
+
+        const int preview_index = std::hash<std::string>{}(id) % 6;
+        preview_label->setPixmap(QPixmap(QString(":/survey_previews/default_%1.png").arg(preview_index)));
+        card_layout->addWidget(preview_label, 0, Qt::AlignHCenter);
 
         auto *survey_title = new QLabel(QString::fromStdString(title), card);
         survey_title->setObjectName("titleLabel");

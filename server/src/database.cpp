@@ -832,6 +832,7 @@ std::string Database::get_top_surveys(const std::string &session_id) {
         survey_json["ratings_count"] = int_or(data, "ratings_count");
         survey_json["rating_score"] = int_or(data, "rating_score");
         survey_json["is_public"] = bool_or(data, "is_public", true);
+        survey_json["preview_image"] = str_or(data, "preview_image");
         if (!session_id.empty()) {
             const std::string survey_id_str = str_or(data, "id");
             auto answer = db()["answers"].find_one(

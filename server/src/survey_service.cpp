@@ -1,6 +1,7 @@
 #include "survey_service.hpp"
 #include "database.hpp"
 #include <algorithm>
+#include <functional>
 #include <set>
 #include <nlohmann/json.hpp>
 
@@ -24,6 +25,11 @@ void SurveyService::validate_survey_payload(const nlohmann::json &payload) const
     if (payload["data"].contains("is_public") &&
         !payload["data"]["is_public"].is_boolean()) {
         throw std::invalid_argument("Survey visibility must be boolean");
+    }
+
+    if (payload["data"].contains("preview_image") &&
+        !payload["data"]["preview_image"].is_string()) {
+        throw std::invalid_argument("Survey preview image must be string");
     }
 
     if (!payload.contains("title") || !payload["title"].is_string()) {
@@ -244,6 +250,10 @@ std::string SurveyService::create_survey(const std::string &access_token, const 
     survey_json["data"]["creator_id"] = creator_id;
     if (!survey_json["data"].contains("is_public")) {
         survey_json["data"]["is_public"] = true;
+    }
+    if (!survey_json["data"].contains("preview_image")) {
+        const int index = std::hash<std::string>{}(survey_id) % 6;
+        survey_json["data"]["preview_image"] = "default:" + std::to_string(index);
     }
     survey_json["data"]["likes_count"] = 0;
     survey_json["data"]["dislikes_count"] = 0;

@@ -490,6 +490,7 @@ def split_sections(questions: list[dict[str, Any]], rng: random.Random) -> list[
 def make_survey(topic: dict[str, Any], survey_type: str, creator_id: str, rng: random.Random) -> dict[str, Any]:
     likes = rng.randint(5, 35)
     dislikes = rng.randint(0, 15)
+    is_public = rng.random() >= 0.25
     survey_id = str(uuid.uuid4())
     questions = expanded_questions(topic, survey_type, rng)
     survey = {
@@ -497,6 +498,8 @@ def make_survey(topic: dict[str, Any], survey_type: str, creator_id: str, rng: r
             "id": survey_id,
             "creator_id": creator_id,
             "type": survey_type,
+            "is_public": is_public,
+            "preview_image": f"default:{rng.randrange(6)}",
             "likes_count": likes,
             "dislikes_count": dislikes,
             "ratings_count": likes + dislikes,
