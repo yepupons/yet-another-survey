@@ -227,6 +227,11 @@
         <translation></translation>
     </message>
     <message>
+        <location filename="../src/main_window.cpp" line="422"/>
+        <source>Please log in first.</source>
+        <translation></translation>
+    </message>
+    <message>
         <location filename="../src/main_window.cpp" line="365"/>
         <source>Survey</source>
         <translation></translation>
@@ -647,8 +652,12 @@
     </message>
     <message>
         <location filename="../src/top_surveys_window.cpp" line="105"/>
-        <source>Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings  ·  %5 complitions</source>
+        <source>№ %1  ·  %2 likes  ·  %3 dislikes  ·  %4 completions</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings  ·  %5 complitions</source>
+        <translation type="vanished"></translation>
     </message>
 </context>
 <context>

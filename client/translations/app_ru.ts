@@ -227,6 +227,11 @@
         <translation>Вы уже проходите этот опрос</translation>
     </message>
     <message>
+        <location filename="../src/main_window.cpp" line="422"/>
+        <source>Please log in first.</source>
+        <translation>Сначала войдите в аккаунт.</translation>
+    </message>
+    <message>
         <location filename="../src/main_window.cpp" line="365"/>
         <source>Survey</source>
         <translation>Опрос</translation>
@@ -647,8 +652,12 @@
     </message>
     <message>
         <location filename="../src/top_surveys_window.cpp" line="105"/>
+        <source>№ %1  ·  %2 likes  ·  %3 dislikes  ·  %4 completions</source>
+        <translation>№ %1  ·  %2 лайков  ·  %3 дизлайков  ·  %4 прохождений</translation>
+    </message>
+    <message>
         <source>Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings  ·  %5 complitions</source>
-        <translation>Рейтинг: %1  ·  %2 лайков  ·  %3 дизлайков  ·  %4 оценок  ·  %5 прохождений</translation>
+        <translation type="vanished">Рейтинг: %1  ·  %2 лайков  ·  %3 дизлайков  ·  %4 оценок  ·  %5 прохождений</translation>
     </message>
     <message>
         <source>Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings</source>

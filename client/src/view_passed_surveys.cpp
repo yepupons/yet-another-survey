@@ -92,14 +92,32 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                 row->setFixedWidth(720);
                 auto *row_layout = new QHBoxLayout(row);
                 row_layout->setContentsMargins(0, 0, 0, 0);
-                row_layout->setSpacing(8);
+                row_layout->setSpacing(0);
 
-                auto *vote_widget = new QWidget(row);
-                vote_widget->setFixedWidth(52);
-                auto *vote_layout = new QVBoxLayout(vote_widget);
+                auto *card = new ClickableCard(
+                    [survey_id, answer_id, this]() {
+                        auto *dialog = new ViewSurveyResults(
+                            survey_id, answer_id, this
+                        );
+                        dialog->setAttribute(Qt::WA_DeleteOnClose);
+                        dialog->showFullScreen();
+                    },
+                    row
+                );
+                card->setObjectName("surveyCard");
+                card->setSizePolicy(
+                    QSizePolicy::Expanding, QSizePolicy::Preferred
+                );
+
+                auto *card_layout = new QVBoxLayout(card);
+                card_layout->setContentsMargins(24, 20, 24, 20);
+                card_layout->setSpacing(8);
+
+                auto *vote_widget = new QWidget(card);
+                auto *vote_layout = new QHBoxLayout(vote_widget);
                 vote_layout->setContentsMargins(0, 0, 0, 0);
-                vote_layout->setSpacing(4);
-                vote_layout->setAlignment(Qt::AlignCenter);
+                vote_layout->setSpacing(8);
+                vote_layout->setAlignment(Qt::AlignRight);
 
                 auto *like_btn = new QPushButton(vote_widget);
                 like_btn->setObjectName("likeButton");
@@ -139,33 +157,26 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                     );
                 });
 
-                auto *card = new ClickableCard(
-                    [survey_id, answer_id, this]() {
-                        auto *dialog = new ViewSurveyResults(
-                            survey_id, answer_id, this
-                        );
-                        dialog->setAttribute(Qt::WA_DeleteOnClose);
-                        dialog->showFullScreen();
-                    },
-                    row
-                );
-                card->setObjectName("surveyCard");
-                card->setSizePolicy(
-                    QSizePolicy::Expanding, QSizePolicy::Preferred
-                );
-
-                auto *card_layout = new QVBoxLayout(card);
-                card_layout->setContentsMargins(24, 20, 24, 20);
-                card_layout->setSpacing(8);
-
                 auto *survey_title =
-                    new QLabel(QString::fromStdString(title + " (" + completed_at + ")"), card);
+                    new QLabel(QString::fromStdString(title), card);
                 survey_title->setObjectName("titleLabel");
                 survey_title->setWordWrap(true);
+                survey_title->setSizePolicy(
+                    QSizePolicy::Expanding, QSizePolicy::Minimum
+                );
                 survey_title->setAttribute(
                     Qt::WA_TransparentForMouseEvents
                 );
                 card_layout->addWidget(survey_title);
+
+                auto *completed_at_label = new QLabel(
+                    QString::fromStdString(completed_at), card
+                );
+                completed_at_label->setObjectName("descriptionLabel");
+                completed_at_label->setAttribute(
+                    Qt::WA_TransparentForMouseEvents
+                );
+                card_layout->addWidget(completed_at_label);
 
                 if (!description.empty()) {
                     auto *desc_label = new QLabel(
@@ -179,7 +190,12 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                     card_layout->addWidget(desc_label);
                 }
 
-                row_layout->addWidget(vote_widget);
+                auto *footer_layout = new QHBoxLayout();
+                footer_layout->setContentsMargins(0, 0, 0, 0);
+                footer_layout->setSpacing(12);
+                footer_layout->addStretch();
+                footer_layout->addWidget(vote_widget, 0, Qt::AlignRight | Qt::AlignBottom);
+                card_layout->addLayout(footer_layout);
                 row_layout->addWidget(card);
 
                 content_layout->addWidget(row, 0, Qt::AlignHCenter);

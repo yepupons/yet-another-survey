@@ -417,6 +417,13 @@ void MainWindow::show_trending() {
 }
 
 void MainWindow::get_passed_surveys() {
+    if (!session().is_authenticated()) {
+        show_message_box(
+            this, QMessageBox::Warning, tr("Error"),
+            tr("Please log in first.")
+        );
+        return;
+    }
     auto *view = new ViewPassedSurveys(this);
     view->setAttribute(Qt::WA_DeleteOnClose);
     view->showFullScreen();

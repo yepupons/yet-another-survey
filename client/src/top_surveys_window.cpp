@@ -70,15 +70,14 @@ TopSurveysWindow::TopSurveysWindow(
         content_layout->addWidget(empty_card, 0, Qt::AlignHCenter);
     }
 
+    int rank = 1;
     for (const auto &survey : surveys) {
         const std::string id = survey.at("id").get<std::string>();
         const std::string title = survey.at("title").get<std::string>();
         const std::string description = survey.at("description").get<std::string>();
         const int likes = survey.value("likes_count", 0);
         const int dislikes = survey.value("dislikes_count", 0);
-        const int total = survey.value("ratings_count", 0);
-        const int score = survey.value("rating_score", 0);
-        const int complitions = survey.value("answers_count", 0);
+        const int completions = survey.value("answers_count", 0);
         const std::string answer_id = survey.value("answer_id", "");
         const std::string user_rate = survey.value("user_rate", "");
         const bool already_rated = !user_rate.empty();
@@ -87,14 +86,24 @@ TopSurveysWindow::TopSurveysWindow(
         row->setFixedWidth(720);
         auto *row_layout = new QHBoxLayout(row);
         row_layout->setContentsMargins(0, 0, 0, 0);
-        row_layout->setSpacing(8);
+        row_layout->setSpacing(0);
 
-        auto *vote_widget = new QWidget(row);
-        vote_widget->setFixedWidth(52);
-        auto *vote_layout = new QVBoxLayout(vote_widget);
+        auto *card = new ClickableCard([id]() {
+            auto *taking = new SurveyTaking(id);
+            taking->setAttribute(Qt::WA_DeleteOnClose);
+        }, row);
+        card->setObjectName("surveyCard");
+        card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+        auto *card_layout = new QVBoxLayout(card);
+        card_layout->setContentsMargins(24, 20, 24, 20);
+        card_layout->setSpacing(8);
+
+        auto *vote_widget = new QWidget(card);
+        auto *vote_layout = new QHBoxLayout(vote_widget);
         vote_layout->setContentsMargins(0, 0, 0, 0);
-        vote_layout->setSpacing(4);
-        vote_layout->setAlignment(Qt::AlignCenter);
+        vote_layout->setSpacing(8);
+        vote_layout->setAlignment(Qt::AlignRight);
 
         auto *like_btn = new QPushButton(vote_widget);
         like_btn->setObjectName("likeButton");
@@ -136,17 +145,6 @@ TopSurveysWindow::TopSurveysWindow(
             });
         }
 
-        auto *card = new ClickableCard([id]() {
-            auto *taking = new SurveyTaking(id);
-            taking->setAttribute(Qt::WA_DeleteOnClose);
-        }, row);
-        card->setObjectName("surveyCard");
-        card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-
-        auto *card_layout = new QVBoxLayout(card);
-        card_layout->setContentsMargins(24, 20, 24, 20);
-        card_layout->setSpacing(8);
-
         auto *preview_label = new QLabel(card);
         preview_label->setFixedSize(672, 189);
         preview_label->setAlignment(Qt::AlignCenter);
@@ -172,17 +170,23 @@ TopSurveysWindow::TopSurveysWindow(
             card_layout->addWidget(survey_description);
         }
 
-        const QString stats = tr("Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings  ·  %5 complitions")
-                                  .arg(score).arg(likes).arg(dislikes).arg(total).arg(complitions);
+        const QString stats = tr("№ %1  ·  %2 likes  ·  %3 dislikes  ·  %4 completions")
+                                  .arg(rank).arg(likes).arg(dislikes).arg(completions);
         auto *stats_label = new QLabel(stats, card);
         stats_label->setObjectName("subtitleLabel");
+        stats_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         stats_label->setAttribute(Qt::WA_TransparentForMouseEvents);
-        card_layout->addWidget(stats_label);
 
-        row_layout->addWidget(vote_widget);
+        auto *footer_layout = new QHBoxLayout();
+        footer_layout->setContentsMargins(0, 0, 0, 0);
+        footer_layout->setSpacing(12);
+        footer_layout->addWidget(stats_label, 1, Qt::AlignBottom);
+        footer_layout->addWidget(vote_widget, 0, Qt::AlignRight | Qt::AlignBottom);
+        card_layout->addLayout(footer_layout);
         row_layout->addWidget(card);
 
         content_layout->addWidget(row, 0, Qt::AlignHCenter);
+        rank++;
     }
 
     content_layout->addStretch();
