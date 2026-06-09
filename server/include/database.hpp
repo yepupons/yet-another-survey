@@ -31,14 +31,8 @@ public:
     std::string read_account(const std::string &session_id);
     std::string read_survey(const std::string &survey_id);
     std::string read_survey_with_answers(const std::string &survey_id);
-    std::string write_survey(const std::string &survey_id, const std::string &creator_id, const nlohmann::json &survey_data);
-
-    // std::string read_answer(int answer_id);
-    std::string write_answer(
-        const std::string &answer_id,
-        const std::string &respondent_id,
-        const std::string &answer_data
-    );
+    std::string write_survey(const nlohmann::json &survey_data);
+    std::string write_answer(const nlohmann::json &answer_data);
 
     std::string read_passed_surveys(const std::string &session_id);
     std::string read_created_surveys(const std::string &session_id);
@@ -48,8 +42,7 @@ public:
     std::string read_statistics_txt(const std::string &survey_id);
     std::string read_statistics_image(const std::string &survey_id, const std::string &image_format);
 
-    std::string
-    read_survey_results(const std::string &session_id, const std::string &survey_id);
+    std::string read_survey_results(const std::string &answer_id);
 
     std::string write_image(const drogon::HttpFile &file);
     std::string read_image(const std::string &image_oid);
@@ -71,8 +64,10 @@ public:
     std::string complete_login(const std::string &user_challenge_data);
     std::string user_id_by_access_token(const std::string &access_token);
     std::string save_rate(const std::string &rate_data, const std::string &survey_id, const std::string &user_id);
-    std::string get_top_surveys();
-    void revoke_access_token(const std::string &access_token); 
+    std::string get_top_surveys(const std::string &session_id = "");
+    void revoke_access_token(const std::string &access_token);
+
+    std::string read_global_stats();
 };
 }  // namespace survey
 

@@ -8,37 +8,52 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <nlohmann/json.hpp>
+#include "pretty_view.hpp"
 #include "server_interaction.hpp"
 #include "session.hpp"
 
 namespace survey {
 LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
-    setWindowTitle("Login");
+    setWindowTitle(tr("Login"));
     resize(420, 240);
 
     auto *central = new QWidget(this);
     central->setObjectName("centralWidget");
 
     auto *layout = new QVBoxLayout(central);
-    layout->setContentsMargins(24, 24, 24, 24);
-    layout->setSpacing(16);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
-    auto *title = new QLabel("Login", central);
+
+    auto *content_wrapper = new QWidget(central);
+    auto *content_layout = new QVBoxLayout(content_wrapper);
+    content_layout->setContentsMargins(24, 24, 24, 24);
+    content_layout->setSpacing(16);
+
+    auto *title = new QLabel(tr("Login"), content_wrapper);
     title->setObjectName("titleLabel");
-    layout->addWidget(title);
+    content_layout->addWidget(title);
 
     status_label_ =
-        new QLabel("Authorize with Telegram to link your account.", central);
+        new QLabel(tr("Authorize with Telegram to link your account."), content_wrapper);
     status_label_->setObjectName("subtitleLabel");
     status_label_->setWordWrap(true);
-    layout->addWidget(status_label_);
+    content_layout->addWidget(status_label_);
 
-    login_button_ = new QPushButton("Login with Telegram", central);
+    login_button_ = new QPushButton(tr("Login with Telegram"), content_wrapper);
     login_button_->setObjectName("primaryButton");
-    layout->addWidget(login_button_);
+    content_layout->addWidget(login_button_);
 
+    layout->addWidget(content_wrapper);
     layout->addStretch();
-    setCentralWidget(central);
+
+    auto *outer = new QWidget(this);
+    auto *outer_layout = new QVBoxLayout(outer);
+    outer_layout->setContentsMargins(0, 0, 0, 0);
+    outer_layout->setSpacing(0);
+    outer_layout->addWidget(make_back_header(outer, this));
+    outer_layout->addWidget(central);
+    setCentralWidget(outer);
 
     connect(
         login_button_, &QPushButton::clicked, this,
@@ -51,7 +66,7 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
         if (expires_in_ <= 0) {
             countdown_timer_->stop();
             poll_timer_->stop();
-            status_label_->setText("Login link expired.");
+            status_label_->setText(tr("Login link expired."));
             login_button_->setText("Login with Telegram");
             login_button_->setEnabled(true);
             disconnect(login_button_, nullptr, this, nullptr);
@@ -63,8 +78,7 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
         }
 
         status_label_->setText(
-            "Open Telegram to authorize. This link expires in " +
-            QString::number(expires_in_) + " seconds."
+            tr("Open Telegram to authorize. This link expires in %1 seconds.").arg(expires_in_)
         );
     });
 
@@ -88,7 +102,7 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
                                 data.at("user").at("id").get<std::string>(),
                                 data.at("access_token").get<std::string>()
                             );
-                            status_label_->setText("Telegram login confirmed.");
+                            status_label_->setText(tr("Telegram login confirmed."));
                             emit login_completed();
                         },
                         [=, this](const std::string &error) {
@@ -100,10 +114,9 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
                         }
                     );
                 } else if (status == "expired") {
-                    status_label_->setText("Link expired. Please, login again."
-                    );
+                    status_label_->setText(tr("Link expired. Please, login again."));
                 } else if (status == "used") {
-                    status_label_->setText("This link was already used.");
+                    status_label_->setText(tr("This link was already used."));
                 }
             },
             [=, this](const std::string &error) {
@@ -119,7 +132,7 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
 
 void LoginWindow::start_telegram_login() {
     login_button_->setEnabled(false);
-    status_label_->setText("Stand by, requesting auth...");
+    status_label_->setText(tr("Stand by, requesting auth..."));
 
     server().request_challenge(
         [=, this](const nlohmann::json &challenge_info) {
@@ -135,7 +148,7 @@ void LoginWindow::start_telegram_login() {
             poll_timer_->start(2000);
             QDesktopServices::openUrl(QUrl(telegram_url_));
 
-            login_button_->setText("Copy link");
+            login_button_->setText(tr("Copy link"));
             login_button_->setEnabled(true);
             disconnect(
                 login_button_, &QPushButton::clicked, this,
@@ -143,7 +156,7 @@ void LoginWindow::start_telegram_login() {
             );
             connect(login_button_, &QPushButton::clicked, this, [this]() {
                 QApplication::clipboard()->setText(telegram_url_);
-                login_button_->setText("Telegram link copied to clipboard.");
+                login_button_->setText(tr("Telegram link copied to clipboard."));
             });
         },
         [=, this](const std::string &error) {

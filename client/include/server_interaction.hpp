@@ -51,8 +51,7 @@ public:
         std::function<void(const std::string &)> failure
     );
     void get_survey_results(
-        const std::string &user_id,
-        const std::string &survey_id,
+        const std::string &answer_id,
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );
@@ -98,6 +97,11 @@ public:
     );
 
     void get_surveys_top(
+        std::function<void(const nlohmann::json &)> success,
+        std::function<void(const std::string &)> failure
+    );
+
+    void get_global_stats(
         std::function<void(const nlohmann::json &)> success,
         std::function<void(const std::string &)> failure
     );

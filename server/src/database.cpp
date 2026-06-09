@@ -11,7 +11,7 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <random>
-#include <set>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -48,8 +48,6 @@ std::string Database::read_survey_with_answers(const std::string &survey_id) {
 }
 
 std::string Database::write_survey(
-    const std::string &survey_id,
-    const std::string &creator_id,
     const nlohmann::json &survey_data
 ) {
     bsoncxx::document::value doc = bsoncxx::from_json(survey_data.dump());
@@ -57,72 +55,70 @@ std::string Database::write_survey(
     if (!insert_result) {
         throw std::runtime_error("Writing survey into database failed");
     }
-    auto find_result =
-        db()["users"].find_one(document{} << "id" << creator_id << finalize);
-    if (!find_result) {
-        db()["users"].insert_one(
-            document{} << "id" << creator_id << "created_surveys" << open_array
-                       << close_array << "given_answers" << open_array
-                       << close_array << finalize
-        );
-    }
+
+    const std::string creator_id = survey_data["data"]["creator_id"];
+    const std::string survey_id = survey_data["data"]["id"];
+    const std::string title = survey_data["title"];
+    const std::string description = survey_data["description"];
+
     db()["users"].update_one(
         document{} << "id" << creator_id << finalize,
-        document{} << "$push" << open_document << "created_surveys" << survey_id
-                   << close_document << finalize
+        document{} << "$push" << open_document << "created_surveys" << open_document << "id" << survey_id << "title" << title << "description" << description
+                   << close_document << close_document << finalize
     );
+    db()["global_stats"].update_one(
+        document{} << "_id" << "main" << finalize,
+        document{} << "$inc" << open_document << "surveys_count" << 1 << close_document << finalize,
+        mongocxx::options::update{}.upsert(true)
+    );
+
     nlohmann::json result;
     result["status"] = "Saved";
     result["survey_id"] = survey_id;
     return result.dump();
 }
 
-/*
-std::string Database::read_answer(int answer_id) {
-    auto result = db()["answers"].find_one(
-        document{} << "data.id" << answer_id << finalize
-    );
-    if (result) {
-        return bsoncxx::to_json(result->view());
-    }
-    throw std::runtime_error("Answer not found");
-}
-*/
-
 std::string Database::write_answer(
-    const std::string &answer_id,
-    const std::string &respondent_id,
-    const std::string &answer_data
+    const nlohmann::json &answer_data
 ) {
-    nlohmann::json json = nlohmann::json::parse(answer_data);
-    json["data"]["id"] = answer_id;
-    json["data"]["respondent_id"] = respondent_id;
-
-    bsoncxx::document::value doc = bsoncxx::from_json(json.dump());
+    bsoncxx::document::value doc = bsoncxx::from_json(answer_data.dump());
     auto insert_result = db()["answers"].insert_one(doc.view());
     if (!insert_result) {
         throw std::runtime_error("Writing answer into database failed");
     }
 
-    auto find_result =
-        db()["users"].find_one(document{} << "id" << respondent_id << finalize);
-    if (!find_result) {
-        db()["users"].insert_one(
-            document{} << "id" << respondent_id << "created_surveys"
-                       << open_array << close_array << "given_answers"
-                       << open_array << close_array << finalize
-        );
-    }
+    const std::string respondent_id = answer_data["data"]["respondent_id"];
+    const std::string answer_id = answer_data["data"]["id"];
+    const std::string completed_at = answer_data["data"]["completed_at"];
+
+    const std::string survey_id = answer_data["data"]["survey_id"];
+    mongocxx::options::find opts;
+    opts.projection(document{} << "title" << 1 << "description" << 1  << "_id" << 0 << finalize);
+    auto survey = nlohmann::json::parse(bsoncxx::to_json(db()["surveys"].find_one(
+        document{} << "data.id" << survey_id << finalize, opts
+    )->view()));
+    const std::string survey_title = survey["title"];
+    const std::string survey_description = survey["description"];
+
     db()["users"].update_one(
         document{} << "id" << respondent_id << finalize,
-        document{} << "$push" << open_document << "given_answers" << answer_id
-                   << close_document << finalize
+        document{} << "$push" << open_document << "given_answers" << open_document << "answer_id" << answer_id << "completed_at" << completed_at << "survey_id" << survey_id << "survey_title" << survey_title << "survey_description" << survey_description
+                   << close_document << close_document << finalize
+    );
+    db()["global_stats"].update_one(
+        document{} << "_id" << "main" << finalize,
+        document{} << "$inc" << open_document << "answers_count" << 1 << close_document << finalize,
+        mongocxx::options::update{}.upsert(true)
+    );
+    db()["surveys"].update_one(
+        document{} << "data.id" << survey_id << finalize,
+        document{} << "$inc" << open_document << "data.answers_count" << 1 << close_document << finalize
     );
 
     nlohmann::json result;
     result["status"] = "Saved";
     result["answer_id"] = answer_id;
-    result["survey_id"] = json["data"]["survey_id"];
+    result["survey_id"] = survey_id;
     return result.dump();
 }
 
@@ -130,28 +126,30 @@ std::string Database::read_passed_surveys(const std::string &session_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
-        << "data.survey_id" << 1 << "_id" << 0
+        << "given_answers" << 1 << "_id" << 0
         << bsoncxx::builder::stream::finalize
     );
-    auto cursor = db()["answers"].find(
-        document{} << "data.respondent_id" << session_id << finalize, opts
+    auto result = db()["users"].find_one(
+        document{} << "id" << session_id << finalize, opts
     );
-    std::set<std::string> passed_surveys;
-    for (auto &&doc : cursor) {
-        auto elem = doc["data"]["survey_id"];
-        if (!elem) {
-            continue;
+    if (result) {
+        auto result_json = nlohmann::json::parse(bsoncxx::to_json(
+            result->view()["given_answers"].get_array().value
+        ));
+        for (auto &elem : result_json) {
+            auto rated = db()["survey_rates"].find_one(
+                document{} << "survey_id" << elem["survey_id"].get<std::string>() << "user_id" << session_id << finalize
+            );
+            if (rated) {
+                const int v = (*rated)["value"].get_int32().value;
+                elem["user_rate"] = (v == 1) ? "like" : "dislike";
+            } else {
+                elem["user_rate"] = "";
+            }
         }
-        if (elem.type() != bsoncxx::type::k_string) {
-            continue;
-        }
-        passed_surveys.insert(std::string(elem.get_string().value));
+        return result_json.dump();
     }
-    nlohmann::json result = nlohmann::json::array();
-    for (const auto &id : passed_surveys) {
-        result.push_back(id);
-    }
-    return result.dump();
+    throw std::runtime_error("User not found");
 }
 
 std::string Database::read_created_surveys(const std::string &session_id) {
@@ -401,27 +399,21 @@ std::string Database::read_statistics_image(const std::string &survey_id, const 
 }
 
 std::string
-Database::read_survey_results(const std::string &session_id, const std::string &survey_id) {
+Database::read_survey_results(const std::string &answer_id) {
     mongocxx::options::find opts;
     opts.projection(
         bsoncxx::builder::stream::document{}
-        << "data.survey_id" << 1 << "sections" << 1 << "_id" << 0
+        << "sections" << 1 << "_id" << 0
         << bsoncxx::builder::stream::finalize
     );
-    auto cursor = db()["answers"].find(
-        document{} << "data.respondent_id" << session_id << "data.survey_id"
-                   << survey_id << finalize,
+    auto result = db()["answers"].find_one(
+        document{} << "data.id" << answer_id << finalize,
         opts
     );
-    nlohmann::json results = nlohmann::json::array();
-    for (auto &&doc : cursor) {
-        if (doc["sections"]) {
-            results.push_back(nlohmann::json::parse(
-                bsoncxx::to_json(doc["sections"].get_array().value)
-            ));
-        }
+    if (result) {
+        return bsoncxx::to_json(result->view()["sections"].get_array().value);
     }
-    return results.dump();
+    throw std::runtime_error("Answer not found");
 }
 
 std::string Database::write_image(const drogon::HttpFile &file) {
@@ -458,7 +450,7 @@ std::string Database::generate_token() {
     return oss.str();
 }
 
-std::string Database::generate_uuid() {
+std::string Database::generate_uuid() { // mongo...
     std::random_device rd;
     std::array<unsigned char, 16> bytes{};
     for (auto &byte : bytes) {
@@ -644,6 +636,11 @@ std::string Database::complete_login(const std::string &user_challenge_data) {
                        << close_array << "given_answers" << open_array
                        << close_array << finalize
         );
+        db()["global_stats"].update_one(
+            document{} << "_id" << "main" << finalize,
+            document{} << "$inc" << open_document << "users_count" << 1 << close_document << finalize,
+            mongocxx::options::update{}.upsert(true)
+        );
     }
 
     auto update_challenge_result = db()["telegram_challenges"].update_one(
@@ -752,7 +749,11 @@ std::string Database::save_rate(
                     << "data.rating_score" << rate_value
                    << close_document << finalize
     );
-
+    db()["global_stats"].update_one(
+        document{} << "_id" << "main" << finalize,
+        document{} << "$inc" << open_document << "ratings_count" << 1 << close_document << finalize,
+        mongocxx::options::update{}.upsert(true)
+    );
 
     nlohmann::json result;
     result["status"] = "Saved";
@@ -763,7 +764,7 @@ std::string Database::save_rate(
     return result.dump();
 }
 
-std::string Database::get_top_surveys() {
+std::string Database::get_top_surveys(const std::string &session_id) {
     mongocxx::options::find opts;
     opts.sort(
         document{} << "data.rating_score" << -1
@@ -773,7 +774,7 @@ std::string Database::get_top_surveys() {
     opts.limit(10);
 
     auto cursor = db()["surveys"].find(
-        document{} << finalize,
+        document{} << "data.is_public" << true << finalize,
         opts
     );
 
@@ -787,6 +788,11 @@ std::string Database::get_top_surveys() {
         return (el && el.type() == bsoncxx::type::k_int32)
             ? el.get_int32().value : def;
     };
+    auto bool_or = [](bsoncxx::document::view doc, const char *key, bool def = false) -> bool {
+        auto el = doc[key];
+        return (el && el.type() == bsoncxx::type::k_bool)
+            ? el.get_bool().value : def;
+    };
 
     nlohmann::json result = nlohmann::json::array();
     for (auto &&survey : cursor) {
@@ -795,14 +801,75 @@ std::string Database::get_top_surveys() {
         survey_json["id"] = str_or(data, "id");
         survey_json["title"] = str_or(survey, "title");
         survey_json["description"] = str_or(survey, "description");
+        survey_json["answers_count"] = int_or(data, "answers_count");
         survey_json["likes_count"] = int_or(data, "likes_count");
         survey_json["dislikes_count"] = int_or(data, "dislikes_count");
         survey_json["ratings_count"] = int_or(data, "ratings_count");
         survey_json["rating_score"] = int_or(data, "rating_score");
+        survey_json["is_public"] = bool_or(data, "is_public", true);
+        survey_json["preview_image"] = str_or(data, "preview_image");
+        if (!session_id.empty()) {
+            const std::string survey_id_str = str_or(data, "id");
+            auto answer = db()["answers"].find_one(
+                document{} << "data.respondent_id" << session_id
+                           << "data.survey_id" << survey_id_str << finalize
+            );
+            if (answer) {
+                auto answer_data = (*answer)["data"].get_document().value;
+                auto id_elem = answer_data["id"];
+                if (id_elem && id_elem.type() == bsoncxx::type::k_string) {
+                    const std::string ans_id =
+                        std::string(id_elem.get_string().value);
+                    survey_json["answer_id"] = ans_id;
+                    auto rated = db()["survey_rates"].find_one(
+                        document{} << "survey_id" << survey_id_str
+                                   << "answer_id" << ans_id
+                                   << "user_id" << session_id << finalize
+                    );
+                    if (rated) {
+                        auto val = (*rated)["value"];
+                        const int v =
+                            (val && val.type() == bsoncxx::type::k_int32)
+                            ? val.get_int32().value : 0;
+                        survey_json["user_rate"] = (v == 1) ? "like" : "dislike";
+                    } else {
+                        survey_json["user_rate"] = "";
+                    }
+                }
+            }
+        }
         result.push_back(survey_json);
     }
     return result.dump();
 }
+
+std::string Database::read_global_stats() {
+    nlohmann::json result;
+    result["surveys_count"] = 0;
+    result["answers_count"] = 0;
+    result["ratings_count"] = 0;
+    result["users_count"] = 0;
+
+    auto doc = db()["global_stats"].find_one(
+        document{} << "_id" << "main" << finalize
+    );
+    if (doc) {
+        auto view = doc->view();
+        auto get_int = [&](const char *key) -> int {
+            auto el = view[key];
+            if (!el) return 0;
+            if (el.type() == bsoncxx::type::k_int32) return el.get_int32().value;
+            if (el.type() == bsoncxx::type::k_int64) return static_cast<int>(el.get_int64().value);
+            return 0;
+        };
+        result["surveys_count"] = get_int("surveys_count");
+        result["answers_count"] = get_int("answers_count");
+        result["ratings_count"] = get_int("ratings_count");
+        result["users_count"] = get_int("users_count");
+    }
+    return result.dump();
+}
+
 
 void Database::revoke_access_token(const std::string &access_token) {
     const std::string token_hash = sha256(access_token);

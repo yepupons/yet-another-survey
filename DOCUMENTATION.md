@@ -20,6 +20,7 @@
     - [Если запустился из корня cmake .](#если-запустился-из-корня-cmake-)
   - [Что и где запускается?](#что-и-где-запускается)
     - [Сервер](#сервер)
+    - [Скрипт для демо-опросов](#скрипт-для-демо-опросов)
     - [Клиент (Qt)](#клиент-qt)
     - [Клиент (WebAssembly)](#клиент-webassembly)
     - [Telegram-бот](#telegram-бот)
@@ -167,10 +168,6 @@ cmake --build build --parallel
 ```bash
 make build
 ```
-***(для дебага)***
-```bash
-make build-debug
-```
 
 ### Билд веба
 Для веб-сборки нужен Qt for WebAssembly под single thread и emsdk той версии, которую просит сайт Qt для твоей версии Qt.
@@ -199,7 +196,7 @@ cmake --build build-wasm --parallel
 
 Чтобы открыть веб-клиент локально:
 ```bash
-make serve-wasm
+make web
 ```
 
 После этого открываем `http://localhost:8054/client.html`.
@@ -225,6 +222,41 @@ cd ../..
 ИЛИ
 ```bash
 make server
+```
+
+### Скрипт для демо-опросов
+
+Скрипт `scripts/seed_surveys.py` добавляет в MongoDB 15 демо-опросов: обычные опросы, тесты и квизы. У каждого опроса уже есть лайки, дизлайки и рейтинг.
+
+Перед запуском MongoDB должна быть запущена. Сервер запускать не обязательно, скрипт пишет напрямую в базу `yas_db`.
+
+Для `pymongo` лучше использовать виртуальное окружение:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install pymongo
+```
+
+Запуск:
+```bash
+python3 scripts/seed_surveys.py
+```
+
+По умолчанию скрипт создает опросы от пользователя `seed-user` и перед повторным запуском удаляет старые демо-опросы этого пользователя.
+
+Если нужно создать опросы от конкретного пользователя:
+```bash
+python3 scripts/seed_surveys.py --creator-id USER_ID
+```
+
+Если нужно только добавить новые демо-опросы, не удаляя старые:
+```bash
+python3 scripts/seed_surveys.py --append
+```
+
+Если MongoDB запущена не на стандартном адресе:
+```bash
+python3 scripts/seed_surveys.py --uri mongodb://localhost:27017 --db yas_db
 ```
 
 ### Клиент (Qt)

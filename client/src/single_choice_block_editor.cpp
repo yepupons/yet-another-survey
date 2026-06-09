@@ -22,7 +22,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
-    auto *title_label = new QLabel("Single choice", this);
+    auto *title_label = new QLabel(tr("Single choice"), this);
     title_label->setObjectName("sectionLabel");
 
     auto *move_up_button = new QPushButton(this);
@@ -33,7 +33,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     move_down_button->setObjectName("moveDownButton");
     move_down_button->setFixedSize(36, 36);
 
-    auto *delete_label = new QLabel("Delete", this);
+    auto *delete_label = new QLabel(tr("Delete"), this);
     delete_label->setObjectName("sectionLabel");
 
     auto *delete_block_button = new QPushButton(this);
@@ -60,10 +60,10 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     });
 
     question_ = new QLineEdit(this);
-    question_->setPlaceholderText("Write your question here");
+    question_->setPlaceholderText(tr("Write your question here"));
     layout->addWidget(question_);
 
-    upload_image_button_ = new QPushButton("Upload Image", this);
+    upload_image_button_ = new QPushButton(tr("Upload Image"), this);
     layout->addWidget(upload_image_button_);
 
     connect(
@@ -75,7 +75,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     layout->addWidget(image_preview_);
 
     if (type_ == SurveyType::Test) {
-        auto *correct_label = new QLabel("Mark the correct answer", this);
+        auto *correct_label = new QLabel(tr("Mark the correct answer"), this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
         correct_answers_ = new QButtonGroup(this);
@@ -84,7 +84,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
     options_layout_ = new QVBoxLayout();
     layout->addLayout(options_layout_);
 
-    add_option_button_ = new QPushButton("Add option", this);
+    add_option_button_ = new QPushButton(tr("Add option"), this);
     add_option_button_->setObjectName("secondaryButton");
     layout->addWidget(add_option_button_);
 
@@ -95,7 +95,7 @@ SingleChoiceBlockEditor::SingleChoiceBlockEditor(
         &SingleChoiceBlockEditor::add_option
     );
 
-    required_ = new QCheckBox("Required", this);
+    required_ = new QCheckBox(tr("Required"), this);
     required_->setObjectName("requiredToggle");
     required_->setChecked(true);
     layout->addWidget(required_);
@@ -136,11 +136,11 @@ void SingleChoiceBlockEditor::add_option() {
     row_layout->setSpacing(8);
 
     auto *option = new QLineEdit(row_widget);
-    option->setPlaceholderText("Write option text here");
+    option->setPlaceholderText(tr("Write option text here"));
     row_layout->addWidget(option);
     options_.push_back(option);
 
-    auto *link_enabling = new QRadioButton("After answer:");
+    auto *link_enabling = new QRadioButton(tr("After answer:"));
     link_enabling->setAutoExclusive(false);
     link_enabling->setObjectName("sectionLabel");
     row_layout->addWidget(link_enabling);
@@ -160,7 +160,7 @@ void SingleChoiceBlockEditor::add_option() {
 
     QAbstractButton *correct_button = nullptr;
     if (type_ == SurveyType::Test) {
-        auto *correct = new QRadioButton("Correct", row_widget);
+        auto *correct = new QRadioButton(tr("Correct"), row_widget);
         correct->setObjectName("sectionLabel");
         row_layout->addWidget(correct);
         correct_answers_->addButton(correct);
@@ -247,13 +247,7 @@ void SingleChoiceBlockEditor::to_json(
         block["answer"] = answer_index;
     }
 
-    // NOT WORK
-
-    // if (preview_mode && !image_path_.isEmpty()) {
-    //     block["image_path"] = image_path_.toStdString();
-    // }
-
-    if (!preview_mode && !image_data_.isEmpty()) {
+    if (!image_data_.isEmpty()) {
         server().post_image(
             image_name_.toStdString(), image_data_,
             [=](const std::string &image_oid) mutable {

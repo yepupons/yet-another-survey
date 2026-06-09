@@ -62,24 +62,8 @@ void SurveyTaking::open_next_section(int next_section_id) {
             deleteLater();
             return;
         }
-        auto show_rating = [=, this](const std::string &answer_id) {
-            auto *box = show_question_box(
-                parentWidget(), QMessageBox::Question,
-                "Rate this survey", "Did you like this survey?",
-                QMessageBox::Yes, QMessageBox::No
-            );
-            connect(box, &QMessageBox::finished, this, [=, this](int result) {
-                server().post_rate(
-                    survey_id_, answer_id, result == QMessageBox::Yes,
-                    [](const nlohmann::json &) {}, [](const std::string &) {}
-                );
-                deleteLater();
-            });
-        };
 
-        auto type =
-            SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>()
-            );
+        auto type = SURVEY_TYPE.at(survey_data_.at("data").at("type").get<std::string>());
         switch (type) {
             case SurveyType::Survey: {
                 server().post_answer(
@@ -88,7 +72,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
                         submission_result_ = submission_result;
                         const std::string answer_id =
                             submission_result.at("answer_id").get<std::string>();
-                        show_rating(answer_id);
+                        deleteLater();
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -104,12 +88,10 @@ void SurveyTaking::open_next_section(int next_section_id) {
                 server().check_answer(
                     answer_data_,
                     [=, this](const nlohmann::json &result) {
-                        auto *view = new ViewTestResults(result, this);
+                        auto *view = new ViewTestResults(result, parentWidget());
                         view->setAttribute(Qt::WA_DeleteOnClose);
                         view->show();
-                        show_rating(
-                            result.at("data").at("answer_id").get<std::string>()
-                        );
+                        deleteLater();
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -162,7 +144,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
                     [=, this](const nlohmann::json &submission_result) {
                         const std::string answer_id =
                             submission_result.at("answer_id").get<std::string>();
-                        show_rating(answer_id);
+                        deleteLater();
                     },
                     [=, this](const std::string &error) {
                         show_message_box(
@@ -181,7 +163,7 @@ void SurveyTaking::open_next_section(int next_section_id) {
             survey_data_, answer_data_, next_section_id, preview_mode_, this
         );
         current_section_->setAttribute(Qt::WA_DeleteOnClose);
-        current_section_->showMaximized();
+        current_section_->showFullScreen();
         current_section_->raise();
         current_section_->activateWindow();
         connect(

@@ -12,8 +12,29 @@
 #include <QPushButton>
 #include <QString>
 #include <QVBoxLayout>
+#include <QWidget>
 
 namespace survey {
+inline QWidget *make_back_header(QWidget *parent, QWidget *window_to_close) {
+    auto *header = new QWidget(parent);
+    header->setObjectName("topHeader");
+
+    auto *layout = new QHBoxLayout(header);
+    layout->setContentsMargins(24, 4, 24, 4);
+    layout->setSpacing(12);
+
+    auto *back_button = new QPushButton("←", header);
+    back_button->setObjectName("headerNavButton");
+    layout->addWidget(back_button);
+    layout->addStretch();
+
+    QObject::connect(back_button, &QPushButton::clicked, back_button, [window_to_close]() {
+        window_to_close->close();
+    });
+
+    return header;
+}
+
 inline void show_message_box(
     QWidget *parent,
     QMessageBox::Icon icon,
@@ -62,7 +83,7 @@ inline void show_qr_code(
     qr_label->setScaledContents(false);
 
     auto *text_label =
-        new QLabel("Your survey ID:\n" + survey_id, content);
+        new QLabel("Survey ID:\n" + survey_id, content);
     text_label->setWordWrap(true);
 
     message_row->addWidget(qr_label);
@@ -72,7 +93,7 @@ inline void show_qr_code(
     QBoxLayout::connect(
         copy_button, &QPushButton::clicked, dialog,
         [survey_id]() {
-            QApplication::clipboard()->setText(survey_id);
+            QApplication::clipboard()->setText("localhost:8054/client.html?survey-id=" + survey_id);
         }
     );
 

@@ -24,6 +24,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+    layout->addWidget(make_back_header(this, this));
 
     auto *scroll_area = new QScrollArea(this);
     scroll_area->setFrameShape(QFrame::NoFrame);
@@ -47,12 +48,12 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
     title_layout->setContentsMargins(24, 24, 24, 24);
     title_layout->setSpacing(8);
 
-    auto *title_label = new QLabel("Created surveys", title_card);
+    auto *title_label = new QLabel(tr("Created surveys"), title_card);
     title_label->setObjectName("titleLabel");
     title_layout->addWidget(title_label);
 
     auto *subtitle_label = new QLabel(
-        "Preview surveys, share QR codes, or export statistics.", title_card
+        tr("Preview surveys, share QR codes, or export statistics."), title_card
     );
     subtitle_label->setObjectName("subtitleLabel");
     title_layout->addWidget(subtitle_label);
@@ -70,10 +71,10 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
 
     server().get_created_surveys(
         session().get_id(),
-        [=, this](const nlohmann::json &surveys_ids) {
-            if (surveys_ids.empty()) {
+        [=, this](const nlohmann::json &surveys) {
+            if (surveys.empty()) {
                 auto *empty_label =
-                    new QLabel("No created surveys yet.", surveys_card);
+                    new QLabel(tr("No created surveys yet."), surveys_card);
                 empty_label->setObjectName("titleLabel");
                 surveys_layout->addWidget(empty_label);
                 content_layout->addWidget(surveys_card, 0, Qt::AlignHCenter);
@@ -84,8 +85,12 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 return;
             }
 
-            for (const auto &id_json : surveys_ids) {
-                const std::string id = id_json.get<std::string>();
+            for (auto iter = surveys.rbegin(); iter != surveys.rend(); iter = std::next(iter)) {
+                const auto &survey = *iter;
+                const std::string id = survey["id"];
+                const std::string title = survey["title"];
+                const std::string description = survey["description"];
+
                 auto *row_widget = new QWidget(surveys_card);
                 auto *row_layout = new QVBoxLayout(row_widget);
                 row_layout->setContentsMargins(0, 0, 0, 0);
@@ -97,30 +102,14 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                     QSizePolicy::Expanding, QSizePolicy::Preferred
                 );
                 survey_title->setWordWrap(true);
-                server().get_survey(
-                    id,
-                    [=, this](const nlohmann::json &survey_data) {
-                        auto title = survey_data.at("title").get<std::string>();
-                        survey_title->setText(
-                            QString::fromStdString(title) +
-                            " (id: " + QString::fromStdString(id) + ")"
-                        );
-                    },
-                    [=, this](const std::string &error) {
-                        show_message_box(
-                            parentWidget(), QMessageBox::Warning, "Error",
-                            QString::fromStdString(error)
-                        );
-                        deleteLater();
-                    }
-                );
+                survey_title->setText(QString::fromStdString(title));
                 row_layout->addWidget(survey_title);
 
                 auto *actions_layout = new QHBoxLayout();
                 actions_layout->setContentsMargins(0, 0, 0, 0);
                 actions_layout->setSpacing(10);
 
-                auto *show_qr_button = new QPushButton("Show QR", row_widget);
+                auto *show_qr_button = new QPushButton(tr("Show QR"), row_widget);
                 show_qr_button->setObjectName("primaryButton");
                 actions_layout->addWidget(show_qr_button, 1);
                 connect(
@@ -131,7 +120,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 );
 
                 auto *view_survey_button =
-                    new QPushButton("Preview", row_widget);
+                    new QPushButton(tr("Preview"), row_widget);
                 view_survey_button->setObjectName("primaryButton");
                 actions_layout->addWidget(view_survey_button, 1);
                 connect(
@@ -154,7 +143,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 );
 
                 auto *txt_export_button =
-                    new QPushButton("Export TXT", row_widget);
+                    new QPushButton(tr("Export TXT"), row_widget);
                 txt_export_button->setObjectName("primaryButton");
                 actions_layout->addWidget(txt_export_button, 1);
                 connect(
@@ -163,7 +152,7 @@ CreatedSurveysWindow::CreatedSurveysWindow(QWidget *parent) : QDialog(parent) {
                 );
 
                 auto *jpg_export_button =
-                    new QPushButton("Export JPG", row_widget);
+                    new QPushButton(tr("Export JPG"), row_widget);
                 jpg_export_button->setObjectName("primaryButton");
                 actions_layout->addWidget(jpg_export_button, 1);
                 connect(
@@ -223,7 +212,7 @@ void CreatedSurveysWindow::show_survey_preview(
     connect(preview_window, &QObject::destroyed, this, [preview_answers]() {
         delete preview_answers;
     });
-    preview_window->show();
+    preview_window->showFullScreen();
 }
 
 void CreatedSurveysWindow::show_qr_code(const std::string &id) {
@@ -231,7 +220,7 @@ void CreatedSurveysWindow::show_qr_code(const std::string &id) {
     const QString survey_id = QString::fromStdString(id);
     const QImage qr_image = generator.generateQr(survey_id, 260, 4);
     survey::show_qr_code(
-        this, QPixmap::fromImage(qr_image), "QR code", survey_id
+        this, QPixmap::fromImage(qr_image), tr("QR code"), survey_id
     );
 }
 

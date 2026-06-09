@@ -21,7 +21,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     auto *layout = new QVBoxLayout();
 
     auto *header_layout = new QHBoxLayout();
-    auto *title_label = new QLabel("Multiple choice", this);
+    auto *title_label = new QLabel(tr("Multiple choice"), this);
     title_label->setObjectName("sectionLabel");
 
     auto *move_up_button = new QPushButton(this);
@@ -32,7 +32,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     move_down_button->setObjectName("moveDownButton");
     move_down_button->setFixedSize(36, 36);
 
-    auto *delete_label = new QLabel("Delete", this);
+    auto *delete_label = new QLabel(tr("Delete"), this);
     delete_label->setObjectName("sectionLabel");
 
     auto *delete_block_button = new QPushButton(this);
@@ -59,10 +59,10 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     });
 
     question_ = new QLineEdit(this);
-    question_->setPlaceholderText("Write your question here");
+    question_->setPlaceholderText(tr("Write your question here"));
     layout->addWidget(question_);
 
-    upload_image_button_ = new QPushButton("Upload Image", this);
+    upload_image_button_ = new QPushButton(tr("Upload Image"), this);
     layout->addWidget(upload_image_button_);
 
     connect(
@@ -74,7 +74,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
     layout->addWidget(image_preview_);
 
     if (type_ == SurveyType::Test) {
-        auto *correct_label = new QLabel("Mark the correct answer(s)", this);
+        auto *correct_label = new QLabel(tr("Mark the correct answer(s)"), this);
         correct_label->setObjectName("sectionLabel");
         layout->addWidget(correct_label);
         correct_answers_ = new QButtonGroup(this);
@@ -87,7 +87,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
 
     add_option();
 
-    add_option_button_ = new QPushButton("Add option", this);
+    add_option_button_ = new QPushButton(tr("Add option"), this);
     layout->addWidget(add_option_button_);
 
     connect(
@@ -95,7 +95,7 @@ MultipleChoiceBlockEditor::MultipleChoiceBlockEditor(
         &MultipleChoiceBlockEditor::add_option
     );
 
-    required_ = new QCheckBox("Required", this);
+    required_ = new QCheckBox(tr("Required"), this);
     required_->setObjectName("requiredToggle");
     required_->setChecked(true);
     layout->addWidget(required_);
@@ -135,13 +135,13 @@ void MultipleChoiceBlockEditor::add_option() {
     row_layout->setSpacing(8);
 
     auto *option = new QLineEdit(row_widget);
-    option->setPlaceholderText("Write option text here");
+    option->setPlaceholderText(tr("Write option text here"));
     row_layout->addWidget(option);
     options_.push_back(option);
 
     QAbstractButton *correct_button = nullptr;
     if (type_ == SurveyType::Test) {
-        auto *correct = new QCheckBox("Correct", row_widget);
+        auto *correct = new QCheckBox(tr("Correct"), row_widget);
         correct->setObjectName("correctOptionToggle");
         row_layout->addWidget(correct);
         correct_answers_->addButton(correct);
@@ -210,13 +210,7 @@ void MultipleChoiceBlockEditor::to_json(
         block["answer"] = answers;
     }
 
-    // NOT WORK
-
-    // if (preview_mode && !image_path_.isEmpty()) {
-    //     block["image_path"] = image_path_.toStdString();
-    // }
-
-    if (!preview_mode && !image_data_.isEmpty()) {
+    if (!image_data_.isEmpty()) {
         server().post_image(
             image_name_.toStdString(), image_data_,
             [=](const std::string &image_oid) mutable {

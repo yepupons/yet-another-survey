@@ -9,5 +9,16 @@
         <file>icons/trash.svg</file>
         <file>icons/arrow_up.svg</file>
         <file>icons/arrow_down.svg</file>
+        <file>icons/like.svg</file>
+        <file>icons/dislike.svg</file>
+    </qresource>
+
+    <qresource prefix="/survey_previews">
+        <file alias="default_0.png">survey_previews/default_0.png</file>
+        <file alias="default_1.png">survey_previews/default_1.png</file>
+        <file alias="default_2.png">survey_previews/default_2.png</file>
+        <file alias="default_3.png">survey_previews/default_3.png</file>
+        <file alias="default_4.png">survey_previews/default_4.png</file>
+        <file alias="default_5.png">survey_previews/default_5.png</file>
     </qresource>
 </RCC>

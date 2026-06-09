@@ -1,52 +1,66 @@
 #include "top_surveys_window.hpp"
+#include <qboxlayout.h>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPixmap>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <functional>
 #include <nlohmann/json.hpp>
 #include "survey_taking.hpp"
 #include "clickable_card.hpp"
+#include "pretty_view.hpp"
+#include "server_interaction.hpp"
 
 namespace survey {
 
 TopSurveysWindow::TopSurveysWindow(
     const nlohmann::json &surveys, QWidget *parent
 ) : QDialog(parent) {
-    setWindowTitle("Trending surveys");
+    setWindowTitle(tr("Trending surveys"));
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+    layout->addWidget(make_back_header(this, this));
 
     auto *scroll_area = new QScrollArea(this);
     scroll_area->setFrameShape(QFrame::NoFrame);
     scroll_area->setWidgetResizable(true);
+    scroll_area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     auto *content = new QWidget(scroll_area);
     content->setObjectName("centralWidget");
 
     auto *content_layout = new QVBoxLayout(content);
     content_layout->setAlignment(Qt::AlignTop);
-    content_layout->setContentsMargins(0, 24, 0, 24);
+    content_layout->setContentsMargins(16, 24, 16, 24);
     content_layout->setSpacing(16);
 
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
-    title_card->setFixedWidth(720);
+    title_card->setMinimumWidth(300);
+    title_card->setMaximumWidth(720);
+    title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title_card);
     title_layout->setContentsMargins(24, 24, 24, 24);
     title_layout->setSpacing(8);
 
-    auto *title_label = new QLabel("Trending surveys", title_card);
+    auto *title_label = new QLabel(tr("Trending surveys"), title_card);
     title_label->setObjectName("titleLabel");
+    title_label->setMinimumWidth(0);
+    title_label->setWordWrap(true);
     title_layout->addWidget(title_label);
 
     auto *subtitle_label = new QLabel(
-        "Top 10 surveys rated by the community.", title_card
+        tr("Top 10 surveys rated by the community."), title_card
     );
     subtitle_label->setObjectName("subtitleLabel");
+    subtitle_label->setMinimumWidth(0);
+    subtitle_label->setWordWrap(true);
     title_layout->addWidget(subtitle_label);
 
     content_layout->addWidget(title_card, 0, Qt::AlignHCenter);
@@ -54,57 +68,147 @@ TopSurveysWindow::TopSurveysWindow(
     if (surveys.empty()) {
         auto *empty_card = new QWidget(content);
         empty_card->setObjectName("questionCard");
-        empty_card->setFixedWidth(720);
+        empty_card->setMinimumWidth(300);
+        empty_card->setMaximumWidth(720);
+        empty_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         auto *empty_layout = new QVBoxLayout(empty_card);
         empty_layout->setContentsMargins(24, 24, 24, 24);
-        auto *empty_label = new QLabel("No surveys yet.", empty_card);
+        auto *empty_label = new QLabel(tr("No surveys yet."), empty_card);
         empty_label->setObjectName("titleLabel");
         empty_layout->addWidget(empty_label);
         content_layout->addWidget(empty_card, 0, Qt::AlignHCenter);
     }
 
+    int rank = 1;
     for (const auto &survey : surveys) {
         const std::string id = survey.at("id").get<std::string>();
         const std::string title = survey.at("title").get<std::string>();
         const std::string description = survey.at("description").get<std::string>();
         const int likes = survey.value("likes_count", 0);
         const int dislikes = survey.value("dislikes_count", 0);
-        const int total = survey.value("ratings_count", 0);
-        const int score = survey.value("rating_score", 0);
+        const int completions = survey.value("answers_count", 0);
+        const std::string answer_id = survey.value("answer_id", "");
+        const std::string user_rate = survey.value("user_rate", "");
+        const bool already_rated = !user_rate.empty();
+
+        auto *row = new QWidget(content);
+        row->setMinimumWidth(300);
+        row->setMaximumWidth(720);
+        row->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        auto *row_layout = new QHBoxLayout(row);
+        row_layout->setContentsMargins(0, 0, 0, 0);
+        row_layout->setSpacing(0);
 
         auto *card = new ClickableCard([id]() {
             auto *taking = new SurveyTaking(id);
             taking->setAttribute(Qt::WA_DeleteOnClose);
-        }, content);
+        }, row);
         card->setObjectName("surveyCard");
-        card->setFixedWidth(720);
+        card->setMinimumWidth(300);
+        card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
         auto *card_layout = new QVBoxLayout(card);
         card_layout->setContentsMargins(24, 20, 24, 20);
         card_layout->setSpacing(8);
 
+        auto *vote_widget = new QWidget(card);
+        auto *vote_layout = new QHBoxLayout(vote_widget);
+        vote_layout->setContentsMargins(0, 0, 0, 0);
+        vote_layout->setSpacing(8);
+        vote_layout->setAlignment(Qt::AlignRight);
+
+        auto *like_btn = new QPushButton(vote_widget);
+        like_btn->setObjectName("likeButton");
+        like_btn->setCheckable(true);
+        like_btn->setChecked(user_rate == "like");
+        like_btn->setDisabled(answer_id.empty() || already_rated);
+
+        auto *dislike_btn = new QPushButton(vote_widget);
+        dislike_btn->setObjectName("dislikeButton");
+        dislike_btn->setCheckable(true);
+        dislike_btn->setChecked(user_rate == "dislike");
+        dislike_btn->setDisabled(answer_id.empty() || already_rated);
+
+        vote_layout->addWidget(like_btn);
+        vote_layout->addWidget(dislike_btn);
+
+        if (!answer_id.empty()) {
+            connect(like_btn, &QPushButton::clicked, [id, answer_id, like_btn, dislike_btn]() {
+                server().post_rate(
+                    id, answer_id, true,
+                    [like_btn, dislike_btn](const nlohmann::json &) {
+                        like_btn->setChecked(true);
+                        like_btn->setDisabled(true);
+                        dislike_btn->setDisabled(true);
+                    },
+                    [](const std::string &) {}
+                );
+            });
+            connect(dislike_btn, &QPushButton::clicked, [id, answer_id, like_btn, dislike_btn]() {
+                server().post_rate(
+                    id, answer_id, false,
+                    [like_btn, dislike_btn](const nlohmann::json &) {
+                        dislike_btn->setChecked(true);
+                        like_btn->setDisabled(true);
+                        dislike_btn->setDisabled(true);
+                    },
+                    [](const std::string &) {}
+                );
+            });
+        }
+
+        auto *preview_label = new QLabel(card);
+        preview_label->setMinimumWidth(0);
+        preview_label->setMaximumWidth(672);
+        preview_label->setFixedHeight(189);
+        preview_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        preview_label->setScaledContents(true);
+        preview_label->setAlignment(Qt::AlignCenter);
+        preview_label->setAttribute(Qt::WA_TransparentForMouseEvents);
+        preview_label->setAttribute(Qt::WA_OpaquePaintEvent);
+        preview_label->setAttribute(Qt::WA_StaticContents);
+
+        const int preview_index = std::hash<std::string>{}(id) % 6;
+        preview_label->setPixmap(QPixmap(QString(":/survey_previews/default_%1.png").arg(preview_index)));
+        card_layout->addWidget(preview_label, 0, Qt::AlignHCenter);
+
         auto *survey_title = new QLabel(QString::fromStdString(title), card);
         survey_title->setObjectName("titleLabel");
+        survey_title->setMinimumWidth(0);
         survey_title->setWordWrap(true);
+        survey_title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         survey_title->setAttribute(Qt::WA_TransparentForMouseEvents);
         card_layout->addWidget(survey_title);
 
         if (!description.empty()) {
             auto *survey_description = new QLabel(QString::fromStdString(description), card);
             survey_description->setObjectName("descriptionLabel");
+            survey_description->setMinimumWidth(0);
             survey_description->setWordWrap(true);
+            survey_description->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
             survey_description->setAttribute(Qt::WA_TransparentForMouseEvents);
             card_layout->addWidget(survey_description);
         }
 
-        const QString stats = QString("Score: %1  ·  %2 likes  ·  %3 dislikes  ·  %4 ratings")
-                                  .arg(score).arg(likes).arg(dislikes).arg(total);
+        const QString stats = tr("№ %1  ·  %2 likes  ·  %3 dislikes  ·  %4 completions")
+                                  .arg(rank).arg(likes).arg(dislikes).arg(completions);
         auto *stats_label = new QLabel(stats, card);
         stats_label->setObjectName("subtitleLabel");
+        stats_label->setMinimumWidth(0);
+        stats_label->setWordWrap(true);
+        stats_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         stats_label->setAttribute(Qt::WA_TransparentForMouseEvents);
-        card_layout->addWidget(stats_label);
 
-        content_layout->addWidget(card, 0, Qt::AlignHCenter);
+        auto *footer_layout = new QHBoxLayout();
+        footer_layout->setContentsMargins(0, 0, 0, 0);
+        footer_layout->setSpacing(12);
+        footer_layout->addWidget(stats_label, 1, Qt::AlignBottom);
+        footer_layout->addWidget(vote_widget, 0, Qt::AlignRight | Qt::AlignBottom);
+        card_layout->addLayout(footer_layout);
+        row_layout->addWidget(card);
+
+        content_layout->addWidget(row, 0, Qt::AlignHCenter);
+        rank++;
     }
 
     content_layout->addStretch();

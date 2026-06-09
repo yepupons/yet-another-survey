@@ -38,10 +38,16 @@ SurveyWindow::SurveyWindow(
 
     auto *central_layout = new QVBoxLayout(central);
     central_layout->setAlignment(Qt::AlignTop);
-    central_layout->setContentsMargins(24, 24, 24, 24);
-    central_layout->setSpacing(16);
+    central_layout->setContentsMargins(0, 0, 0, 0);
+    central_layout->setSpacing(0);
 
-    auto *title = new QWidget(this);
+    auto *content_wrapper = new QWidget(central);
+    auto *content_wrapper_layout = new QVBoxLayout(content_wrapper);
+    content_wrapper_layout->setAlignment(Qt::AlignTop);
+    content_wrapper_layout->setContentsMargins(24, 24, 24, 24);
+    content_wrapper_layout->setSpacing(16);
+
+    auto *title = new QWidget(content_wrapper);
     title->setObjectName("questionCard");
     title->setFixedWidth(720);
     title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -58,26 +64,36 @@ SurveyWindow::SurveyWindow(
     survey_title_label->setObjectName("titleLabel");
     title_layout->addWidget(survey_title_label);
 
-    if (section_id == 0) {
-        const std::string desc = survey_data.value("description", "");
-        if (!desc.empty()) {
-            auto *desc_label = new QLabel(QString::fromStdString(desc), title);
-            desc_label->setObjectName("descriptionLabel");
-            desc_label->setWordWrap(true);
-            title_layout->addWidget(desc_label);
-        }
+    const std::string desc = survey_data.value("description", "");
+    if (!desc.empty()) {
+        auto *desc_label = new QLabel(QString::fromStdString(desc), title);
+        desc_label->setObjectName("subtitleLabel");
+        desc_label->setWordWrap(true);
+        title_layout->addWidget(desc_label);
     }
+
+    auto *section_name_widget = new QWidget(content_wrapper);
+    section_name_widget->setObjectName("questionCard");
+    section_name_widget->setFixedWidth(720);
+    section_name_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    auto *section_name_layout = new QVBoxLayout(section_name_widget);
+    section_name_layout->setAlignment(Qt::AlignTop);
+    section_name_layout->setContentsMargins(24, 24, 24, 24);
+    section_name_layout->setSpacing(16);
 
     auto *section_title_label = new QLabel(
         QString::fromStdString(section_title),
-        title
+        section_name_widget
     );
-    section_title_label->setObjectName("subtitleLabel");
-    title_layout->addWidget(section_title_label);
 
-    central_layout->addWidget(title, 0, Qt::AlignHCenter);
+    section_title_label->setObjectName("titleLabel");
+    section_name_layout->addWidget(section_title_label);
 
-    auto *scroll_area = new QScrollArea(central);
+    content_wrapper_layout->addWidget(title, 0, Qt::AlignHCenter);
+    content_wrapper_layout->addWidget(section_name_widget, 0, Qt::AlignHCenter);
+
+    auto *scroll_area = new QScrollArea(content_wrapper);
     scroll_area->setFrameShape(QFrame::NoFrame);
     scroll_area->setWidgetResizable(true);
 
@@ -117,17 +133,25 @@ SurveyWindow::SurveyWindow(
     scroll_area->setWidget(content);
     // scroll_area->setWidgetResizable(true);  // Deleted this line as per
     // instructions
-    central_layout->addWidget(scroll_area);
+    content_wrapper_layout->addWidget(scroll_area);
 
-    save_answer_button_ = new QPushButton("Save answers", central);
+    save_answer_button_ = new QPushButton(tr("Save answers"), content_wrapper);
     save_answer_button_->setObjectName("primaryButton");
-    central_layout->addWidget(save_answer_button_);
+    content_wrapper_layout->addWidget(save_answer_button_);
 
+    central_layout->addWidget(content_wrapper);
     central->setLayout(central_layout);
-    setCentralWidget(central);
+
+    auto *outer = new QWidget(this);
+    auto *outer_layout = new QVBoxLayout(outer);
+    outer_layout->setContentsMargins(0, 0, 0, 0);
+    outer_layout->setSpacing(0);
+    outer_layout->addWidget(make_back_header(outer, this));
+    outer_layout->addWidget(central);
+    setCentralWidget(outer);
 
     if (preview_mode_) {
-        save_answer_button_->setText("Next / finish preview");
+        save_answer_button_->setText(tr("Next / finish preview"));
     }
 
     connect(
@@ -148,15 +172,13 @@ void SurveyWindow::save_answer() {
         if (!question->is_valid()) {
             if (preview_mode_) {
                 auto box = show_question_box(
-                    this, QMessageBox::Question, "Continue?",
-                    "Some required answers are missing. Are you sure you want "
-                    "to continue?"
+                    this, QMessageBox::Question, tr("Continue?"),
+                    tr("Some required answers are missing. Are you sure you want to continue?")
                 );
             } else {
                 show_message_box(
-                    this, QMessageBox::Warning, "Error",
-                    "Some required answers are missing. Please complete all "
-                    "sections."
+                    this, QMessageBox::Warning, tr("Error"),
+                    tr("Some required answers are missing. Please complete all sections.")
                 );
                 return;
             }
@@ -172,11 +194,11 @@ void SurveyWindow::save_answer() {
     }
 
     if (!preview_mode_) {
-        QString message = all_answered ? "Are you sure you want to continue?"
-                                       : "Some answers are missing. Are you "
-                                         "sure you want to continue?";
+        QString message = all_answered
+                              ? tr("Are you sure you want to continue?")
+                              : tr("Some answers are missing. Are you sure you want to continue?");
         auto box =
-            show_question_box(this, QMessageBox::Question, "Save?", message);
+            show_question_box(this, QMessageBox::Question, tr("Save?"), message);
 
         connect(box, &QMessageBox::finished, this, [this](int want_to_save) {
             if (want_to_save == QMessageBox::No) {
