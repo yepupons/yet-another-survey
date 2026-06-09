@@ -280,8 +280,15 @@ ViewSurveyResults::ViewSurveyResults(
                             } else {
                                 continue;
                             }
-
-                            block->set_answer(results.at(section_index).at(question_index).at("answer"));
+                            if (sections.is_array() &&
+                                section_index < sections.size()) {
+                                auto &answers =
+                                    sections.at(section_index);
+                                if (answers.is_array() &&
+                                    question_index < answers.size()) {
+                                    block->set_answer(answers.at(question_index).at("answer"));
+                                }
+                            }
                             block->set_read_only(true);
                             content_layout->addWidget(block);
                         }
