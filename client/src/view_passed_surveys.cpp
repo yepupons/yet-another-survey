@@ -241,41 +241,63 @@ ViewSurveyResults::ViewSurveyResults(
             server().get_survey_results(
                 answer_id,
                 [=, this](const nlohmann::json &results) {
+                    auto *title = new QWidget(this);
+                    title->setObjectName("questionCard");
+                    title->setFixedWidth(720);
+                    title->setSizePolicy(
+                        QSizePolicy::Expanding, QSizePolicy::Preferred
+                    );
+
+                    auto *title_layout = new QVBoxLayout(title);
+                    title_layout->setAlignment(Qt::AlignTop);
+                    title_layout->setContentsMargins(24, 24, 24, 24);
+                    title_layout->setSpacing(16);
+
+                    auto *survey_title_label = new QLabel(
+                        QString::fromStdString(survey.at("title")),
+                        content
+                    );
+                    survey_title_label->setObjectName("titleLabel");
+                    title_layout->addWidget(survey_title_label);
+
+                    if (!survey.at("description").empty()) {
+                        auto *survey_desc_label = new QLabel(
+                            QString::fromStdString(survey.at("description")),
+                            content
+                        );
+                        survey_desc_label->setObjectName("subtitleLabel");
+                        title_layout->addWidget(survey_desc_label);
+                    }
+
+                    content_layout->addWidget(title, 0, Qt::AlignHCenter);
+
                     auto &sections = survey.at("sections");
                     for (int section_index = 0; section_index < sections.size();
                          section_index++) {
                         auto &section = sections.at(section_index);
-                        auto *title = new QWidget(this);
-                        title->setObjectName("questionCard");
-                        title->setFixedWidth(720);
-                        title->setSizePolicy(
+                        auto *section_title = new QWidget(this);
+                        section_title->setObjectName("questionCard");
+                        section_title->setFixedWidth(720);
+                        section_title->setSizePolicy(
                             QSizePolicy::Expanding, QSizePolicy::Preferred
                         );
 
-                        auto *title_layout = new QVBoxLayout(title);
-                        title_layout->setAlignment(Qt::AlignTop);
-                        title_layout->setContentsMargins(24, 24, 24, 24);
-                        title_layout->setSpacing(16);
+                        auto *section_title_layout = new QVBoxLayout(section_title);
+                        section_title_layout->setAlignment(Qt::AlignTop);
+                        section_title_layout->setContentsMargins(24, 24, 24, 24);
+                        section_title_layout->setSpacing(16);
 
-                        auto *section_number_label = new QLabel(
-                            tr("Section %1").arg(section_index + 1),
-                            content
-                        );
-
-                        section_number_label->setObjectName("titleLabel");
-                        title_layout->addWidget(section_number_label);
-
-                        auto *survey_title_label = new QLabel(
+                        auto *section_title_label = new QLabel(
                             QString::fromStdString(
                                 section.value("title", "Section")
                             ),
                             content
                         );
 
-                        survey_title_label->setObjectName("subtitleLabel");
-                        title_layout->addWidget(survey_title_label);
+                        section_title_label->setObjectName("titleLabel");
+                        section_title_layout->addWidget(section_title_label);
 
-                        content_layout->addWidget(title, 0, Qt::AlignHCenter);
+                        content_layout->addWidget(section_title, 0, Qt::AlignHCenter);
 
                         const auto &questions = section.at("questions");
                         for (int question_index = 0;

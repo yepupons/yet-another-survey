@@ -259,7 +259,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     outer_layout->addWidget(content_wrapper);
 
     auto *stats_timer = new QTimer(this);
-    stats_timer->setInterval(1000);
+    stats_timer->setInterval(5 * 60 * 1000);
     connect(stats_timer, &QTimer::timeout, this, &MainWindow::load_global_stats);
     stats_timer->start();
     load_global_stats();

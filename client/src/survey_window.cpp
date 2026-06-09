@@ -64,24 +64,34 @@ SurveyWindow::SurveyWindow(
     survey_title_label->setObjectName("titleLabel");
     title_layout->addWidget(survey_title_label);
 
-    if (section_id == 0) {
-        const std::string desc = survey_data.value("description", "");
-        if (!desc.empty()) {
-            auto *desc_label = new QLabel(QString::fromStdString(desc), title);
-            desc_label->setObjectName("descriptionLabel");
-            desc_label->setWordWrap(true);
-            title_layout->addWidget(desc_label);
-        }
+    const std::string desc = survey_data.value("description", "");
+    if (!desc.empty()) {
+        auto *desc_label = new QLabel(QString::fromStdString(desc), title);
+        desc_label->setObjectName("subtitleLabel");
+        desc_label->setWordWrap(true);
+        title_layout->addWidget(desc_label);
     }
+
+    auto *section_name_widget = new QWidget(content_wrapper);
+    section_name_widget->setObjectName("questionCard");
+    section_name_widget->setFixedWidth(720);
+    section_name_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    auto *section_name_layout = new QVBoxLayout(section_name_widget);
+    section_name_layout->setAlignment(Qt::AlignTop);
+    section_name_layout->setContentsMargins(24, 24, 24, 24);
+    section_name_layout->setSpacing(16);
 
     auto *section_title_label = new QLabel(
         QString::fromStdString(section_title),
-        title
+        section_name_widget
     );
-    section_title_label->setObjectName("subtitleLabel");
-    title_layout->addWidget(section_title_label);
+
+    section_title_label->setObjectName("titleLabel");
+    section_name_layout->addWidget(section_title_label);
 
     content_wrapper_layout->addWidget(title, 0, Qt::AlignHCenter);
+    content_wrapper_layout->addWidget(section_name_widget, 0, Qt::AlignHCenter);
 
     auto *scroll_area = new QScrollArea(content_wrapper);
     scroll_area->setFrameShape(QFrame::NoFrame);
