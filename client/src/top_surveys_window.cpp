@@ -41,9 +41,7 @@ TopSurveysWindow::TopSurveysWindow(
 
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
-    title_card->setMinimumWidth(300);
-    title_card->setMaximumWidth(720);
-    title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    title_card->setFixedWidth(720);
 
     auto *title_layout = new QVBoxLayout(title_card);
     title_layout->setContentsMargins(24, 24, 24, 24);
