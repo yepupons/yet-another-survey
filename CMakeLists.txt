@@ -171,6 +171,7 @@ if(NOT EMSCRIPTEN)
         server/src/database.cpp
         server/src/ollama_interaction.cpp
         server/src/survey_service.cpp
+        server/src/survey_validator.cpp
     )
 
     target_include_directories(server PRIVATE
@@ -186,6 +187,24 @@ if(NOT EMSCRIPTEN)
         OpenSSL::Crypto
         CURL::libcurl
     )
+
+    enable_testing()
+
+    add_executable(survey_validator_tests
+        tests/server/survey_validator_tests.cpp
+        server/src/survey_validator.cpp
+    )
+
+    target_include_directories(survey_validator_tests PRIVATE
+        ${PROJECT_SOURCE_DIR}/server/include/
+    )
+
+    target_link_libraries(survey_validator_tests PRIVATE
+        Qt6::Test
+        nlohmann_json::nlohmann_json
+    )
+
+    add_test(NAME survey_validator_tests COMMAND survey_validator_tests)
 
     # TG bot
     add_executable(telegram_bot

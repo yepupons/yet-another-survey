@@ -7,7 +7,7 @@ CCACHE_DIR ?= $(CURDIR)/build-wasm/.ccache
 WASM_ENV = EM_CACHE="$(EM_CACHE)" CCACHE_DIR="$(CCACHE_DIR)"
 EMSDK_SOURCE = $(if $(EMSDK_ENV),EMSDK_QUIET=1 . "$(EMSDK_ENV)" >/dev/null && ,)$(WASM_ENV)
 
-.PHONY: configure configure-wasm check-wasm-env build build-wasm build-debug server client bot serve-wasm web format clean
+.PHONY: configure configure-wasm check-wasm-env build build-wasm build-debug test server client bot serve-wasm web format clean
 
 configure:
 	cmake -S . -B build
