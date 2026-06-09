@@ -10,8 +10,8 @@
     </message>
     <message>
         <location filename="../src/created_surveys_window.cpp" line="56"/>
-        <source>Preview surveys, share QR codes, or export statistics.</source>
-        <translation>Предпросмотр, QR-код или экспорт статистики.</translation>
+        <source>Preview surveys, share QR codes, or view statistics.</source>
+        <translation>Предпросмотр, QR-код или просмотр статистики.</translation>
     </message>
     <message>
         <location filename="../src/created_surveys_window.cpp" line="77"/>
@@ -27,6 +27,10 @@
         <location filename="../src/created_surveys_window.cpp" line="135"/>
         <source>Preview</source>
         <translation>Предпросмотр</translation>
+    </message>
+    <message>
+        <source>View Stats</source>
+        <translation>Статистика</translation>
     </message>
     <message>
         <location filename="../src/created_surveys_window.cpp" line="158"/>
@@ -680,6 +684,29 @@
         <location filename="../src/view_passed_surveys.cpp" line="75"/>
         <source>No passed surveys yet.</source>
         <translation>Пройденных опросов пока нет.</translation>
+    </message>
+</context>
+<context>
+    <name>survey::ViewSurveyStats</name>
+    <message>
+        <source>Survey statistics</source>
+        <translation>Статистика опроса</translation>
+    </message>
+    <message>
+        <source>Total responses: %1</source>
+        <translation>Всего ответов: %1</translation>
+    </message>
+    <message>
+        <source>%1 responses</source>
+        <translation>%1 ответов</translation>
+    </message>
+    <message>
+        <source>Export TXT</source>
+        <translation>Экспорт TXT</translation>
+    </message>
+    <message>
+        <source>Export JPG</source>
+        <translation>Экспорт JPG</translation>
     </message>
 </context>
 <context>

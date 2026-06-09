@@ -18,7 +18,24 @@ public slots:
     void show_qr_code(const std::string &id);
     void
     show_survey_preview(QWidget *parent, const nlohmann::json &survey_data);
-    void export_statistics(const std::string &survey_id, const std::string &file_format);
+};
+
+class ViewSurveyStats : public QDialog {
+    Q_OBJECT
+
+public:
+    explicit ViewSurveyStats(
+        const std::string &survey_id,
+        QWidget *parent = nullptr
+    );
+
+private:
+    void export_statistics(
+        const std::string &survey_id,
+        const std::string &file_format
+    );
+
+    std::string survey_id_;
 };
 }  // namespace survey
 
