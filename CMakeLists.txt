@@ -24,7 +24,7 @@ if(CCACHE_PROGRAM)
 endif()
 
 # Dependencies
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network Svg LinguistTools Test)
 
 set(NLOHMANN_JSON_LOCAL_DIR "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
 if (EXISTS "${NLOHMANN_JSON_LOCAL_DIR}/CMakeLists.txt")

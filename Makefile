@@ -38,6 +38,10 @@ bot:
 	BOT_TOKEN=$(BOT_TOKEN)
 	./build/telegram_bot
 
+test: configure
+	cmake --build build --target survey_validator_tests --parallel
+	ctest --test-dir build --output-on-failure
+
 web:
 	test -d build-wasm
 	python3 -m http.server 8054 --directory build-wasm

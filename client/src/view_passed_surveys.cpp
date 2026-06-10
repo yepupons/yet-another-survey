@@ -34,7 +34,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
 
     auto *title_card = new QWidget(content);
     title_card->setObjectName("questionCard");
-    title_card->setMaximumWidth(720);
+    title_card->setFixedWidth(720);
     title_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     auto *title_layout = new QVBoxLayout(title_card);
@@ -62,7 +62,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
             if (surveys.empty()) {
                 auto *empty_card = new QWidget(content);
                 empty_card->setObjectName("questionCard");
-                empty_card->setMaximumWidth(720);
+                empty_card->setFixedWidth(720);
                 empty_card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
                 auto *empty_layout = new QVBoxLayout(empty_card);
                 empty_layout->setContentsMargins(24, 24, 24, 24);
@@ -91,7 +91,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                 const bool already_rated = !user_rate.empty();
 
                 auto *row = new QWidget(content);
-                row->setMaximumWidth(720);
+                row->setFixedWidth(720);
                 row->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
                 auto *row_layout = new QHBoxLayout(row);
                 row_layout->setContentsMargins(0, 0, 0, 0);
@@ -108,6 +108,7 @@ ViewPassedSurveys::ViewPassedSurveys(QWidget *parent) : QDialog(parent) {
                     row
                 );
                 card->setObjectName("surveyCard");
+                card->setFixedWidth(720);
                 card->setSizePolicy(
                     QSizePolicy::Expanding, QSizePolicy::Preferred
                 );

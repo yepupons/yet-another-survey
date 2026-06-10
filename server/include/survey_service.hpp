@@ -28,27 +28,9 @@ public:
         const nlohmann::json &payload
     );
 
-    std::string get_statistics(
-        const std::string &access_token,
-        const std::string &survey_id,
-        const std::string &format
-    );
-
-    std::string upload_image(
-        const std::string &access_token,
-        const drogon::HttpFile &file
-    );
-
 private:
     Database &db_;
     SurveyValidator validator_;
-
-    std::string require_user(const std::string &access_token) const;
-    void validate_image(const drogon::HttpFile &file) const;
-    void require_survey_owner(
-        const std::string &survey_id,
-        const std::string &user_id
-    ) const;
 };
 }
 
